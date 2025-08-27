@@ -94,10 +94,21 @@ This document breaks down the ContentMax PRD into actionable development tasks o
 ---
 
 ## Sprint 2: Data Ingestion & Processing
-**Goal**: Build data ingestion pipeline for sitemaps and content scraping
+**Goal**: Build data ingestion pipeline with CI/CD setup for quality assurance
 **Duration**: 2 weeks
 
-### Task 2.1: Sitemap Parser
+### Task 2.1: CI/CD Pipeline Setup
+**Size**: M (4 hours)
+**Priority**: P0 - Critical
+**Dependencies**: Sprint 1 complete
+**Description**: Set up GitHub Actions for automated testing and deployment.
+**Files to create**:
+- .github/workflows/ci.yml
+- .github/workflows/preview.yml
+- .github/dependabot.yml
+**Note**: See external-services-setup.md for GitHub configuration requirements.
+
+### Task 2.2: Sitemap Parser
 **Size**: M (6 hours)
 **Priority**: P0 - Critical
 **Dependencies**: Sprint 1 complete
@@ -108,10 +119,10 @@ This document breaks down the ContentMax PRD into actionable development tasks o
 - api/ingestion/sitemap/route.ts
 - types/sitemap.types.ts
 
-### Task 2.2: Content Scraper with Rate Limiting
+### Task 2.3: Content Scraper with Rate Limiting
 **Size**: L (8 hours)
 **Priority**: P0 - Critical
-**Dependencies**: Task 2.1
+**Dependencies**: Task 2.2
 **Description**: Build web scraper with rate limiting and robots.txt compliance.
 **Files to create**:
 - lib/scraping/scraper.ts
@@ -120,20 +131,21 @@ This document breaks down the ContentMax PRD into actionable development tasks o
 - lib/queue/scraping-queue.ts
 - supabase/functions/scrape-content/index.ts
 
-### Task 2.3: Google Search Console Integration
+### Task 2.4: Google Search Console Integration
 **Size**: M (6 hours)
 **Priority**: P1 - High
 **Dependencies**: Sprint 1 complete
+**Note**: Requires Google Cloud account setup - see external-services-setup.md
 **Description**: Integrate Google Search Console API for metrics.
 **Files to create**:
 - lib/integrations/search-console.ts
 - app/settings/integrations/page.tsx
 - api/integrations/google/callback/route.ts
 
-### Task 2.4: Data Processing Pipeline
+### Task 2.5: Data Processing Pipeline
 **Size**: L (8 hours)
 **Priority**: P0 - Critical
-**Dependencies**: Task 2.2
+**Dependencies**: Task 2.3
 **Description**: Process scraped data into structured taxonomy.
 **Files to create**:
 - lib/processing/taxonomy-builder.ts
@@ -141,10 +153,10 @@ This document breaks down the ContentMax PRD into actionable development tasks o
 - supabase/functions/process-taxonomy/index.ts
 - supabase/migrations/002_materialized_views.sql
 
-### Task 2.5: Import UI & Progress Tracking
+### Task 2.6: Import UI & Progress Tracking
 **Size**: M (4 hours)
 **Priority**: P1 - High
-**Dependencies**: Tasks 2.1-2.4
+**Dependencies**: Tasks 2.2-2.5
 **Description**: Create UI for importing sitemaps with progress tracking.
 **Files to create**:
 - app/import/page.tsx
@@ -264,11 +276,12 @@ This document breaks down the ContentMax PRD into actionable development tasks o
 - app/generate/page.tsx
 - components/generation/GenerationForm.tsx
 
-### Task 4.5: Multi-language Support
+### Task 4.5: Multi-language Content Generation
 **Size**: M (4 hours)
-**Priority**: P2 - Medium
+**Priority**: P1 - High
 **Dependencies**: Task 4.3
-**Description**: Add language selection and localization support.
+**Description**: Add language parameter for AI content generation (UI remains English).
+**Note**: Only generated content is multilingual - admin interface stays in English.
 **Files to create**:
 - lib/i18n/language-manager.ts
 - components/generation/LanguageSelector.tsx

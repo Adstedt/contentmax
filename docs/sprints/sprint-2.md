@@ -175,7 +175,48 @@ FROM build_hierarchy_recursive(taxonomy_nodes);
 
 ---
 
-### Task 2.5: Import UI & Progress Tracking
+### Task 2.5: CI/CD Pipeline Setup
+**Size**: M (4 hours) | **Priority**: P0 - Critical | **Dependencies**: Sprint 1 complete
+
+**Implementation Steps**:
+1. Set up GitHub Actions workflow for automated testing
+2. Configure build and type checking pipeline
+3. Implement branch protection rules
+4. Add automated deployment to Vercel preview environments
+
+**Files to Create**:
+- `.github/workflows/ci.yml` - Main CI workflow
+- `.github/workflows/preview.yml` - Preview deployment workflow
+- `.github/dependabot.yml` - Dependency updates configuration
+
+**CI/CD Configuration**:
+```yaml
+# Basic CI workflow structure
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+      - run: npm run test
+```
+
+**Acceptance Criteria**:
+- [ ] Tests run automatically on every push/PR
+- [ ] TypeScript type checking prevents type errors
+- [ ] Linting enforces code quality standards
+- [ ] Preview deployments created for PRs
+- [ ] Build failures block merging to main
+- [ ] Test results visible in PR interface
+
+---
+
+### Task 2.6: Import UI & Progress Tracking
 **Size**: M (4 hours) | **Priority**: P1 - High | **Dependencies**: Tasks 2.1-2.4
 
 **Implementation Steps**:

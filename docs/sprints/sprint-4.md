@@ -253,50 +253,68 @@ interface QueueManager {
 
 ---
 
-### Task 4.5: Multi-language Support
-**Size**: M (4 hours) | **Priority**: P2 - Medium | **Dependencies**: Task 4.3
+### Task 4.5: Multi-language Content Generation Support
+**Size**: M (4 hours) | **Priority**: P1 - High | **Dependencies**: Task 4.3
 
 **Implementation Steps**:
-1. Add language selection to generation parameters
-2. Create language-specific prompt templates
-3. Implement locale-aware content formatting
-4. Build language quality validation
+1. Add language parameter to content generation API
+2. Modify OpenAI prompts to generate content in specified language
+3. Implement language-specific SEO optimization
+4. Add language validation for generated content
 
 ```typescript
-// Multi-language interfaces
-interface LanguageConfig {
-  code: string;
-  name: string;
-  rtl: boolean;
-  prompts: Record<string, string>;
-  formatting: LocaleFormatting;
+// Multi-language content generation interfaces
+interface ContentGenerationRequest {
+  pageType: PageType;
+  targetLanguage: string; // ISO 639-1 code (en, es, fr, de, etc.)
+  components: ComponentConfig[];
+  seoKeywords: string[];
+  brandVoice: BrandVoice;
 }
 
-interface LocaleFormatting {
-  currency: string;
-  dateFormat: string;
-  numberFormat: Intl.NumberFormatOptions;
-  textDirection: 'ltr' | 'rtl';
+interface LanguageConfig {
+  code: string;           // ISO 639-1 code
+  name: string;          // Display name
+  openAIModel: string;   // Best model for this language
+  seoRules: SEOLanguageRules;
+}
+
+// Simple prompt modification for language
+interface PromptBuilder {
+  buildPrompt(template: string, language: string): string {
+    return `Generate the following content in ${language}:\n${template}`;
+  }
 }
 ```
 
 **Files to Create**:
-- `lib/i18n/language-manager.ts` - Language configuration management
-- `components/generation/LanguageSelector.tsx` - UI for language selection
-- `types/language.types.ts` - Language-related type definitions
+- `lib/generation/language-adapter.ts` - Language-specific generation logic
+- `components/generation/LanguageSelector.tsx` - Dropdown for language selection
+- `types/language.types.ts` - Language configuration types
 
-**Supported Languages (Initial)**:
-- English (US/UK variants)
-- Spanish (Spain/Mexico variants)
-- French (France/Canada variants)
-- German
-- Italian
+**Supported Languages for Content Generation**:
+- English (EN) - Default
+- Spanish (ES)
+- French (FR)
+- German (DE)
+- Italian (IT)
+- Portuguese (PT)
+- Dutch (NL)
+- Polish (PL)
+- Swedish (SV)
+- Norwegian (NO)
+
+**Important Notes**:
+- **UI remains in English** - Only generated content is multilingual
+- **Single language per generation** - User selects target language before generating
+- **SEO optimization per language** - Keywords and meta descriptions in target language
+- **No UI translation needed** - Admin interface stays English-only
 
 **Language Features**:
-- Locale-specific content generation
-- Currency and date formatting
-- RTL language support planning
-- Cultural adaptation of content
+- Generate content directly in target language via OpenAI
+- Language-specific SEO keyword optimization
+- Proper character encoding for all languages
+- Language metadata stored with content
 
 **Acceptance Criteria**:
 - [ ] Content can be generated in multiple languages
