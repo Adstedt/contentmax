@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { Header } from '@/components/layout/Header';
+import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { QuickActions } from '@/components/dashboard/QuickActions';
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();
@@ -10,48 +14,47 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold">ContentMax Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">{user.email}</span>
-              <form action="/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Sign out
-                </button>
-              </form>
-            </div>
+    <div className="flex-1 flex flex-col bg-[#000]">
+      <Header 
+        title="Dashboard" 
+        subtitle="Welcome back! Here's an overview of your content performance."
+      />
+      
+      <main className="flex-1 p-6 overflow-y-auto">
+        {/* Stats Grid */}
+        <StatsGrid />
+
+        {/* Main Content Grid */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Activity - Takes up 2 columns on large screens */}
+          <div className="lg:col-span-2">
+            <RecentActivity />
+          </div>
+          
+          {/* Quick Actions - Takes up 1 column on large screens */}
+          <div className="lg:col-span-1">
+            <QuickActions />
           </div>
         </div>
-      </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome to ContentMax!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              You&apos;re successfully logged in as: <span className="font-semibold">{user.email}</span>
-            </p>
-            <div className="bg-blue-50 p-4 rounded-md">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Getting Started
-              </h3>
-              <ul className="list-disc list-inside text-blue-800 space-y-1">
-                <li>Import your website sitemap to analyze content structure</li>
-                <li>Scrape and analyze existing content</li>
-                <li>Generate new content using AI</li>
-                <li>Visualize your content taxonomy</li>
-                <li>Manage templates and components</li>
-              </ul>
+        {/* Welcome Message for First Time Users */}
+        <div className="mt-8 bg-gradient-to-r from-[#10a37f] to-[#0e906d] rounded-lg p-6 text-white">
+          <h2 className="text-2xl font-bold mb-2">Getting Started with ContentMax</h2>
+          <p className="text-white/90 mb-4">
+            Transform your content strategy with AI-powered generation and management.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="bg-white bg-opacity-10 backdrop-blur rounded-lg p-4">
+              <h3 className="font-semibold mb-1">1. Import Your Site</h3>
+              <p className="text-sm text-white/80">Upload sitemap to analyze structure</p>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur rounded-lg p-4">
+              <h3 className="font-semibold mb-1">2. Generate Content</h3>
+              <p className="text-sm text-white/80">AI creates optimized content</p>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur rounded-lg p-4">
+              <h3 className="font-semibold mb-1">3. Review & Publish</h3>
+              <p className="text-sm text-white/80">Approve and deploy at scale</p>
             </div>
           </div>
         </div>

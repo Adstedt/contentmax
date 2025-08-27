@@ -113,15 +113,16 @@ export async function createAuditLog({
   const org = await getCurrentOrganization();
 
   const supabase = createClient();
-  await supabase.from('audit_logs').insert({
-    user_id: user?.id,
-    organization_id: org?.id,
-    action,
-    entity_type: entityType,
-    entity_id: entityId,
-    old_values: oldValues,
-    new_values: newValues,
-  });
+  // TODO: Enable when audit_logs table is created with proper schema
+  // await supabase.from('audit_logs').insert({
+  //   user_id: user?.id,
+  //   organization_id: org?.id,
+  //   action,
+  //   entity_type: entityType,
+  //   entity_id: entityId,
+  //   old_values: oldValues,
+  //   new_values: newValues,
+  // });
 }
 
 /**

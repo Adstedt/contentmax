@@ -1,5 +1,9 @@
 # Story 1.3a: Basic Authentication Implementation
 
+**STATUS: SUPERSEDED BY STORY 1.3**
+
+*This story has been superseded by Story 1.3, which provides a more comprehensive authentication implementation including all features from this story plus OAuth preparation and additional security measures.*
+
 ## User Story
 As a user,
 I want to sign up and log in with email and password,
@@ -10,6 +14,7 @@ So that I can securely access my ContentMax account.
 - **Priority**: P0 - Critical
 - **Sprint**: 1 (Adjusted)
 - **Dependencies**: Story 1.2 (Supabase Setup)
+- **Status**: SUPERSEDED - See Story 1.3 for implementation
 
 ## Description
 Implement core authentication functionality with email/password using Supabase Auth. OAuth and SSO will be handled in Story 1.3b (Sprint 2).
