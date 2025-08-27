@@ -40,11 +40,13 @@ export async function updateSession(request: NextRequest) {
 
   if (isProtectedPath && !user) {
     // Redirect to login if accessing protected route without auth
-    return NextResponse.redirect(new URL('/login', request.url));
+    const redirectUrl = new URL('/auth/login', request.url);
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   // Redirect to dashboard if logged in and accessing auth pages
-  const authPaths = ['/login', '/signup'];
+  const authPaths = ['/auth/login', '/auth/signup', '/login', '/signup'];
   const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path));
 
   if (isAuthPath && user) {

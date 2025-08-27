@@ -6,7 +6,7 @@ export async function GET() {
     const supabase = createClient();
     
     // Test basic connection
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('organizations')
       .select('count')
       .limit(1);

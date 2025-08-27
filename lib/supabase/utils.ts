@@ -1,5 +1,4 @@
 import { createClient } from './client';
-import { createServerSupabaseClient } from './server';
 import type { Database } from '@/types/database.types';
 
 // Type aliases for easier use
@@ -107,8 +106,8 @@ export async function createAuditLog({
   action: string;
   entityType: string;
   entityId?: string;
-  oldValues?: any;
-  newValues?: any;
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
 }) {
   const user = await getCurrentUser();
   const org = await getCurrentOrganization();
@@ -152,11 +151,11 @@ export async function softDelete(
 /**
  * Get paginated results from a table
  */
-export async function getPaginated<T>(
+export async function getPaginated(
   table: keyof Tables,
   page: number = 1,
   pageSize: number = 20,
-  filters?: Record<string, any>
+  filters?: Record<string, unknown>
 ) {
   const supabase = createClient();
   const from = (page - 1) * pageSize;
