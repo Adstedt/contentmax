@@ -1,22 +1,26 @@
 # Story 2.5: Data Processing Pipeline
 
 ## User Story
+
 As a data analyst,
 I want scraped content automatically processed into a hierarchical taxonomy,
 So that I can visualize the site structure and identify content relationships.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 2
 - **Dependencies**: Task 2.3
 
 ## Description
+
 Process scraped data into structured taxonomy with hierarchy detection, content similarity analysis, and performance optimization through materialized views.
 
 ## Implementation Steps
 
 1. **Build taxonomy hierarchy from URLs**
+
    ```typescript
    interface TaxonomyNode {
      id: string;
@@ -32,7 +36,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
        lastModified: Date;
      };
    }
-   
+
    class TaxonomyBuilder {
      buildHierarchy(urls: string[]): TaxonomyNode {
        // Parse URL paths
@@ -44,6 +48,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
    ```
 
 2. **Detect content relationships**
+
    ```typescript
    class HierarchyAnalyzer {
      detectRelationships(nodes: TaxonomyNode[]): Relationship[] {
@@ -52,7 +57,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
        // Detect cross-links
        // Identify orphans
      }
-     
+
      calculateSimilarity(node1: TaxonomyNode, node2: TaxonomyNode): number {
        // URL similarity
        // Content similarity
@@ -63,6 +68,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
    ```
 
 3. **Content gap analysis**
+
    ```typescript
    interface ContentGap {
      nodeId: string;
@@ -72,7 +78,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
      reason: string;
      suggestedAction: string;
    }
-   
+
    class GapAnalyzer {
      identifyGaps(taxonomy: TaxonomyNode): ContentGap[] {
        // Find nodes without content
@@ -84,11 +90,12 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
    ```
 
 4. **Create materialized views**
+
    ```sql
    -- Materialized view for fast hierarchy queries
    CREATE MATERIALIZED VIEW taxonomy_hierarchy AS
    WITH RECURSIVE tree AS (
-     SELECT 
+     SELECT
        id,
        parent_id,
        url,
@@ -97,10 +104,10 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
        ARRAY[id] as path
      FROM taxonomy_nodes
      WHERE parent_id IS NULL
-     
+
      UNION ALL
-     
-     SELECT 
+
+     SELECT
        n.id,
        n.parent_id,
        n.url,
@@ -111,7 +118,7 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
      JOIN tree t ON n.parent_id = t.id
    )
    SELECT * FROM tree;
-   
+
    -- Index for performance
    CREATE INDEX idx_hierarchy_depth ON taxonomy_hierarchy(depth);
    CREATE INDEX idx_hierarchy_path ON taxonomy_hierarchy USING GIN(path);
@@ -122,13 +129,11 @@ Process scraped data into structured taxonomy with hierarchy detection, content 
    class ProcessingQueue {
      async processInBatches(items: ProcessingJob[], batchSize = 100) {
        for (const batch of chunks(items, batchSize)) {
-         await Promise.all(
-           batch.map(job => this.processJob(job))
-         );
+         await Promise.all(batch.map((job) => this.processJob(job)));
          await this.updateProgress(batch.length);
        }
      }
-     
+
      private async processJob(job: ProcessingJob) {
        try {
          // Parse content
@@ -163,7 +168,7 @@ enum ProcessingStage {
   GAP_ANALYSIS = 'gap_analysis',
   SIMILARITY_CALCULATION = 'similarity_calculation',
   VIEW_REFRESH = 'view_refresh',
-  COMPLETE = 'complete'
+  COMPLETE = 'complete',
 }
 
 interface PipelineProgress {
@@ -182,26 +187,25 @@ interface PipelineProgress {
 const hierarchyRules = {
   // URL depth determines hierarchy
   depthSeparator: '/',
-  
+
   // Common patterns
   patterns: {
     category: /\/(category|categories|c)\//,
     product: /\/(product|products|p)\//,
     brand: /\/(brand|brands|manufacturer)\//,
   },
-  
+
   // Parent-child detection
   isParent: (url1: string, url2: string) => {
-    return url2.startsWith(url1) && 
-           url2.split('/').length === url1.split('/').length + 1;
+    return url2.startsWith(url1) && url2.split('/').length === url1.split('/').length + 1;
   },
-  
+
   // Sibling detection
   areSiblings: (url1: string, url2: string) => {
     const parent1 = url1.substring(0, url1.lastIndexOf('/'));
     const parent2 = url2.substring(0, url2.lastIndexOf('/'));
     return parent1 === parent2;
-  }
+  },
 };
 ```
 
@@ -209,9 +213,9 @@ const hierarchyRules = {
 
 ```typescript
 interface OptimizationConfig {
-  batchSize: number;           // Process in batches (default: 100)
-  parallelWorkers: number;     // Concurrent processing (default: 5)
-  cacheEnabled: boolean;       // Cache intermediate results
+  batchSize: number; // Process in batches (default: 100)
+  parallelWorkers: number; // Concurrent processing (default: 5)
+  cacheEnabled: boolean; // Cache intermediate results
   viewRefreshInterval: number; // Minutes between view refresh (default: 60)
 }
 
@@ -254,7 +258,7 @@ CREATE INDEX idx_nodes_status ON taxonomy_nodes(content_status);
 CREATE INDEX idx_nodes_url ON taxonomy_nodes(url);
 
 -- Full-text search
-CREATE INDEX idx_nodes_search ON taxonomy_nodes 
+CREATE INDEX idx_nodes_search ON taxonomy_nodes
   USING GIN(to_tsvector('english', title || ' ' || url));
 ```
 

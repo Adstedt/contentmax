@@ -1,12 +1,12 @@
-import React from 'react'
-import { cn } from '@/lib/utils'
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string
-  error?: string
-  hint?: string
-  leftIcon?: React.ReactNode
-  rightElement?: React.ReactNode
+  label?: string;
+  error?: string;
+  hint?: string;
+  leftIcon?: React.ReactNode;
+  rightElement?: React.ReactNode;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -44,9 +44,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightElement && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              {rightElement}
-            </div>
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">{rightElement}</div>
           )}
         </div>
         {error && (
@@ -60,10 +58,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
       </div>
-    )
+    );
   }
-)
+);
 
-Input.displayName = 'Input'
+Input.displayName = 'Input';
 
-export default Input
+export default Input;

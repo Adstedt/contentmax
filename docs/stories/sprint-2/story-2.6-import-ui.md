@@ -1,38 +1,42 @@
 # Story 2.6: Import UI & Progress Tracking
 
 ## User Story
+
 As a content manager,
 I want a clear interface to import my site data with real-time progress updates,
 So that I can understand what's happening during the import process.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P1 - High
 - **Sprint**: 2
 - **Dependencies**: Tasks 2.2-2.5
 
 ## Description
+
 Create a multi-step import wizard with real-time progress tracking, error reporting, and import history management.
 
 ## Implementation Steps
 
 1. **Create import wizard component**
+
    ```typescript
    interface ImportWizardProps {
      onComplete: (importId: string) => void;
    }
-   
+
    enum ImportStep {
      SITEMAP_INPUT = 'sitemap_input',
      CONFIGURATION = 'configuration',
      PROCESSING = 'processing',
-     REVIEW = 'review'
+     REVIEW = 'review',
    }
-   
+
    const ImportWizard: React.FC<ImportWizardProps> = () => {
      const [currentStep, setCurrentStep] = useState(ImportStep.SITEMAP_INPUT);
      const [importConfig, setImportConfig] = useState<ImportConfig>({});
-     
+
      // Step components
      // Navigation logic
      // Progress tracking
@@ -40,11 +44,12 @@ Create a multi-step import wizard with real-time progress tracking, error report
    ```
 
 2. **Sitemap input step**
+
    ```typescript
    interface SitemapInputProps {
      onNext: (sitemapUrl: string) => void;
    }
-   
+
    const SitemapInput: React.FC<SitemapInputProps> = ({ onNext }) => {
      // URL input field
      // Validation (check URL format, accessibility)
@@ -54,15 +59,16 @@ Create a multi-step import wizard with real-time progress tracking, error report
    ```
 
 3. **Configuration step**
+
    ```typescript
    interface ImportConfigProps {
      sitemapData: SitemapPreview;
      onNext: (config: ImportConfig) => void;
    }
-   
+
    interface ImportConfig {
      scrapeContent: boolean;
-     rateLimit: number;       // Requests per second
+     rateLimit: number; // Requests per second
      includePatterns: string[];
      excludePatterns: string[];
      maxPages?: number;
@@ -71,14 +77,15 @@ Create a multi-step import wizard with real-time progress tracking, error report
    ```
 
 4. **Real-time progress tracking**
+
    ```typescript
    interface ProgressTrackerProps {
      importId: string;
    }
-   
+
    const ProgressTracker: React.FC<ProgressTrackerProps> = ({ importId }) => {
      const { data, loading } = useRealtimeProgress(importId);
-     
+
      return (
        <div>
          <ProgressBar value={data.percentage} />
@@ -88,11 +95,11 @@ Create a multi-step import wizard with real-time progress tracking, error report
        </div>
      );
    };
-   
+
    // Custom hook for real-time updates
    function useRealtimeProgress(importId: string) {
      const [progress, setProgress] = useState<ImportProgress>();
-     
+
      useEffect(() => {
        const subscription = supabase
          .channel(`import:${importId}`)
@@ -105,10 +112,10 @@ Create a multi-step import wizard with real-time progress tracking, error report
            setProgress(payload.new);
          })
          .subscribe();
-       
+
        return () => subscription.unsubscribe();
      }, [importId]);
-     
+
      return progress;
    }
    ```
@@ -145,11 +152,12 @@ Create a multi-step import wizard with real-time progress tracking, error report
 ## UI Components
 
 ### Progress Visualization
+
 ```typescript
 interface ProgressVisualization {
   // Overall progress bar
   overallProgress: number; // 0-100
-  
+
   // Stage indicators
   stages: {
     name: string;
@@ -157,7 +165,7 @@ interface ProgressVisualization {
     startTime?: Date;
     endTime?: Date;
   }[];
-  
+
   // Real-time metrics
   metrics: {
     urlsDiscovered: number;
@@ -165,7 +173,7 @@ interface ProgressVisualization {
     errorsEncountered: number;
     estimatedTimeRemaining: number;
   };
-  
+
   // Activity feed
   recentActivity: {
     timestamp: Date;
@@ -176,6 +184,7 @@ interface ProgressVisualization {
 ```
 
 ### Import History Table
+
 ```typescript
 interface ImportHistoryItem {
   id: string;
@@ -203,7 +212,7 @@ interface ImportHistoryItem {
     <span>{progress}%</span>
   </div>
   <div className="w-full bg-gray-200 rounded-full h-2">
-    <div 
+    <div
       className="bg-blue-600 h-2 rounded-full transition-all"
       style={{ width: `${progress}%` }}
     />

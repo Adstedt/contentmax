@@ -1,22 +1,26 @@
 # Story 7.2: API Documentation & Developer Portal
 
 ## User Story
+
 As a developer,
 I want comprehensive API documentation and tools,
 So that I can easily integrate with the ContentMax platform.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P2 - Medium
 - **Sprint**: 7
 - **Dependencies**: API endpoints complete
 
 ## Description
+
 Create comprehensive API documentation using OpenAPI/Swagger specification, implement interactive API explorer, provide SDKs, code examples, and developer tools for easy integration.
 
 ## Implementation Steps
 
 1. **OpenAPI specification**
+
    ```yaml
    # api/openapi.yaml
    openapi: 3.1.0
@@ -29,7 +33,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
      license:
        name: MIT
        url: https://opensource.org/licenses/MIT
-   
+
    servers:
      - url: https://api.contentmax.app/v1
        description: Production server
@@ -37,11 +41,11 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
        description: Staging server
      - url: http://localhost:3000/api/v1
        description: Development server
-   
+
    security:
      - BearerAuth: []
      - ApiKeyAuth: []
-   
+
    paths:
      /content/generate:
        post:
@@ -105,7 +109,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
            - lang: Python
              source: |
                import requests
-               
+
                response = requests.post(
                  'https://api.contentmax.app/v1/content/generate',
                  headers={
@@ -120,7 +124,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
                  }
                )
                content = response.json()
-   
+
      /taxonomy/analyze:
        post:
          summary: Analyze website taxonomy
@@ -154,7 +158,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
                application/json:
                  schema:
                    $ref: '#/components/schemas/TaxonomyAnalysis'
-   
+
      /content/{id}:
        get:
          summary: Get content by ID
@@ -175,7 +179,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
                application/json:
                  schema:
                    $ref: '#/components/schemas/Content'
-   
+
    components:
      securitySchemes:
        BearerAuth:
@@ -186,7 +190,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
          type: apiKey
          in: header
          name: X-API-Key
-   
+
      schemas:
        GenerateContentRequest:
          type: object
@@ -237,20 +241,21 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
    ```
 
 2. **API documentation generator**
+
    ```typescript
    // lib/docs/api-doc-generator.ts
    import SwaggerUI from 'swagger-ui-react';
    import { OpenAPIV3 } from 'openapi-types';
-   
+
    class APIDocGenerator {
      private spec: OpenAPIV3.Document;
-     
+
      constructor() {
        this.spec = this.loadOpenAPISpec();
        this.enhanceWithExamples();
        this.addAuthenticationGuide();
      }
-     
+
      generateHTML(): string {
        return `
          <!DOCTYPE html>
@@ -286,31 +291,31 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
          </html>
        `;
      }
-     
+
      generateMarkdown(): string {
        const md = [];
-       
+
        md.push('# ContentMax API Documentation\n');
        md.push(`Version: ${this.spec.info.version}\n\n`);
        md.push('## Base URL\n');
        md.push(`\`${this.spec.servers?.[0].url}\`\n\n`);
-       
+
        md.push('## Authentication\n');
        md.push(this.generateAuthSection());
-       
+
        md.push('## Endpoints\n');
        for (const [path, pathItem] of Object.entries(this.spec.paths)) {
          md.push(this.generateEndpointDoc(path, pathItem));
        }
-       
+
        md.push('## Models\n');
        for (const [name, schema] of Object.entries(this.spec.components?.schemas || {})) {
          md.push(this.generateSchemaDoc(name, schema));
        }
-       
+
        return md.join('\n');
      }
-     
+
      generateSDK(language: 'typescript' | 'python' | 'php'): string {
        switch (language) {
          case 'typescript':
@@ -321,18 +326,18 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
            return this.generatePHPSDK();
        }
      }
-     
+
      private generateTypeScriptSDK(): string {
        const sdk = [];
-       
+
        sdk.push('// ContentMax API SDK for TypeScript\n');
        sdk.push('import axios, { AxiosInstance } from "axios";\n\n');
-       
+
        // Generate interfaces from schemas
        for (const [name, schema] of Object.entries(this.spec.components?.schemas || {})) {
          sdk.push(this.generateTypeScriptInterface(name, schema));
        }
-       
+
        // Generate API client class
        sdk.push('export class ContentMaxClient {\n');
        sdk.push('  private client: AxiosInstance;\n\n');
@@ -345,7 +350,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
        sdk.push('      }\n');
        sdk.push('    });\n');
        sdk.push('  }\n\n');
-       
+
        // Generate methods for each endpoint
        for (const [path, pathItem] of Object.entries(this.spec.paths)) {
          for (const [method, operation] of Object.entries(pathItem)) {
@@ -354,15 +359,16 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
            }
          }
        }
-       
+
        sdk.push('}\n');
-       
+
        return sdk.join('');
      }
    }
    ```
 
 3. **Interactive API explorer**
+
    ```tsx
    // components/docs/APIExplorer.tsx
    const APIExplorer: React.FC = () => {
@@ -371,26 +377,26 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
      const [requestBody, setRequestBody] = useState('');
      const [response, setResponse] = useState<any>(null);
      const [loading, setLoading] = useState(false);
-     
+
      const executeRequest = async () => {
        if (!selectedEndpoint) return;
-       
+
        setLoading(true);
        try {
          const result = await fetch(`/api${selectedEndpoint.path}`, {
            method: selectedEndpoint.method,
            headers: {
              'X-API-Key': apiKey,
-             'Content-Type': 'application/json'
+             'Content-Type': 'application/json',
            },
-           body: selectedEndpoint.method !== 'GET' ? requestBody : undefined
+           body: selectedEndpoint.method !== 'GET' ? requestBody : undefined,
          });
-         
+
          const data = await result.json();
          setResponse({
            status: result.status,
            headers: Object.fromEntries(result.headers.entries()),
-           body: data
+           body: data,
          });
        } catch (error) {
          setResponse({ error: error.message });
@@ -398,7 +404,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
          setLoading(false);
        }
      };
-     
+
      return (
        <div className="api-explorer">
          <div className="api-sidebar">
@@ -409,12 +415,12 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
              onSelectEndpoint={setSelectedEndpoint}
            />
          </div>
-         
+
          <div className="api-main">
            {selectedEndpoint && (
              <>
                <EndpointDetails endpoint={selectedEndpoint} />
-               
+
                <div className="api-credentials">
                  <label>API Key:</label>
                  <input
@@ -424,7 +430,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
                    placeholder="Enter your API key"
                  />
                </div>
-               
+
                {selectedEndpoint.method !== 'GET' && (
                  <div className="request-body">
                    <h4>Request Body</h4>
@@ -434,37 +440,30 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
                      language="json"
                      theme="vs-dark"
                    />
-                   <button 
-                     onClick={() => setRequestBody(selectedEndpoint.exampleRequest)}
-                   >
+                   <button onClick={() => setRequestBody(selectedEndpoint.exampleRequest)}>
                      Use Example
                    </button>
                  </div>
                )}
-               
-               <button 
+
+               <button
                  onClick={executeRequest}
                  disabled={loading || !apiKey}
                  className="execute-btn"
                >
                  {loading ? 'Executing...' : `Execute ${selectedEndpoint.method}`}
                </button>
-               
+
                {response && (
                  <div className="response-section">
                    <h4>Response</h4>
                    <div className="response-status">
-                     Status: <span className={`status-${response.status}`}>
-                       {response.status}
-                     </span>
+                     Status: <span className={`status-${response.status}`}>{response.status}</span>
                    </div>
-                   <CodeViewer
-                     code={JSON.stringify(response.body, null, 2)}
-                     language="json"
-                   />
+                   <CodeViewer code={JSON.stringify(response.body, null, 2)} language="json" />
                  </div>
                )}
-               
+
                <CodeExamples
                  endpoint={selectedEndpoint}
                  languages={['curl', 'javascript', 'python', 'php']}
@@ -478,6 +477,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
    ```
 
 4. **SDK generators**
+
    ```typescript
    // lib/sdk/sdk-generator.ts
    class SDKGenerator {
@@ -565,7 +565,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
    }
        `;
      }
-     
+
      generatePythonSDK(): string {
        return `
    """
@@ -635,47 +635,47 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
    // pages/developers/index.tsx
    const DeveloperPortal: React.FC = () => {
      const [activeTab, setActiveTab] = useState('getting-started');
-     
+
      return (
        <div className="developer-portal">
          <header className="portal-header">
            <h1>ContentMax Developer Portal</h1>
            <p>Build amazing content experiences with our API</p>
          </header>
-         
+
          <nav className="portal-nav">
-           <button 
+           <button
              onClick={() => setActiveTab('getting-started')}
              className={activeTab === 'getting-started' ? 'active' : ''}
            >
              Getting Started
            </button>
-           <button 
+           <button
              onClick={() => setActiveTab('api-reference')}
              className={activeTab === 'api-reference' ? 'active' : ''}
            >
              API Reference
            </button>
-           <button 
+           <button
              onClick={() => setActiveTab('sdks')}
              className={activeTab === 'sdks' ? 'active' : ''}
            >
              SDKs & Libraries
            </button>
-           <button 
+           <button
              onClick={() => setActiveTab('examples')}
              className={activeTab === 'examples' ? 'active' : ''}
            >
              Examples
            </button>
-           <button 
+           <button
              onClick={() => setActiveTab('playground')}
              className={activeTab === 'playground' ? 'active' : ''}
            >
              API Playground
            </button>
          </nav>
-         
+
          <div className="portal-content">
            {activeTab === 'getting-started' && <GettingStarted />}
            {activeTab === 'api-reference' && <APIReference />}
@@ -683,7 +683,7 @@ Create comprehensive API documentation using OpenAPI/Swagger specification, impl
            {activeTab === 'examples' && <CodeExamples />}
            {activeTab === 'playground' && <APIPlayground />}
          </div>
-         
+
          <aside className="portal-sidebar">
            <APIKeyManager />
            <RateLimitInfo />

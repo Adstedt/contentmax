@@ -3,6 +3,7 @@
 ## Goals and Background Context
 
 ### Goals
+
 - Reduce content creation time by 85% for e-commerce marketing teams managing thousands of product pages
 - Enable single marketers to manage 1,000+ pages per month through bulk operations and automation
 - Achieve 80% catalog coverage with optimized content within 6 months of implementation
@@ -13,14 +14,16 @@
 - Deliver measurable SEO improvements within 30 days of content publication
 
 ### Background Context
+
 ContentMax addresses the critical challenge faced by e-commerce sites with large product catalogs who lack visibility into their content coverage and cannot scale content creation efficiently. Marketing teams managing thousands of categories have no comprehensive view of which pages have optimized content, which are outdated, or which are missing entirely. This blindness leads to missed SEO opportunities daily as teams work through spreadsheets without ability to prioritize high-value categories or track optimization progress. The platform's unique visual taxonomy mapping combined with bulk content operations solves the core visibility problem while automating the entire editorial pipeline at scale.
 
 The urgency has intensified with Google's increasing emphasis on EEAT signals and the rise of AI-powered search engines. Sites without comprehensive, authoritative content risk losing visibility in both traditional and AI-driven search results. ContentMax provides the first "Content Command Center" for e-commerce, bridging the gap between generic AI writers that lack e-commerce understanding and SEO tools that focus on optimization rather than generation.
 
 ### Change Log
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2024-01-26 | 1.0 | Initial PRD creation from Project Brief | John (PM) |
+
+| Date       | Version | Description                             | Author    |
+| ---------- | ------- | --------------------------------------- | --------- |
+| 2024-01-26 | 1.0     | Initial PRD creation from Project Brief | John (PM) |
 
 ## Requirements
 
@@ -95,9 +98,11 @@ The urgency has intensified with Google's increasing emphasis on EEAT signals an
 ## User Interface Design Goals
 
 ### Overall UX Vision
+
 The ContentMax interface embodies a "command center" metaphor, providing marketing teams with a bird's-eye view of their content universe through an interactive, game-like visualization that makes managing thousands of pages feel intuitive and even enjoyable. The design philosophy centers on progressive disclosure—showing exactly what users need when they need it—combined with powerful bulk operations that transform hours of work into minutes. Every interaction is optimized for speed and efficiency, from the Tinder-style content review to keyboard-driven navigation, ensuring users can achieve flow state while managing content at scale.
 
 ### Key Interaction Paradigms
+
 - **Visual-First Navigation:** Primary navigation through the interactive taxonomy map using zoom, pan, and click interactions similar to Google Maps
 - **Bulk Selection Patterns:** Lasso tool for free-form selection, shift-click for ranges, and saved selection groups for recurring workflows
 - **Speed Review Mode:** Tinder-style card swiping with keyboard shortcuts (A/R/E) for rapid content approval at 100+ pages/hour
@@ -106,6 +111,7 @@ The ContentMax interface embodies a "command center" metaphor, providing marketi
 - **Context-Aware Actions:** Right-click menus and floating action buttons that adapt based on current selection and user role
 
 ### Core Screens and Views
+
 - **Taxonomy Dashboard:** Interactive site map visualization with heat map overlay showing content coverage, with language filter to see coverage per language
 - **Content Inventory Table:** Searchable, sortable table view showing all categories/pages with columns for URL, content status (optimized/outdated/missing), last updated date, word count, SEO score, traffic metrics, available languages, and quick actions. Supports advanced filtering by status, date ranges, traffic thresholds, language availability, and bulk selection for operations
 - **Bulk Generation Wizard:** Multi-step flow for selecting categories, configuring templates, and initiating batch generation
@@ -118,30 +124,37 @@ The ContentMax interface embodies a "command center" metaphor, providing marketi
 - **Content History View:** Version history for each page showing what content was generated, when it was published, performance metrics since publication, and ability to rollback or A/B test versions
 
 ### Accessibility: WCAG AA
+
 The platform will meet WCAG AA standards with full keyboard navigation, screen reader support, high contrast mode, and configurable text sizes. All interactive elements will have clear focus states and the speed review interface will offer an alternative list-based mode for users who cannot use gesture-based interactions.
 
 ### Branding
+
 Clean, professional design system using the primary blue color palette (#3b82f6) with generous white space and subtle shadows. The interface should feel modern and trustworthy while avoiding overwhelming users with the complexity of managing thousands of pages. Visual hierarchy through typography and spacing rather than heavy borders or backgrounds.
 
 ### Target Device and Platforms: Web Responsive
+
 Primary focus on desktop browsers (1920x1080 minimum) optimized for marketing professionals working on large screens. Responsive design ensures usability on tablets for executive review and approval workflows. Mobile support limited to read-only views and quick approvals, not full content management capabilities.
 
 ## Technical Assumptions
 
 ### Repository Structure: Monorepo
+
 The project will use a monorepo structure to maintain all services, shared libraries, and frontend applications in a single repository. This enables code sharing, consistent versioning, and simplified dependency management across the entire ContentMax platform.
 
 ### Service Architecture
+
 **Next.js + Supabase Architecture** - Frontend application built with Next.js communicating with Supabase backend services. Supabase provides database, authentication, real-time subscriptions, and storage in a unified platform. Content generation runs through Vercel Edge Functions or Supabase Edge Functions for scalability.
 
 ### Testing Requirements
+
 **Unit + Integration Testing** - Unit tests for all business logic and content generation components with minimum 80% code coverage. Integration tests for API endpoints, content generation pipeline, and critical user workflows. Manual testing convenience methods for speed review interface and visualization performance. No E2E testing required for MVP, but structure code to enable future Playwright/Cypress tests.
 
 ### Additional Technical Assumptions and Requests
 
 **Frontend Stack:**
+
 - Next.js 15+ with App Router for the web application
-- TypeScript for type safety across the entire codebase  
+- TypeScript for type safety across the entire codebase
 - React 19 for UI components
 - Tailwind CSS for styling with custom design system
 - D3.js or Cytoscape.js for the interactive taxonomy visualization
@@ -151,6 +164,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - React Query/TanStack Query for caching and optimistic updates
 
 **Backend Stack (Supabase):**
+
 - Supabase Database (PostgreSQL) for all data storage
 - Supabase Auth for authentication and user management
 - Supabase Realtime for live updates during bulk operations
@@ -160,6 +174,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - Database Functions for complex queries and triggers
 
 **Content Generation Architecture:**
+
 - OpenAI API (GPT-4) for content generation
 - Handlebars.js for template rendering (as discussed)
 - Component-based content system with reusable blocks
@@ -168,6 +183,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - Edge Functions for parallel content generation
 
 **Infrastructure & Deployment:**
+
 - Vercel for Next.js frontend deployment
 - Supabase Cloud for backend services
 - Vercel Edge Functions for compute-intensive tasks
@@ -175,6 +191,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - Supabase CLI for database migrations and local development
 
 **Third-Party Integrations:**
+
 - Google Search Console API for SEO data
 - Google Merchant Center API for product feeds
 - Sitemap XML parsing libraries
@@ -182,6 +199,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - Stripe for payment processing (post-MVP)
 
 **Performance Optimizations:**
+
 - Virtual scrolling for large taxonomy visualizations
 - WebGL rendering fallback for 10,000+ node graphs
 - Lazy loading and code splitting for faster initial load
@@ -189,6 +207,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - WebSocket connections for real-time generation progress
 
 **Security & Compliance:**
+
 - JWT tokens for API authentication
 - Rate limiting on all API endpoints
 - Input sanitization for all user-generated content
@@ -196,6 +215,7 @@ The project will use a monorepo structure to maintain all services, shared libra
 - Audit logging with immutable event store pattern
 
 **Development Tools:**
+
 - ESLint + Prettier for code formatting
 - Husky for pre-commit hooks
 - Jest for unit testing
@@ -230,6 +250,7 @@ I want a fully configured Next.js application with TypeScript, Tailwind, and dev
 so that the team can begin building features with consistent code quality.
 
 **Acceptance Criteria:**
+
 1. Next.js 15+ application initialized with TypeScript and App Router
 2. Tailwind CSS configured with custom design system colors and spacing
 3. ESLint and Prettier configured with agreed-upon rules
@@ -246,6 +267,7 @@ I want Supabase configured with proper database schema,
 so that we can persist user data and content with real-time capabilities.
 
 **Acceptance Criteria:**
+
 1. Supabase project created and connected to Next.js app
 2. Database schema defined with User, Organization, Project, and Content tables
 3. Database migrations managed through Supabase CLI
@@ -262,6 +284,7 @@ I want to securely log in with Google or email/password,
 so that I can access my content management workspace.
 
 **Acceptance Criteria:**
+
 1. Supabase Auth configured with Google OAuth provider
 2. Email/password authentication with built-in password hashing
 3. Protected routes using Supabase middleware
@@ -278,6 +301,7 @@ I want to see a dashboard with placeholder metrics upon login,
 so that I know the system is working and understand the interface layout.
 
 **Acceptance Criteria:**
+
 1. Dashboard route protected by authentication
 2. Responsive layout with navigation sidebar and main content area
 3. Four metric cards showing placeholder data (Total Categories, Coverage %, Pending Review, Published)
@@ -298,6 +322,7 @@ I want to ingest data from sitemaps and Google Search Console with content scrap
 so that we can build an accurate picture of the site's current content state and structure.
 
 **Acceptance Criteria:**
+
 1. Sitemap XML parser extracting URLs and categorizing by type (category/brand/product)
 2. Web scraper extracting existing content from each URL (meta tags, headers, main content, schema)
 3. Content quality analyzer scoring existing content (no content, basic, optimized)
@@ -314,6 +339,7 @@ I want to scrape and analyze existing content from discovered URLs,
 so that we can preserve valuable content and accurately identify optimization opportunities.
 
 **Acceptance Criteria:**
+
 1. Web scraper extracting content from each discovered URL using Edge Functions
 2. Content parser identifying key elements (title, meta, headers, body text, images, schema)
 3. Quality scoring algorithm evaluating content completeness and SEO optimization
@@ -330,6 +356,7 @@ I want the system to process and organize ingested data into hierarchical struct
 so that we can visualize category trees and brand groupings accurately.
 
 **Acceptance Criteria:**
+
 1. URL parsing to extract category hierarchy from paths
 2. Parent-child relationships established using Supabase recursive CTEs
 3. Brand extraction and normalization from URLs or metadata
@@ -346,6 +373,7 @@ I want to see an interactive visual map of my site's taxonomy,
 so that I can understand content coverage at a glance and identify gaps.
 
 **Acceptance Criteria:**
+
 1. D3.js or Cytoscape.js visualization rendering hierarchical tree structure
 2. Zoom and pan controls with smooth animations
 3. Node sizing based on SKU count or traffic metrics
@@ -363,6 +391,7 @@ I want to switch between Category and Brand taxonomy views,
 so that I can analyze content coverage from different perspectives.
 
 **Acceptance Criteria:**
+
 1. Toggle or tab UI for switching between Category and Brand views
 2. Category view shows hierarchical tree structure
 3. Brand view shows grouped layout (alphabetical or by popularity)
@@ -379,6 +408,7 @@ I want to drill down into any page to see its content and performance details,
 so that I can make informed decisions about optimization needs.
 
 **Acceptance Criteria:**
+
 1. Click or double-click node to open detail panel/modal
 2. Display current published content from Supabase Storage
 3. Show content history timeline with version comparison
@@ -400,6 +430,7 @@ I want to build the component-based content system foundation,
 so that we can create reusable, composable content blocks.
 
 **Acceptance Criteria:**
+
 1. ContentComponent base interface with generateContent, renderHTML, renderText methods
 2. Component registry system for managing available components
 3. Hero, FAQ, ProductGrid, and Features components implemented
@@ -416,6 +447,7 @@ I want Handlebars templates managing content structure,
 so that we can maintain consistent formatting while allowing customization.
 
 **Acceptance Criteria:**
+
 1. Handlebars.js integrated with helper functions
 2. Base templates for Brand, Category, Inspire, and Engage pages
 3. Template inheritance for shared elements (headers, footers)
@@ -432,6 +464,7 @@ I want the system to generate high-quality content using OpenAI,
 so that we can produce engaging, relevant content at scale.
 
 **Acceptance Criteria:**
+
 1. OpenAI API client with retry logic and error handling
 2. Prompt templates stored in Supabase with versioning
 3. Brand voice configuration stored in Supabase
@@ -448,6 +481,7 @@ I want to generate content for individual pages with live preview and language s
 so that I can create localized content for different markets.
 
 **Acceptance Criteria:**
+
 1. Generation triggered via Supabase Edge Function
 2. Language selector dropdown with common languages (EN, ES, FR, DE, IT, PT, NL, etc.)
 3. Real-time preview using Supabase Realtime subscriptions
@@ -465,6 +499,7 @@ I want automatic schema.org markup generation,
 so that our content is properly structured for search engines.
 
 **Acceptance Criteria:**
+
 1. Schema generators for FAQ, HowTo, Product, ItemList types
 2. Automatic schema selection based on content type
 3. Schema validation against Google's requirements
@@ -485,6 +520,7 @@ I want to select multiple pages for bulk operations with smart prioritization,
 so that I can efficiently process high-value content first.
 
 **Acceptance Criteria:**
+
 1. Multi-select in taxonomy visualization using lasso tool
 2. Shift-click and ctrl-click selection in table view
 3. "Select all in category" and "Select by criteria" options
@@ -501,6 +537,7 @@ I want to generate content for hundreds of pages in parallel with language selec
 so that we can achieve rapid content coverage across our catalog in multiple markets.
 
 **Acceptance Criteria:**
+
 1. Batch generation triggered via Supabase Edge Functions
 2. Language selection for entire batch or per-category override
 3. Queue management using Supabase database with status tracking
@@ -518,6 +555,7 @@ I want a fast, keyboard-driven interface for reviewing generated content,
 so that I can approve or reject hundreds of pages per hour.
 
 **Acceptance Criteria:**
+
 1. Full-screen card-based review interface
 2. Keyboard shortcuts: A (approve), R (reject), E (edit), Space (next)
 3. Swipe gestures on touch devices
@@ -534,6 +572,7 @@ I want advanced review features for handling large batches efficiently,
 so that I can maintain quality while working at speed.
 
 **Acceptance Criteria:**
+
 1. AI confidence score displayed with auto-approve threshold
 2. Side-by-side comparison mode for similar pages
 3. Bulk approve/reject using Supabase database triggers
@@ -550,6 +589,7 @@ I want to monitor and manage all bulk operations from a central dashboard,
 so that I can track progress and optimize our content pipeline.
 
 **Acceptance Criteria:**
+
 1. Active operations with real-time progress via Supabase subscriptions
 2. Operation history with filtering using Supabase queries
 3. Performance metrics per batch calculated by database functions
@@ -570,6 +610,7 @@ I want a visual Kanban board for managing content through stages,
 so that I can track progress and identify bottlenecks.
 
 **Acceptance Criteria:**
+
 1. Multi-column board with configurable stages stored in Supabase
 2. Drag-and-drop updating Supabase records
 3. Card preview showing title, type, and status
@@ -586,6 +627,7 @@ I want to publish approved content with proper validation,
 so that only high-quality, compliant content goes live.
 
 **Acceptance Criteria:**
+
 1. Pre-publish validation via Supabase Edge Function
 2. Published content stored in Supabase Storage
 3. Version control using Supabase's built-in versioning
@@ -602,6 +644,7 @@ I want APIs and export options for delivering content to various platforms,
 so that generated content can be used across our digital properties.
 
 **Acceptance Criteria:**
+
 1. RESTful API using Supabase PostgREST
 2. Webhook system using Supabase webhooks
 3. Export formats generated by Edge Functions
@@ -618,6 +661,7 @@ I want to track content performance post-publish,
 so that we can measure ROI and optimize our strategy.
 
 **Acceptance Criteria:**
+
 1. Google Analytics integration storing data in Supabase
 2. Search Console sync via scheduled Edge Functions
 3. Performance metrics in time-series tables
@@ -634,6 +678,7 @@ I want to set up automation rules for common workflows,
 so that repetitive tasks happen automatically.
 
 **Acceptance Criteria:**
+
 1. Rule builder UI storing rules in Supabase
 2. Auto-approve using database triggers
 3. Auto-assign based on database rules
@@ -654,17 +699,17 @@ so that repetitive tasks happen automatically.
 
 ### Category Analysis
 
-| Category                         | Status  | Critical Issues |
-| -------------------------------- | ------- | --------------- |
-| Problem Definition & Context     | PASS    | None |
-| MVP Scope Definition            | PASS    | None |
-| User Experience Requirements    | PASS    | None |
-| Functional Requirements         | PASS    | None |
-| Non-Functional Requirements     | PASS    | None |
-| Epic & Story Structure         | PASS    | None |
-| Technical Guidance             | PASS    | None |
-| Cross-Functional Requirements  | PARTIAL | Data migration strategy not detailed |
-| Clarity & Communication        | PASS    | None |
+| Category                      | Status  | Critical Issues                      |
+| ----------------------------- | ------- | ------------------------------------ |
+| Problem Definition & Context  | PASS    | None                                 |
+| MVP Scope Definition          | PASS    | None                                 |
+| User Experience Requirements  | PASS    | None                                 |
+| Functional Requirements       | PASS    | None                                 |
+| Non-Functional Requirements   | PASS    | None                                 |
+| Epic & Story Structure        | PASS    | None                                 |
+| Technical Guidance            | PASS    | None                                 |
+| Cross-Functional Requirements | PARTIAL | Data migration strategy not detailed |
+| Clarity & Communication       | PASS    | None                                 |
 
 ### Recommendations
 

@@ -7,28 +7,33 @@ This document outlines the complete fullstack architecture for ContentMax, inclu
 This unified approach combines what would traditionally be separate backend and frontend architecture documents, streamlining the development process for modern fullstack applications where these concerns are increasingly intertwined.
 
 ### Starter Template or Existing Project
+
 N/A - Greenfield project with custom architecture optimized for content generation at scale
 
 ### Change Log
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2024-01-26 | 1.0 | Initial fullstack architecture | Winston (Architect) |
-| 2024-01-26 | 1.1 | Optimized for 3,000 node visualization | Winston |
-| 2024-01-26 | 1.2 | Added resilience patterns and fixes | Winston |
+
+| Date       | Version | Description                            | Author              |
+| ---------- | ------- | -------------------------------------- | ------------------- |
+| 2024-01-26 | 1.0     | Initial fullstack architecture         | Winston (Architect) |
+| 2024-01-26 | 1.1     | Optimized for 3,000 node visualization | Winston             |
+| 2024-01-26 | 1.2     | Added resilience patterns and fixes    | Winston             |
 
 ---
 
 ## High Level Architecture
 
 ### Technical Summary
+
 ContentMax employs a modern Jamstack architecture with Next.js 15 serving both static content and dynamic APIs through serverless functions. The frontend uses React 19 with D3.js for visualization, while the backend leverages Supabase for database, authentication, realtime subscriptions, and storage. Key integration points include OpenAI for content generation, Google Search Console for SEO data, and a sophisticated content scraping system. The entire platform is deployed on Vercel with global CDN distribution, achieving sub-2 second load times while managing 3,000+ taxonomy nodes efficiently.
 
 ### Platform and Infrastructure Choice
+
 **Platform:** Vercel + Supabase  
 **Key Services:** Vercel (hosting, edge functions), Supabase (PostgreSQL, Auth, Realtime, Storage), OpenAI API, Google Search Console API  
 **Deployment Host and Regions:** Vercel Global CDN with automatic region selection, Supabase US-East-1 (primary)
 
 ### Repository Structure
+
 **Structure:** Monorepo with shared packages  
 **Monorepo Tool:** npm workspaces (built into npm 10+)  
 **Package Organization:** apps/web (frontend), apps/api (backend edge functions), packages/shared (types, utils), packages/ui (component library)
@@ -41,17 +46,17 @@ graph TB
         Browser[Web Browser]
         Mobile[Mobile Browser]
     end
-    
+
     subgraph "CDN/Edge"
         Vercel[Vercel CDN]
         EdgeFunc[Edge Functions]
     end
-    
+
     subgraph "Application Layer"
         NextJS[Next.js 15 App]
         API[API Routes/tRPC]
     end
-    
+
     subgraph "Backend Services"
         Supabase[Supabase Platform]
         Auth[Supabase Auth]
@@ -59,13 +64,13 @@ graph TB
         Realtime[Realtime Subscriptions]
         Storage[Supabase Storage]
     end
-    
+
     subgraph "External Services"
         OpenAI[OpenAI API]
         GSC[Google Search Console]
         Scraper[Content Scraper]
     end
-    
+
     Browser --> Vercel
     Mobile --> Vercel
     Vercel --> NextJS
@@ -82,13 +87,14 @@ graph TB
 ```
 
 ### Architectural Patterns
-- **Jamstack Architecture:** Static generation with serverless APIs - *Rationale:* Optimal performance and scalability for content-heavy applications
-- **Component-Based UI:** Atomic design with React components and TypeScript - *Rationale:* Maintainability and type safety across large codebases
-- **Repository Pattern:** Abstract data access logic with Supabase - *Rationale:* Enables testing and future database migration flexibility
-- **BFF Pattern:** Backend for Frontend via Next.js API routes - *Rationale:* Optimized data fetching and security boundary
-- **Event-Driven Updates:** Realtime subscriptions for collaborative features - *Rationale:* Instant UI updates without polling
-- **Circuit Breaker Pattern:** Protect external API calls - *Rationale:* Prevent cascading failures from OpenAI/Google APIs
-- **Progressive Enhancement:** Core functionality without JavaScript - *Rationale:* Accessibility and SEO optimization
+
+- **Jamstack Architecture:** Static generation with serverless APIs - _Rationale:_ Optimal performance and scalability for content-heavy applications
+- **Component-Based UI:** Atomic design with React components and TypeScript - _Rationale:_ Maintainability and type safety across large codebases
+- **Repository Pattern:** Abstract data access logic with Supabase - _Rationale:_ Enables testing and future database migration flexibility
+- **BFF Pattern:** Backend for Frontend via Next.js API routes - _Rationale:_ Optimized data fetching and security boundary
+- **Event-Driven Updates:** Realtime subscriptions for collaborative features - _Rationale:_ Instant UI updates without polling
+- **Circuit Breaker Pattern:** Protect external API calls - _Rationale:_ Prevent cascading failures from OpenAI/Google APIs
+- **Progressive Enhancement:** Core functionality without JavaScript - _Rationale:_ Accessibility and SEO optimization
 
 ---
 
@@ -96,43 +102,45 @@ graph TB
 
 ### Technology Stack Table
 
-| Category | Technology | Version | Purpose | Rationale |
-|----------|------------|---------|---------|-----------|
-| Frontend Language | TypeScript | 5.3.3 | Type-safe frontend development | Catches errors at compile time, improves IDE support |
-| Frontend Framework | Next.js | 15.0.0 | React framework with SSR/SSG | SEO optimization, performance, developer experience |
-| UI Component Library | Radix UI | 1.1.2 | Accessible component primitives | WCAG compliance, customizable, headless |
-| State Management | Zustand | 5.0.1 | Client state management | Simple, performant, TypeScript-friendly |
-| Backend Language | TypeScript | 5.3.3 | Type-safe backend development | Code sharing with frontend, type safety |
-| Backend Framework | Next.js API Routes | 15.0.0 | Serverless API endpoints | Integrated with frontend, automatic deployments |
-| API Style | tRPC | 10.45.0 | Type-safe API calls | End-to-end type safety, no code generation |
-| Database | PostgreSQL (Supabase) | 15 | Primary data store | ACID compliance, complex queries, proven reliability |
-| Cache | Supabase Cache | Built-in | Query result caching | Integrated with database, automatic invalidation |
-| File Storage | Supabase Storage | 2.45.4 | Content and asset storage | S3-compatible, integrated auth, CDN |
-| Authentication | Supabase Auth | 2.45.4 | User authentication | Built-in providers, Row Level Security |
-| Frontend Testing | Vitest | 2.1.5 | Unit and integration tests | Fast, ESM support, Jest compatible |
-| Backend Testing | Vitest | 2.1.5 | API and service tests | Same as frontend for consistency |
-| E2E Testing | Playwright | 1.49.0 | End-to-end testing | Cross-browser, reliable, fast |
-| Build Tool | Vite | 5.0.0 | Development server and bundler | Fast HMR, optimized builds |
-| Bundler | Vite/Rollup | 5.0.0 | Production bundling | Tree-shaking, code splitting |
-| IaC Tool | Terraform | 1.6.0 | Infrastructure as Code | Declarative, version controlled |
-| CI/CD | GitHub Actions | N/A | Continuous integration/deployment | Integrated with GitHub, free for public repos |
-| Monitoring | Vercel Analytics | Built-in | Performance and usage monitoring | Zero-config, real user metrics |
-| Logging | Supabase Logs | Built-in | Application logging | Integrated, searchable, retained |
-| CSS Framework | Tailwind CSS | 3.4.15 | Utility-first CSS | Rapid development, consistent design |
-| Visualization | D3.js | 7.9.0 | Taxonomy visualization | Flexible, performant for 3,000 nodes |
-| Content Generation | OpenAI API | 4.73.0 | AI content generation | Best-in-class LLM, proven reliability |
-| Data Fetching | TanStack Query | 5.59.20 | Server state management | Caching, synchronization, optimistic updates |
-| Forms | React Hook Form | 7.54.0 | Form management | Performance, validation, minimal re-renders |
-| Validation | Zod | 3.23.8 | Schema validation | TypeScript integration, runtime validation |
+| Category             | Technology            | Version  | Purpose                           | Rationale                                            |
+| -------------------- | --------------------- | -------- | --------------------------------- | ---------------------------------------------------- |
+| Frontend Language    | TypeScript            | 5.3.3    | Type-safe frontend development    | Catches errors at compile time, improves IDE support |
+| Frontend Framework   | Next.js               | 15.0.0   | React framework with SSR/SSG      | SEO optimization, performance, developer experience  |
+| UI Component Library | Radix UI              | 1.1.2    | Accessible component primitives   | WCAG compliance, customizable, headless              |
+| State Management     | Zustand               | 5.0.1    | Client state management           | Simple, performant, TypeScript-friendly              |
+| Backend Language     | TypeScript            | 5.3.3    | Type-safe backend development     | Code sharing with frontend, type safety              |
+| Backend Framework    | Next.js API Routes    | 15.0.0   | Serverless API endpoints          | Integrated with frontend, automatic deployments      |
+| API Style            | tRPC                  | 10.45.0  | Type-safe API calls               | End-to-end type safety, no code generation           |
+| Database             | PostgreSQL (Supabase) | 15       | Primary data store                | ACID compliance, complex queries, proven reliability |
+| Cache                | Supabase Cache        | Built-in | Query result caching              | Integrated with database, automatic invalidation     |
+| File Storage         | Supabase Storage      | 2.45.4   | Content and asset storage         | S3-compatible, integrated auth, CDN                  |
+| Authentication       | Supabase Auth         | 2.45.4   | User authentication               | Built-in providers, Row Level Security               |
+| Frontend Testing     | Vitest                | 2.1.5    | Unit and integration tests        | Fast, ESM support, Jest compatible                   |
+| Backend Testing      | Vitest                | 2.1.5    | API and service tests             | Same as frontend for consistency                     |
+| E2E Testing          | Playwright            | 1.49.0   | End-to-end testing                | Cross-browser, reliable, fast                        |
+| Build Tool           | Vite                  | 5.0.0    | Development server and bundler    | Fast HMR, optimized builds                           |
+| Bundler              | Vite/Rollup           | 5.0.0    | Production bundling               | Tree-shaking, code splitting                         |
+| IaC Tool             | Terraform             | 1.6.0    | Infrastructure as Code            | Declarative, version controlled                      |
+| CI/CD                | GitHub Actions        | N/A      | Continuous integration/deployment | Integrated with GitHub, free for public repos        |
+| Monitoring           | Vercel Analytics      | Built-in | Performance and usage monitoring  | Zero-config, real user metrics                       |
+| Logging              | Supabase Logs         | Built-in | Application logging               | Integrated, searchable, retained                     |
+| CSS Framework        | Tailwind CSS          | 3.4.15   | Utility-first CSS                 | Rapid development, consistent design                 |
+| Visualization        | D3.js                 | 7.9.0    | Taxonomy visualization            | Flexible, performant for 3,000 nodes                 |
+| Content Generation   | OpenAI API            | 4.73.0   | AI content generation             | Best-in-class LLM, proven reliability                |
+| Data Fetching        | TanStack Query        | 5.59.20  | Server state management           | Caching, synchronization, optimistic updates         |
+| Forms                | React Hook Form       | 7.54.0   | Form management                   | Performance, validation, minimal re-renders          |
+| Validation           | Zod                   | 3.23.8   | Schema validation                 | TypeScript integration, runtime validation           |
 
 ---
 
 ## Data Models
 
 ### User Model
+
 **Purpose:** Represents authenticated users and their organization membership
 
 **Key Attributes:**
+
 - id: UUID - Unique user identifier from Supabase Auth
 - email: string - User email address
 - name: string - Display name
@@ -141,6 +149,7 @@ graph TB
 - created_at: timestamp - Account creation date
 
 **TypeScript Interface:**
+
 ```typescript
 interface User {
   id: string;
@@ -154,14 +163,17 @@ interface User {
 ```
 
 **Relationships:**
+
 - Belongs to one Organization
 - Has many ContentItems (as creator)
 - Has many ReviewDecisions
 
 ### Organization Model
+
 **Purpose:** Multi-tenant organization container
 
 **Key Attributes:**
+
 - id: UUID - Unique organization identifier
 - name: string - Organization name
 - domain: string - Primary domain
@@ -169,6 +181,7 @@ interface User {
 - settings: JSONB - Organization preferences
 
 **TypeScript Interface:**
+
 ```typescript
 interface Organization {
   id: string;
@@ -185,14 +198,17 @@ interface Organization {
 ```
 
 **Relationships:**
+
 - Has many Users
 - Has many TaxonomyNodes
 - Has many ContentItems
 
 ### TaxonomyNode Model
+
 **Purpose:** Represents a node in the site taxonomy visualization
 
 **Key Attributes:**
+
 - id: UUID - Unique node identifier
 - org_id: UUID - Organization owner
 - label: string - Display name
@@ -203,6 +219,7 @@ interface Organization {
 - status: enum - Content status
 
 **TypeScript Interface:**
+
 ```typescript
 interface TaxonomyNode {
   id: string;
@@ -226,6 +243,7 @@ interface TaxonomyNode {
 ```
 
 **Relationships:**
+
 - Belongs to Organization
 - Has parent TaxonomyNode (hierarchical)
 - Has many child TaxonomyNodes
@@ -233,9 +251,11 @@ interface TaxonomyNode {
 - Has many InternalLinks (as source or target)
 
 ### Content Model
+
 **Purpose:** Stores generated and reviewed content
 
 **Key Attributes:**
+
 - id: UUID - Unique content identifier
 - node_id: UUID - Associated taxonomy node
 - type: enum - Content type
@@ -246,6 +266,7 @@ interface TaxonomyNode {
 - ai_confidence: float - Generation confidence score
 
 **TypeScript Interface:**
+
 ```typescript
 interface Content {
   id: string;
@@ -279,15 +300,18 @@ interface ContentComponent {
 ```
 
 **Relationships:**
+
 - Belongs to Organization
 - Belongs to TaxonomyNode
 - Created by User
 - Has many ReviewDecisions
 
 ### GenerationQueue Model
+
 **Purpose:** Manages bulk content generation pipeline
 
 **Key Attributes:**
+
 - id: UUID - Queue item identifier
 - content_ids: UUID[] - Content items to generate
 - priority: integer - Processing priority
@@ -295,6 +319,7 @@ interface ContentComponent {
 - settings: JSONB - Generation configuration
 
 **TypeScript Interface:**
+
 ```typescript
 interface GenerationQueueItem {
   id: string;
@@ -321,6 +346,7 @@ interface GenerationQueueItem {
 ```
 
 **Relationships:**
+
 - Belongs to Organization
 - Has many Content items
 
@@ -338,101 +364,112 @@ import { router, publicProcedure, protectedProcedure } from '../trpc';
 // Taxonomy Router
 export const taxonomyRouter = router({
   getNodes: protectedProcedure
-    .input(z.object({
-      orgId: z.string().uuid(),
-      type: z.enum(['category', 'brand', 'all']).optional()
-    }))
+    .input(
+      z.object({
+        orgId: z.string().uuid(),
+        type: z.enum(['category', 'brand', 'all']).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       return ctx.db.taxonomyNode.findMany({
-        where: { 
+        where: {
           orgId: input.orgId,
-          ...(input.type && input.type !== 'all' && { type: input.type })
+          ...(input.type && input.type !== 'all' && { type: input.type }),
         },
-        include: { metrics: true }
+        include: { metrics: true },
       });
     }),
 
   createLink: protectedProcedure
-    .input(z.object({
-      sourceId: z.string().uuid(),
-      targetId: z.string().uuid(),
-      linkType: z.enum(['parent', 'related', 'cross_sell']),
-      reason: z.string().min(50)
-    }))
+    .input(
+      z.object({
+        sourceId: z.string().uuid(),
+        targetId: z.string().uuid(),
+        linkType: z.enum(['parent', 'related', 'cross_sell']),
+        reason: z.string().min(50),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.internalLink.create({
         data: {
           ...input,
-          createdBy: ctx.user.id
-        }
+          createdBy: ctx.user.id,
+        },
       });
     }),
 
   bulkSelect: protectedProcedure
-    .input(z.object({
-      nodeIds: z.array(z.string().uuid()),
-      operation: z.enum(['generate', 'review', 'publish', 'delete'])
-    }))
+    .input(
+      z.object({
+        nodeIds: z.array(z.string().uuid()),
+        operation: z.enum(['generate', 'review', 'publish', 'delete']),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Handle bulk operations
       return processBulkOperation(input);
-    })
+    }),
 });
 
 // Content Router
 export const contentRouter = router({
   generate: protectedProcedure
-    .input(z.object({
-      nodeId: z.string().uuid(),
-      template: z.string(),
-      language: z.string(),
-      components: z.array(z.string())
-    }))
+    .input(
+      z.object({
+        nodeId: z.string().uuid(),
+        template: z.string(),
+        language: z.string(),
+        components: z.array(z.string()),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Queue for generation
       return ctx.services.generation.queue(input);
     }),
 
   review: protectedProcedure
-    .input(z.object({
-      contentId: z.string().uuid(),
-      decision: z.enum(['approve', 'reject', 'edit']),
-      feedback: z.string().optional()
-    }))
+    .input(
+      z.object({
+        contentId: z.string().uuid(),
+        decision: z.enum(['approve', 'reject', 'edit']),
+        feedback: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.content.update({
         where: { id: input.contentId },
         data: {
           status: input.decision === 'approve' ? 'approved' : 'draft',
           reviewedBy: ctx.user.id,
-          reviewedAt: new Date()
-        }
+          reviewedAt: new Date(),
+        },
       });
     }),
 
   getReviewQueue: protectedProcedure
-    .input(z.object({
-      limit: z.number().default(50),
-      type: z.enum(['category', 'brand', 'all']).optional()
-    }))
+    .input(
+      z.object({
+        limit: z.number().default(50),
+        type: z.enum(['category', 'brand', 'all']).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       return ctx.db.content.findMany({
         where: {
           orgId: ctx.user.orgId,
           status: 'pending_review',
-          ...(input.type && input.type !== 'all' && { type: input.type })
+          ...(input.type && input.type !== 'all' && { type: input.type }),
         },
         limit: input.limit,
-        orderBy: { aiConfidence: 'desc' }
+        orderBy: { aiConfidence: 'desc' },
       });
-    })
+    }),
 });
 
-// Analytics Router  
+// Analytics Router
 export const analyticsRouter = router({
-  getCoverage: protectedProcedure
-    .query(async ({ ctx }) => {
-      const stats = await ctx.db.$queryRaw`
+  getCoverage: protectedProcedure.query(async ({ ctx }) => {
+    const stats = await ctx.db.$queryRaw`
         SELECT 
           COUNT(*) FILTER (WHERE status = 'optimized') as optimized,
           COUNT(*) FILTER (WHERE status = 'outdated') as outdated,
@@ -441,24 +478,26 @@ export const analyticsRouter = router({
         FROM taxonomy_nodes
         WHERE org_id = ${ctx.user.orgId}
       `;
-      return stats;
-    }),
+    return stats;
+  }),
 
   getVelocity: protectedProcedure
-    .input(z.object({
-      period: z.enum(['day', 'week', 'month']).default('week')
-    }))
+    .input(
+      z.object({
+        period: z.enum(['day', 'week', 'month']).default('week'),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // Return content generation velocity metrics
       return getVelocityMetrics(ctx.user.orgId, input.period);
-    })
+    }),
 });
 
 // Main App Router
 export const appRouter = router({
   taxonomy: taxonomyRouter,
   content: contentRouter,
-  analytics: analyticsRouter
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -469,9 +508,11 @@ export type AppRouter = typeof appRouter;
 ## Components
 
 ### ForceGraphVisualization
+
 **Responsibility:** Render interactive taxonomy visualization with D3.js and Canvas for 3,000 nodes
 
 **Key Interfaces:**
+
 - Props: nodes, edges, mode, onNodeClick, onLinkCreate
 - Events: nodeSelected, linkCreated, viewportChanged
 
@@ -480,9 +521,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** React 19, D3.js 7.9, Canvas 2D, TypeScript
 
 ### ContentGenerationWizard
+
 **Responsibility:** Multi-step wizard for configuring and initiating bulk content generation
 
 **Key Interfaces:**
+
 - Props: selectedNodes, templates, onGenerate
 - State: currentStep, configuration, validation
 
@@ -491,9 +534,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** React 19, React Hook Form, Radix UI, Zod
 
 ### SpeedReviewInterface
+
 **Responsibility:** Tinder-style card interface for rapid content approval/rejection
 
 **Key Interfaces:**
+
 - Props: reviewQueue, onDecision
 - Events: swipeLeft, swipeRight, swipeUp, keyboard shortcuts
 
@@ -502,9 +547,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** React 19, Framer Motion, Touch gestures
 
 ### KanbanWorkflowBoard
+
 **Responsibility:** Drag-and-drop content pipeline management
 
 **Key Interfaces:**
+
 - Props: columns, cards, onMove
 - Events: cardMoved, bulkMove, statusChanged
 
@@ -513,9 +560,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** React 19, @dnd-kit, WebSocket subscriptions
 
 ### SupabaseService
+
 **Responsibility:** Centralized data access and real-time subscriptions
 
 **Key Interfaces:**
+
 - Methods: query, mutate, subscribe, unsubscribe
 - Auth: getUser, signIn, signOut
 
@@ -524,9 +573,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** TypeScript, Supabase JS SDK
 
 ### GenerationService
+
 **Responsibility:** Manage content generation queue and OpenAI integration
 
 **Key Interfaces:**
+
 - Methods: queueGeneration, processQueue, getStatus
 - Events: generationStarted, generationCompleted, generationFailed
 
@@ -535,9 +586,11 @@ export type AppRouter = typeof appRouter;
 **Technology Stack:** Edge Functions, OpenAI SDK, p-retry
 
 ### ScrapingService
+
 **Responsibility:** Respectful web scraping with rate limiting and robots.txt compliance
 
 **Key Interfaces:**
+
 - Methods: scrapeUrl, scrapeBatch, checkRobotsTxt
 - Configuration: maxConcurrency, requestDelay, userAgent
 
@@ -550,6 +603,7 @@ export type AppRouter = typeof appRouter;
 ## External APIs
 
 ### OpenAI API
+
 - **Purpose:** Generate SEO-optimized content using GPT-4
 - **Documentation:** https://platform.openai.com/docs
 - **Base URL(s):** https://api.openai.com/v1
@@ -557,11 +611,13 @@ export type AppRouter = typeof appRouter;
 - **Rate Limits:** 10,000 TPM (tokens per minute), 500 RPM (requests per minute)
 
 **Key Endpoints Used:**
+
 - `POST /chat/completions` - Generate content using GPT-4-turbo
 
 **Integration Notes:** Implement tiered model selection (GPT-3.5 for bulk, GPT-4 for premium), circuit breaker pattern for resilience
 
 ### Google Search Console API
+
 - **Purpose:** Fetch SEO performance data and search analytics
 - **Documentation:** https://developers.google.com/webmaster-tools/search-console-api-original
 - **Base URL(s):** https://www.googleapis.com/webmasters/v3
@@ -569,6 +625,7 @@ export type AppRouter = typeof appRouter;
 - **Rate Limits:** 1,200 QPM (queries per minute)
 
 **Key Endpoints Used:**
+
 - `POST /sites/{siteUrl}/searchAnalytics/query` - Get search performance data
 - `GET /sites/{siteUrl}/sitemaps` - List sitemaps for content discovery
 
@@ -596,7 +653,7 @@ sequenceDiagram
     Q->>S: Save content with 'pending_review'
     S-->>F: Realtime update
     F->>U: Show progress
-    
+
     U->>F: Open speed review
     F->>A: tRPC: content.getReviewQueue()
     A->>S: Fetch pending content
@@ -699,7 +756,7 @@ CREATE TABLE generation_queue (
 
 -- Materialized view for coverage analytics
 CREATE MATERIALIZED VIEW coverage_stats AS
-SELECT 
+SELECT
   org_id,
   COUNT(*) as total_nodes,
   COUNT(*) FILTER (WHERE status = 'optimized') as optimized,
@@ -724,7 +781,7 @@ ALTER TABLE generation_queue ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their organization's data"
   ON taxonomy_nodes FOR ALL
   USING (org_id IN (
-    SELECT org_id FROM organization_users 
+    SELECT org_id FROM organization_users
     WHERE user_id = auth.uid()
   ));
 ```
@@ -736,6 +793,7 @@ CREATE POLICY "Users can view their organization's data"
 ### Component Architecture
 
 #### Component Organization
+
 ```
 components/
 ├── ui/                    # Base UI components (Radix UI)
@@ -767,6 +825,7 @@ components/
 ```
 
 #### Component Template
+
 ```typescript
 // components/taxonomy/ForceGraph/ForceGraph.tsx
 import { useEffect, useRef, memo } from 'react';
@@ -810,6 +869,7 @@ ForceGraph.displayName = 'ForceGraph';
 ### State Management Architecture
 
 #### State Structure
+
 ```typescript
 // stores/taxonomy.store.ts
 interface TaxonomyStore {
@@ -823,14 +883,14 @@ interface TaxonomyStore {
     type: string[];
     minSkuCount: number;
   };
-  
+
   // Actions
   loadNodes: () => Promise<void>;
   selectNode: (id: string, multi?: boolean) => void;
   createLink: (source: string, target: string, reason: string) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   applyFilters: (filters: Partial<FilterState>) => void;
-  
+
   // Computed
   get visibleNodes(): TaxonomyNode[];
   get coverageStats(): CoverageStats;
@@ -838,6 +898,7 @@ interface TaxonomyStore {
 ```
 
 #### State Management Patterns
+
 - Use Zustand for client-side state
 - Use TanStack Query for server state
 - Implement optimistic updates for UI responsiveness
@@ -847,6 +908,7 @@ interface TaxonomyStore {
 ### Routing Architecture
 
 #### Route Organization
+
 ```
 app/
 ├── (auth)/
@@ -873,6 +935,7 @@ app/
 ```
 
 #### Protected Route Pattern
+
 ```typescript
 // app/(dashboard)/layout.tsx
 export default async function DashboardLayout({
@@ -901,6 +964,7 @@ export default async function DashboardLayout({
 ### Frontend Services Layer
 
 #### API Client Setup
+
 ```typescript
 // lib/trpc/client.ts
 import { createTRPCReact } from '@trpc/react-query';
@@ -937,26 +1001,27 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 ```
 
 #### Service Example
+
 ```typescript
 // services/content.service.ts
 export const contentService = {
   async generateContent(nodes: string[], config: GenerationConfig) {
     return trpc.content.generate.mutate({
       nodeIds: nodes,
-      ...config
+      ...config,
     });
   },
 
   async reviewContent(contentId: string, decision: ReviewDecision) {
     return trpc.content.review.mutate({
       contentId,
-      decision
+      decision,
     });
   },
 
   useReviewQueue() {
     return trpc.content.getReviewQueue.useQuery();
-  }
+  },
 };
 ```
 
@@ -967,6 +1032,7 @@ export const contentService = {
 ### Service Architecture
 
 #### Edge Function Organization
+
 ```
 apps/api/
 ├── src/
@@ -989,6 +1055,7 @@ apps/api/
 ```
 
 #### Function Template
+
 ```typescript
 // functions/generate-content.ts
 import { createClient } from '@supabase/supabase-js';
@@ -998,13 +1065,13 @@ import { CircuitBreaker } from '@/utils/circuit-breaker';
 
 const openaiBreaker = new CircuitBreaker('openai', {
   failureThreshold: 3,
-  resetTimeout: 30000
+  resetTimeout: 30000,
 });
 
 export default async function handler(req: Request) {
   try {
     const { nodeId, template, language } = await req.json();
-    
+
     // Fetch node data
     const supabase = createClient();
     const { data: node } = await supabase
@@ -1012,28 +1079,25 @@ export default async function handler(req: Request) {
       .select('*')
       .eq('id', nodeId)
       .single();
-    
+
     // Generate content with circuit breaker
     const content = await openaiBreaker.execute(() =>
       withRetry(() => generateWithOpenAI(node, template, language), 'openai')
     );
-    
+
     // Save to database
-    const { data, error } = await supabase
-      .from('content')
-      .insert({
-        node_id: nodeId,
-        content_html: content.html,
-        content_components: content.components,
-        language,
-        ai_confidence: content.confidence,
-        status: 'pending_review'
-      });
-    
-    return new Response(JSON.stringify({ success: true, data }), {
-      headers: { 'Content-Type': 'application/json' }
+    const { data, error } = await supabase.from('content').insert({
+      node_id: nodeId,
+      content_html: content.html,
+      content_components: content.components,
+      language,
+      ai_confidence: content.confidence,
+      status: 'pending_review',
     });
-    
+
+    return new Response(JSON.stringify({ success: true, data }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     return handleError(error);
   }
@@ -1043,6 +1107,7 @@ export default async function handler(req: Request) {
 ### Database Architecture
 
 #### Data Access Layer
+
 ```typescript
 // lib/repositories/content.repository.ts
 export class ContentRepository {
@@ -1054,7 +1119,7 @@ export class ContentRepository {
       .select('*, node:taxonomy_nodes(*)')
       .eq('id', id)
       .single();
-      
+
     if (error) throw error;
     return data;
   }
@@ -1067,7 +1132,7 @@ export class ContentRepository {
       .eq('status', 'pending_review')
       .order('ai_confidence', { ascending: false })
       .limit(limit);
-      
+
     if (error) throw error;
     return data;
   }
@@ -1078,12 +1143,9 @@ export class ContentRepository {
       updates.reviewed_by = reviewerId;
       updates.reviewed_at = new Date();
     }
-    
-    const { error } = await this.supabase
-      .from('content')
-      .update(updates)
-      .eq('id', id);
-      
+
+    const { error } = await this.supabase.from('content').update(updates).eq('id', id);
+
     if (error) throw error;
   }
 }
@@ -1092,6 +1154,7 @@ export class ContentRepository {
 ### Authentication and Authorization
 
 #### Auth Flow
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -1103,7 +1166,7 @@ sequenceDiagram
     F->>S: supabase.auth.signIn()
     S-->>F: JWT + Refresh token
     F->>F: Store in secure cookie
-    
+
     U->>F: Access protected route
     F->>A: Request with JWT
     A->>S: Verify JWT
@@ -1113,37 +1176,41 @@ sequenceDiagram
 ```
 
 #### Middleware/Guards
+
 ```typescript
 // middleware/auth.ts
 export async function requireAuth(req: Request): Promise<User> {
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
-  
+
   if (!token) {
     throw new AuthenticationError('No token provided');
   }
-  
+
   const supabase = createClient();
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
   if (error || !user) {
     throw new AuthenticationError('Invalid token');
   }
-  
+
   // Get organization membership
   const { data: membership } = await supabase
     .from('organization_users')
     .select('org_id, role')
     .eq('user_id', user.id)
     .single();
-  
+
   if (!membership) {
     throw new AuthorizationError('No organization membership');
   }
-  
+
   return {
     ...user,
     orgId: membership.org_id,
-    role: membership.role
+    role: membership.role,
   };
 }
 ```
@@ -1209,6 +1276,7 @@ contentmax/
 ### Local Development Setup
 
 #### Prerequisites
+
 ```bash
 # Node.js 20.11.0
 nvm install 20.11.0
@@ -1222,6 +1290,7 @@ npm install -g vercel
 ```
 
 #### Initial Setup
+
 ```bash
 # Clone repository
 git clone https://github.com/org/contentmax
@@ -1244,6 +1313,7 @@ supabase db seed
 ```
 
 #### Development Commands
+
 ```bash
 # Start all services
 npm run dev
@@ -1262,6 +1332,7 @@ npm run test:e2e
 ### Environment Configuration
 
 #### Required Environment Variables
+
 ```bash
 # Frontend (.env.local)
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
@@ -1285,17 +1356,20 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:54321/postgres
 ### Deployment Strategy
 
 **Frontend Deployment:**
+
 - **Platform:** Vercel
 - **Build Command:** `npm run build:web`
 - **Output Directory:** `apps/web/.next`
 - **CDN/Edge:** Vercel Edge Network with automatic caching
 
 **Backend Deployment:**
+
 - **Platform:** Vercel Edge Functions
 - **Build Command:** `npm run build:api`
 - **Deployment Method:** Automatic via GitHub integration
 
 ### CI/CD Pipeline
+
 ```yaml
 # .github/workflows/deploy.yaml
 name: Deploy to Production
@@ -1333,11 +1407,11 @@ jobs:
 
 ### Environments
 
-| Environment | Frontend URL | Backend URL | Purpose |
-|------------|--------------|-------------|---------|
-| Development | http://localhost:3000 | http://localhost:3000/api | Local development |
-| Staging | https://staging.contentmax.ai | https://staging.contentmax.ai/api | Pre-production testing |
-| Production | https://contentmax.ai | https://contentmax.ai/api | Live environment |
+| Environment | Frontend URL                  | Backend URL                       | Purpose                |
+| ----------- | ----------------------------- | --------------------------------- | ---------------------- |
+| Development | http://localhost:3000         | http://localhost:3000/api         | Local development      |
+| Staging     | https://staging.contentmax.ai | https://staging.contentmax.ai/api | Pre-production testing |
+| Production  | https://contentmax.ai         | https://contentmax.ai/api         | Live environment       |
 
 ---
 
@@ -1346,16 +1420,19 @@ jobs:
 ### Security Requirements
 
 **Frontend Security:**
+
 - CSP Headers: `default-src 'self'; script-src 'self' 'unsafe-eval' *.supabase.co`
 - XSS Prevention: React's automatic escaping + input sanitization
 - Secure Storage: HTTPOnly cookies for auth tokens
 
 **Backend Security:**
+
 - Input Validation: Zod schemas on all endpoints
 - Rate Limiting: 100 req/min per IP, 1000 req/min per user
 - CORS Policy: Restricted to app domains only
 
 **Authentication Security:**
+
 - Token Storage: Secure HTTPOnly cookies with SameSite
 - Session Management: 7-day refresh tokens, 1-hour access tokens
 - Password Policy: Min 8 chars, uppercase, lowercase, number, special char
@@ -1363,11 +1440,13 @@ jobs:
 ### Performance Optimization
 
 **Frontend Performance:**
+
 - Bundle Size Target: <200KB gzipped for initial load
 - Loading Strategy: Code splitting, lazy loading, progressive enhancement
 - Caching Strategy: SWR for data fetching, service worker for assets
 
 **Backend Performance:**
+
 - Response Time Target: p50 <100ms, p95 <500ms, p99 <1000ms
 - Database Optimization: Indexes, materialized views, connection pooling
 - Caching Strategy: Supabase query caching, Edge caching for static responses
@@ -1377,6 +1456,7 @@ jobs:
 ## Testing Strategy
 
 ### Testing Pyramid
+
 ```
       E2E Tests
      /        \
@@ -1388,6 +1468,7 @@ jobs:
 ### Test Organization
 
 #### Frontend Tests
+
 ```
 tests/
 ├── unit/
@@ -1404,6 +1485,7 @@ tests/
 ```
 
 #### Backend Tests
+
 ```
 tests/
 ├── unit/
@@ -1418,6 +1500,7 @@ tests/
 ### Test Examples
 
 #### Frontend Component Test
+
 ```typescript
 // tests/unit/components/ForceGraph.test.tsx
 import { render, screen } from '@testing-library/react';
@@ -1432,13 +1515,13 @@ describe('ForceGraph', () => {
   it('handles node selection', async () => {
     const onNodeClick = vi.fn();
     const { user } = render(
-      <ForceGraph 
-        nodes={mockNodes} 
-        edges={[]} 
+      <ForceGraph
+        nodes={mockNodes}
+        edges={[]}
         onNodeClick={onNodeClick}
       />
     );
-    
+
     await user.click(screen.getByTestId('node-1'));
     expect(onNodeClick).toHaveBeenCalledWith(mockNodes[0]);
   });
@@ -1446,6 +1529,7 @@ describe('ForceGraph', () => {
 ```
 
 #### Backend API Test
+
 ```typescript
 // tests/integration/api/content.test.ts
 import { createMockRequest } from '@/tests/utils';
@@ -1458,13 +1542,13 @@ describe('Content Generation API', () => {
       body: {
         nodeId: 'test-node-id',
         template: 'category',
-        language: 'en'
-      }
+        language: 'en',
+      },
     });
 
     const res = await handler(req);
     const data = await res.json();
-    
+
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data.content_html).toBeDefined();
@@ -1473,6 +1557,7 @@ describe('Content Generation API', () => {
 ```
 
 #### E2E Test
+
 ```typescript
 // tests/e2e/generation.spec.ts
 import { test, expect } from '@playwright/test';
@@ -1496,7 +1581,7 @@ test('bulk content generation flow', async ({ page }) => {
 
   // Open generation wizard
   await page.click('button:has-text("Generate Content")');
-  
+
   // Configure and generate
   await page.selectOption('[name="template"]', 'category');
   await page.selectOption('[name="language"]', 'en');
@@ -1512,6 +1597,7 @@ test('bulk content generation flow', async ({ page }) => {
 ## Coding Standards
 
 ### Critical Fullstack Rules
+
 - **Type Sharing:** Always define types in packages/shared and import from there
 - **API Calls:** Never make direct HTTP calls - use the tRPC service layer
 - **Environment Variables:** Access only through config objects, never process.env directly
@@ -1523,21 +1609,22 @@ test('bulk content generation flow', async ({ page }) => {
 
 ### Naming Conventions
 
-| Element | Frontend | Backend | Example |
-|---------|----------|---------|---------|
-| Components | PascalCase | - | `UserProfile.tsx` |
-| Hooks | camelCase with 'use' | - | `useAuth.ts` |
-| API Routes | - | kebab-case | `/api/user-profile` |
-| Database Tables | - | snake_case | `user_profiles` |
-| Type Interfaces | PascalCase | PascalCase | `UserProfile` |
-| Enums | PascalCase | PascalCase | `ContentStatus` |
-| Constants | UPPER_SNAKE_CASE | UPPER_SNAKE_CASE | `MAX_NODES` |
+| Element         | Frontend             | Backend          | Example             |
+| --------------- | -------------------- | ---------------- | ------------------- |
+| Components      | PascalCase           | -                | `UserProfile.tsx`   |
+| Hooks           | camelCase with 'use' | -                | `useAuth.ts`        |
+| API Routes      | -                    | kebab-case       | `/api/user-profile` |
+| Database Tables | -                    | snake_case       | `user_profiles`     |
+| Type Interfaces | PascalCase           | PascalCase       | `UserProfile`       |
+| Enums           | PascalCase           | PascalCase       | `ContentStatus`     |
+| Constants       | UPPER_SNAKE_CASE     | UPPER_SNAKE_CASE | `MAX_NODES`         |
 
 ---
 
 ## Error Handling Strategy
 
 ### Error Flow
+
 ```mermaid
 sequenceDiagram
     participant C as Component
@@ -1557,6 +1644,7 @@ sequenceDiagram
 ```
 
 ### Error Response Format
+
 ```typescript
 interface ApiError {
   error: {
@@ -1570,6 +1658,7 @@ interface ApiError {
 ```
 
 ### Frontend Error Handling
+
 ```typescript
 // hooks/useErrorHandler.ts
 export function useErrorHandler() {
@@ -1587,34 +1676,41 @@ export function useErrorHandler() {
 ```
 
 ### Backend Error Handling
+
 ```typescript
 // middleware/error-handler.ts
 export function errorHandler(error: unknown): Response {
   const errorId = generateErrorId();
-  
+
   if (error instanceof ValidationError) {
-    return new Response(JSON.stringify({
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: error.message,
-        details: error.details,
-        timestamp: new Date().toISOString(),
-        requestId: errorId
-      }
-    }), { status: 400 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: error.message,
+          details: error.details,
+          timestamp: new Date().toISOString(),
+          requestId: errorId,
+        },
+      }),
+      { status: 400 }
+    );
   }
-  
+
   // Log unexpected errors
   console.error(`[${errorId}]`, error);
-  
-  return new Response(JSON.stringify({
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred',
-      timestamp: new Date().toISOString(),
-      requestId: errorId
-    }
-  }), { status: 500 });
+
+  return new Response(
+    JSON.stringify({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+        timestamp: new Date().toISOString(),
+        requestId: errorId,
+      },
+    }),
+    { status: 500 }
+  );
 }
 ```
 
@@ -1623,6 +1719,7 @@ export function errorHandler(error: unknown): Response {
 ## Monitoring and Observability
 
 ### Monitoring Stack
+
 - **Frontend Monitoring:** Vercel Analytics + Web Vitals
 - **Backend Monitoring:** Vercel Functions Monitoring
 - **Error Tracking:** Sentry for production errors
@@ -1631,12 +1728,14 @@ export function errorHandler(error: unknown): Response {
 ### Key Metrics
 
 **Frontend Metrics:**
+
 - Core Web Vitals (LCP, FID, CLS)
 - JavaScript errors rate
 - API response times (p50, p95, p99)
 - User interactions (clicks, swipes, keyboard)
 
 **Backend Metrics:**
+
 - Request rate per endpoint
 - Error rate by type
 - Response time percentiles

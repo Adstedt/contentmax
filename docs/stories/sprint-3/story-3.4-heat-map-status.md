@@ -1,22 +1,26 @@
 # Story 3.4: Heat Map & Status Indicators
 
 ## User Story
+
 As a content manager,
 I want to see color-coded content status at a glance,
 So that I can quickly identify which areas need attention.
 
 ## Size & Priority
+
 - **Size**: S (3 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 3
 - **Dependencies**: Task 3.1
 
 ## Description
+
 Implement color coding for content status with a clear legend, making it easy to identify optimized, outdated, missing, and no-content areas.
 
 ## Implementation Steps
 
 1. **Color mapping system**
+
    ```typescript
    enum ContentStatus {
      OPTIMIZED = 'optimized',
@@ -24,71 +28,76 @@ Implement color coding for content status with a clear legend, making it easy to
      MISSING = 'missing',
      NO_CONTENT = 'no_content',
      IN_PROGRESS = 'in_progress',
-     ERROR = 'error'
+     ERROR = 'error',
    }
-   
+
    class ColorMapper {
      private colorScheme = {
        optimized: {
-         primary: '#10b981',    // Green
+         primary: '#10b981', // Green
          secondary: '#34d399',
          border: '#059669',
-         glow: 'rgba(16, 185, 129, 0.3)'
+         glow: 'rgba(16, 185, 129, 0.3)',
        },
        outdated: {
-         primary: '#f59e0b',    // Yellow/Amber
+         primary: '#f59e0b', // Yellow/Amber
          secondary: '#fbbf24',
          border: '#d97706',
-         glow: 'rgba(245, 158, 11, 0.3)'
+         glow: 'rgba(245, 158, 11, 0.3)',
        },
        missing: {
-         primary: '#ef4444',    // Red
+         primary: '#ef4444', // Red
          secondary: '#f87171',
          border: '#dc2626',
-         glow: 'rgba(239, 68, 68, 0.3)'
+         glow: 'rgba(239, 68, 68, 0.3)',
        },
        no_content: {
-         primary: '#9ca3af',    // Gray
+         primary: '#9ca3af', // Gray
          secondary: '#d1d5db',
          border: '#6b7280',
-         glow: 'rgba(156, 163, 175, 0.3)'
+         glow: 'rgba(156, 163, 175, 0.3)',
        },
        in_progress: {
-         primary: '#3b82f6',    // Blue
+         primary: '#3b82f6', // Blue
          secondary: '#60a5fa',
          border: '#2563eb',
-         glow: 'rgba(59, 130, 246, 0.3)'
+         glow: 'rgba(59, 130, 246, 0.3)',
        },
        error: {
-         primary: '#7c3aed',    // Purple
+         primary: '#7c3aed', // Purple
          secondary: '#a78bfa',
          border: '#6d28d9',
-         glow: 'rgba(124, 58, 237, 0.3)'
-       }
+         glow: 'rgba(124, 58, 237, 0.3)',
+       },
      };
-     
+
      getNodeColor(node: Node, property: 'primary' | 'border' | 'glow' = 'primary'): string {
        const status = node.contentStatus || ContentStatus.NO_CONTENT;
        return this.colorScheme[status][property];
      }
-     
+
      getGradient(ctx: CanvasRenderingContext2D, node: Node): CanvasGradient {
        const gradient = ctx.createRadialGradient(
-         node.x!, node.y!, 0,
-         node.x!, node.y!, node.radius
+         node.x!,
+         node.y!,
+         0,
+         node.x!,
+         node.y!,
+         node.radius
        );
-       
+
        const colors = this.colorScheme[node.contentStatus];
        gradient.addColorStop(0, colors.secondary);
        gradient.addColorStop(0.7, colors.primary);
        gradient.addColorStop(1, colors.border);
-       
+
        return gradient;
      }
    }
    ```
 
 2. **Legend component**
+
    ```typescript
    interface LegendProps {
      statistics?: {
@@ -99,39 +108,39 @@ Implement color coding for content status with a clear legend, making it easy to
      };
      onFilterChange?: (status: ContentStatus[]) => void;
    }
-   
+
    const Legend: React.FC<LegendProps> = ({ statistics, onFilterChange }) => {
      const [activeFilters, setActiveFilters] = useState<Set<ContentStatus>>(
        new Set(Object.values(ContentStatus))
      );
-     
+
      const legendItems = [
-       { 
-         status: ContentStatus.OPTIMIZED, 
-         label: 'Optimized', 
+       {
+         status: ContentStatus.OPTIMIZED,
+         label: 'Optimized',
          color: '#10b981',
          description: 'Content is up-to-date and optimized'
        },
-       { 
-         status: ContentStatus.OUTDATED, 
-         label: 'Outdated', 
+       {
+         status: ContentStatus.OUTDATED,
+         label: 'Outdated',
          color: '#f59e0b',
          description: 'Content needs updating'
        },
-       { 
-         status: ContentStatus.MISSING, 
-         label: 'Missing', 
+       {
+         status: ContentStatus.MISSING,
+         label: 'Missing',
          color: '#ef4444',
          description: 'No content exists'
        },
-       { 
-         status: ContentStatus.NO_CONTENT, 
-         label: 'No Products', 
+       {
+         status: ContentStatus.NO_CONTENT,
+         label: 'No Products',
          color: '#9ca3af',
          description: 'Category has no products'
        }
      ];
-     
+
      const toggleFilter = (status: ContentStatus) => {
        const newFilters = new Set(activeFilters);
        if (newFilters.has(status)) {
@@ -142,7 +151,7 @@ Implement color coding for content status with a clear legend, making it easy to
        setActiveFilters(newFilters);
        onFilterChange?.(Array.from(newFilters));
      };
-     
+
      return (
        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4">
          <h3 className="text-sm font-semibold mb-2">Content Status</h3>
@@ -174,15 +183,12 @@ Implement color coding for content status with a clear legend, making it easy to
    ```
 
 3. **Visual effects for status**
+
    ```typescript
    class StatusEffects {
      private animations: Map<string, Animation> = new Map();
-     
-     applyGlowEffect(
-       ctx: CanvasRenderingContext2D,
-       node: Node,
-       intensity = 1
-     ) {
+
+     applyGlowEffect(ctx: CanvasRenderingContext2D, node: Node, intensity = 1) {
        if (node.contentStatus === ContentStatus.MISSING) {
          // Pulsing glow for critical items
          const pulse = Math.sin(Date.now() * 0.003) * 0.5 + 0.5;
@@ -194,24 +200,21 @@ Implement color coding for content status with a clear legend, making it easy to
          ctx.shadowBlur = 5;
        }
      }
-     
-     renderStatusBadge(
-       ctx: CanvasRenderingContext2D,
-       node: Node
-     ) {
+
+     renderStatusBadge(ctx: CanvasRenderingContext2D, node: Node) {
        // Small indicator badge
        const badgeRadius = 4;
        const badgeX = node.x! + node.radius * 0.7;
        const badgeY = node.y! - node.radius * 0.7;
-       
+
        ctx.beginPath();
        ctx.arc(badgeX, badgeY, badgeRadius, 0, 2 * Math.PI);
        ctx.fillStyle = '#fff';
        ctx.fill();
-       
+
        ctx.beginPath();
        ctx.arc(badgeX, badgeY, badgeRadius - 1, 0, 2 * Math.PI);
-       
+
        // Icon based on status
        if (node.contentStatus === ContentStatus.MISSING) {
          ctx.fillStyle = '#ef4444';
@@ -238,6 +241,7 @@ Implement color coding for content status with a clear legend, making it easy to
    ```
 
 4. **Statistics overlay**
+
    ```typescript
    interface StatusStatistics {
      total: number;
@@ -245,20 +249,20 @@ Implement color coding for content status with a clear legend, making it easy to
      coverage: number; // Percentage
      criticalCount: number; // Missing content in high-value areas
    }
-   
+
    const StatusOverlay: React.FC<{ stats: StatusStatistics }> = ({ stats }) => {
-     const coverageColor = 
+     const coverageColor =
        stats.coverage > 80 ? 'text-green-600' :
        stats.coverage > 60 ? 'text-yellow-600' :
        'text-red-600';
-     
+
      return (
        <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4">
          <div className="text-2xl font-bold mb-2">
            <span className={coverageColor}>{stats.coverage}%</span>
            <span className="text-sm font-normal text-gray-500 ml-2">Coverage</span>
          </div>
-         
+
          <div className="grid grid-cols-2 gap-2 text-sm">
            <div className="flex items-center gap-1">
              <div className="w-3 h-3 bg-green-500 rounded-full" />
@@ -277,7 +281,7 @@ Implement color coding for content status with a clear legend, making it easy to
              <span>{stats.byStatus.noContent} empty</span>
            </div>
          </div>
-         
+
          {stats.criticalCount > 0 && (
            <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
              ⚠️ {stats.criticalCount} critical pages need content
@@ -292,13 +296,11 @@ Implement color coding for content status with a clear legend, making it easy to
    ```typescript
    class StatusFilter {
      private activeStatuses = new Set(Object.values(ContentStatus));
-     
+
      filterNodes(nodes: Node[]): Node[] {
-       return nodes.filter(node => 
-         this.activeStatuses.has(node.contentStatus)
-       );
+       return nodes.filter((node) => this.activeStatuses.has(node.contentStatus));
      }
-     
+
      toggleStatus(status: ContentStatus) {
        if (this.activeStatuses.has(status)) {
          this.activeStatuses.delete(status);
@@ -307,17 +309,15 @@ Implement color coding for content status with a clear legend, making it easy to
        }
        this.onFilterChange();
      }
-     
+
      showOnly(status: ContentStatus) {
        this.activeStatuses.clear();
        this.activeStatuses.add(status);
        this.onFilterChange();
      }
-     
+
      showAll() {
-       Object.values(ContentStatus).forEach(status => 
-         this.activeStatuses.add(status)
-       );
+       Object.values(ContentStatus).forEach((status) => this.activeStatuses.add(status));
        this.onFilterChange();
      }
    }
@@ -336,14 +336,15 @@ Implement color coding for content status with a clear legend, making it easy to
 ## Visual Specifications
 
 ### Color Palette
+
 ```css
 /* Status Colors */
---status-optimized: #10b981;     /* Green - All good */
---status-outdated: #f59e0b;      /* Amber - Needs update */
---status-missing: #ef4444;       /* Red - Critical */
---status-no-content: #9ca3af;    /* Gray - No products */
---status-in-progress: #3b82f6;   /* Blue - Being worked on */
---status-error: #7c3aed;         /* Purple - Processing error */
+--status-optimized: #10b981; /* Green - All good */
+--status-outdated: #f59e0b; /* Amber - Needs update */
+--status-missing: #ef4444; /* Red - Critical */
+--status-no-content: #9ca3af; /* Gray - No products */
+--status-in-progress: #3b82f6; /* Blue - Being worked on */
+--status-error: #7c3aed; /* Purple - Processing error */
 
 /* Supporting colors */
 --glow-intensity: 0.3;

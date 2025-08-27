@@ -1,19 +1,20 @@
-import React from 'react'
-import { cn } from '@/lib/utils'
-import { ChevronDown } from 'lucide-react'
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
 export interface SelectOption {
-  value: string
-  label: string
-  disabled?: boolean
+  value: string;
+  label: string;
+  disabled?: boolean;
 }
 
-export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
-  label?: string
-  error?: string
-  hint?: string
-  options: SelectOption[]
-  placeholder?: string
+export interface SelectProps
+  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
+  label?: string;
+  error?: string;
+  hint?: string;
+  options: SelectOption[];
+  placeholder?: string;
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
@@ -49,11 +50,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             )}
             {options.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
+              <option key={option.value} value={option.value} disabled={option.disabled}>
                 {option.label}
               </option>
             ))}
@@ -73,10 +70,10 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </p>
         )}
       </div>
-    )
+    );
   }
-)
+);
 
-Select.displayName = 'Select'
+Select.displayName = 'Select';
 
-export default Select
+export default Select;

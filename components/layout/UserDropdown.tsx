@@ -47,7 +47,9 @@ export function UserDropdown() {
         <span className="hidden md:block text-sm text-[#999]">
           {user?.email?.split('@')[0] || 'User'}
         </span>
-        <ChevronDown className={`h-3 w-3 text-[#666] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-3 w-3 text-[#666] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
@@ -56,7 +58,7 @@ export function UserDropdown() {
             <p className="text-sm font-medium text-white">{user?.email}</p>
             <p className="text-xs text-[#999] mt-0.5">Free tier</p>
           </div>
-          
+
           <div className="py-1">
             <button
               onClick={() => {
@@ -69,7 +71,7 @@ export function UserDropdown() {
               <Settings className="mr-3 h-4 w-4" />
               Settings
             </button>
-            
+
             <button
               onClick={handleSignOut}
               className="flex items-center w-full px-4 py-2 text-sm text-[#999] hover:bg-[#2a2a2a] hover:text-white transition-colors"

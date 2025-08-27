@@ -1,26 +1,30 @@
 # Story 7.4: Billing and Subscription System
 
 ## User Story
+
 As a user,
 I want flexible billing and subscription options,
 So that I can choose a plan that fits my needs and budget.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 7
 - **Dependencies**: Task 7.3 (Enterprise features)
 
 ## Description
+
 Implement a comprehensive billing and subscription system with multiple pricing tiers, usage-based billing, payment processing, invoicing, and subscription management capabilities.
 
 ## Implementation Steps
 
 1. **Subscription management**
+
    ```typescript
    // lib/billing/subscription-manager.ts
    import Stripe from 'stripe';
-   
+
    interface SubscriptionPlan {
      id: string;
      name: string;
@@ -43,18 +47,18 @@ Implement a comprehensive billing and subscription system with multiple pricing 
        annual: string;
      };
    }
-   
+
    class SubscriptionManager {
      private stripe: Stripe;
      private plans: Map<string, SubscriptionPlan>;
-     
+
      constructor() {
        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-         apiVersion: '2023-10-16'
+         apiVersion: '2023-10-16',
        });
        this.initializePlans();
      }
-     
+
      private initializePlans() {
        const plans: SubscriptionPlan[] = [
          {
@@ -64,24 +68,20 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            pricing: {
              monthly: 0,
              annual: 0,
-             currency: 'USD'
+             currency: 'USD',
            },
            limits: {
              users: 1,
              contentGenerations: 10,
              storage: 1,
              apiCalls: 100,
-             customDomains: 0
+             customDomains: 0,
            },
-           features: [
-             'Basic content generation',
-             'Standard templates',
-             'Community support'
-           ],
+           features: ['Basic content generation', 'Standard templates', 'Community support'],
            stripePriceId: {
              monthly: '',
-             annual: ''
-           }
+             annual: '',
+           },
          },
          {
            id: 'starter',
@@ -90,26 +90,26 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            pricing: {
              monthly: 49,
              annual: 490, // 2 months free
-             currency: 'USD'
+             currency: 'USD',
            },
            limits: {
              users: 5,
              contentGenerations: 500,
              storage: 10,
              apiCalls: 5000,
-             customDomains: 1
+             customDomains: 1,
            },
            features: [
              'Advanced content generation',
              'Custom templates',
              'API access',
              'Email support',
-             'Analytics dashboard'
+             'Analytics dashboard',
            ],
            stripePriceId: {
              monthly: 'price_starter_monthly',
-             annual: 'price_starter_annual'
-           }
+             annual: 'price_starter_annual',
+           },
          },
          {
            id: 'professional',
@@ -118,14 +118,14 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            pricing: {
              monthly: 199,
              annual: 1990,
-             currency: 'USD'
+             currency: 'USD',
            },
            limits: {
              users: 20,
              contentGenerations: 5000,
              storage: 100,
              apiCalls: 50000,
-             customDomains: 5
+             customDomains: 5,
            },
            features: [
              'All Starter features',
@@ -133,12 +133,12 @@ Implement a comprehensive billing and subscription system with multiple pricing 
              'Priority generation',
              'Advanced analytics',
              'Priority support',
-             'Custom branding'
+             'Custom branding',
            ],
            stripePriceId: {
              monthly: 'price_professional_monthly',
-             annual: 'price_professional_annual'
-           }
+             annual: 'price_professional_annual',
+           },
          },
          {
            id: 'enterprise',
@@ -147,14 +147,14 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            pricing: {
              monthly: -1, // Custom pricing
              annual: -1,
-             currency: 'USD'
+             currency: 'USD',
            },
            limits: {
              users: -1, // Unlimited
              contentGenerations: -1,
              storage: -1,
              apiCalls: -1,
-             customDomains: -1
+             customDomains: -1,
            },
            features: [
              'All Professional features',
@@ -163,18 +163,18 @@ Implement a comprehensive billing and subscription system with multiple pricing 
              'SLA guarantee',
              'Dedicated support',
              'Custom integrations',
-             'On-premise option'
+             'On-premise option',
            ],
            stripePriceId: {
              monthly: '',
-             annual: ''
-           }
-         }
+             annual: '',
+           },
+         },
        ];
-       
-       plans.forEach(plan => this.plans.set(plan.id, plan));
+
+       plans.forEach((plan) => this.plans.set(plan.id, plan));
      }
-     
+
      async createSubscription(
        userId: string,
        planId: string,
@@ -183,37 +183,39 @@ Implement a comprehensive billing and subscription system with multiple pricing 
      ): Promise<Subscription> {
        const plan = this.plans.get(planId);
        if (!plan) throw new Error('Invalid plan');
-       
+
        // Get or create Stripe customer
        const customer = await this.getOrCreateCustomer(userId);
-       
+
        // Attach payment method if provided
        if (paymentMethodId) {
          await this.stripe.paymentMethods.attach(paymentMethodId, {
-           customer: customer.id
+           customer: customer.id,
          });
-         
+
          await this.stripe.customers.update(customer.id, {
            invoice_settings: {
-             default_payment_method: paymentMethodId
-           }
+             default_payment_method: paymentMethodId,
+           },
          });
        }
-       
+
        // Create subscription
        const stripeSubscription = await this.stripe.subscriptions.create({
          customer: customer.id,
-         items: [{
-           price: plan.stripePriceId[billingPeriod]
-         }],
+         items: [
+           {
+             price: plan.stripePriceId[billingPeriod],
+           },
+         ],
          trial_period_days: 14,
          payment_behavior: 'default_incomplete',
          payment_settings: {
-           save_default_payment_method: 'on_subscription'
+           save_default_payment_method: 'on_subscription',
          },
-         expand: ['latest_invoice.payment_intent']
+         expand: ['latest_invoice.payment_intent'],
        });
-       
+
        // Save subscription to database
        const subscription = await this.saveSubscription({
          id: stripeSubscription.id,
@@ -224,65 +226,67 @@ Implement a comprehensive billing and subscription system with multiple pricing 
          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-         stripeCustomerId: customer.id
+         stripeCustomerId: customer.id,
        });
-       
+
        return subscription;
      }
-     
+
      async updateSubscription(
        subscriptionId: string,
        updates: SubscriptionUpdate
      ): Promise<Subscription> {
        const subscription = await this.getSubscription(subscriptionId);
-       
+
        if (updates.planId) {
          const newPlan = this.plans.get(updates.planId);
          if (!newPlan) throw new Error('Invalid plan');
-         
+
          // Update Stripe subscription
          await this.stripe.subscriptions.update(subscription.stripeId, {
-           items: [{
-             id: subscription.stripeItemId,
-             price: newPlan.stripePriceId[subscription.billingPeriod]
-           }],
-           proration_behavior: updates.prorationBehavior || 'create_prorations'
+           items: [
+             {
+               id: subscription.stripeItemId,
+               price: newPlan.stripePriceId[subscription.billingPeriod],
+             },
+           ],
+           proration_behavior: updates.prorationBehavior || 'create_prorations',
          });
        }
-       
+
        if (updates.billingPeriod) {
          // Handle billing period change
          await this.changeBillingPeriod(subscription, updates.billingPeriod);
        }
-       
+
        if (updates.quantity) {
          // Update quantity for seat-based pricing
          await this.stripe.subscriptions.update(subscription.stripeId, {
-           items: [{
-             id: subscription.stripeItemId,
-             quantity: updates.quantity
-           }]
+           items: [
+             {
+               id: subscription.stripeItemId,
+               quantity: updates.quantity,
+             },
+           ],
          });
        }
-       
+
        return this.getSubscription(subscriptionId);
      }
-     
-     async cancelSubscription(
-       subscriptionId: string,
-       immediately = false
-     ): Promise<void> {
+
+     async cancelSubscription(subscriptionId: string, immediately = false): Promise<void> {
        const subscription = await this.getSubscription(subscriptionId);
-       
+
        if (immediately) {
          await this.stripe.subscriptions.cancel(subscription.stripeId);
        } else {
          await this.stripe.subscriptions.update(subscription.stripeId, {
-           cancel_at_period_end: true
+           cancel_at_period_end: true,
          });
        }
-       
-       await this.updateSubscriptionStatus(subscriptionId, 
+
+       await this.updateSubscriptionStatus(
+         subscriptionId,
          immediately ? 'canceled' : 'pending_cancellation'
        );
      }
@@ -290,104 +294,97 @@ Implement a comprehensive billing and subscription system with multiple pricing 
    ```
 
 2. **Usage-based billing**
+
    ```typescript
    // lib/billing/usage-billing.ts
    class UsageBilling {
      private stripe: Stripe;
      private usageTrackers: Map<string, UsageTracker> = new Map();
-     
-     async trackUsage(
-       subscriptionId: string,
-       metric: UsageMetric,
-       quantity: number
-     ) {
+
+     async trackUsage(subscriptionId: string, metric: UsageMetric, quantity: number) {
        // Record usage event
        const usageEvent = {
          subscriptionId,
          metric,
          quantity,
          timestamp: new Date(),
-         processed: false
+         processed: false,
        };
-       
+
        await this.saveUsageEvent(usageEvent);
-       
+
        // Update real-time tracker
        this.updateUsageTracker(subscriptionId, metric, quantity);
-       
+
        // Check if limits exceeded
        await this.checkUsageLimits(subscriptionId);
      }
-     
+
      async reportUsageToStripe() {
        // Get unprocessed usage events
        const events = await this.getUnprocessedUsageEvents();
-       
+
        // Group by subscription and metric
        const grouped = this.groupUsageEvents(events);
-       
+
        // Report to Stripe
        for (const [key, usage] of grouped) {
          const [subscriptionId, metric] = key.split(':');
-         
+
          await this.stripe.subscriptionItems.createUsageRecord(
            this.getSubscriptionItemId(subscriptionId, metric),
            {
              quantity: usage.quantity,
              timestamp: Math.floor(usage.timestamp.getTime() / 1000),
-             action: 'increment'
+             action: 'increment',
            }
          );
        }
-       
+
        // Mark events as processed
-       await this.markEventsProcessed(events.map(e => e.id));
+       await this.markEventsProcessed(events.map((e) => e.id));
      }
-     
+
      async calculateOverage(subscriptionId: string): Promise<OverageCharges> {
        const subscription = await this.getSubscription(subscriptionId);
        const usage = await this.getCurrentUsage(subscriptionId);
        const plan = await this.getPlan(subscription.planId);
-       
+
        const overages: OverageCharges = {
          contentGenerations: 0,
          storage: 0,
          apiCalls: 0,
-         total: 0
+         total: 0,
        };
-       
+
        // Calculate overages
        if (usage.contentGenerations > plan.limits.contentGenerations) {
-         overages.contentGenerations = 
-           (usage.contentGenerations - plan.limits.contentGenerations) * 0.10; // $0.10 per generation
+         overages.contentGenerations =
+           (usage.contentGenerations - plan.limits.contentGenerations) * 0.1; // $0.10 per generation
        }
-       
+
        if (usage.storage > plan.limits.storage) {
-         overages.storage = 
-           (usage.storage - plan.limits.storage) * 5; // $5 per GB
+         overages.storage = (usage.storage - plan.limits.storage) * 5; // $5 per GB
        }
-       
+
        if (usage.apiCalls > plan.limits.apiCalls) {
-         overages.apiCalls = 
-           Math.ceil((usage.apiCalls - plan.limits.apiCalls) / 1000) * 1; // $1 per 1000 calls
+         overages.apiCalls = Math.ceil((usage.apiCalls - plan.limits.apiCalls) / 1000) * 1; // $1 per 1000 calls
        }
-       
-       overages.total = 
-         overages.contentGenerations + 
-         overages.storage + 
-         overages.apiCalls;
-       
+
+       overages.total = overages.contentGenerations + overages.storage + overages.apiCalls;
+
        return overages;
      }
    }
    ```
 
 3. **Payment processing**
+
    ```typescript
    // lib/billing/payment-processor.ts
    class PaymentProcessor {
      private stripe: Stripe;
-     
+
      async processPayment(
        amount: number,
        currency: string,
@@ -400,72 +397,72 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            currency,
            payment_method: paymentMethodId,
            confirm: true,
-           metadata
+           metadata,
          });
-         
+
          if (paymentIntent.status === 'succeeded') {
            await this.recordPayment({
              id: paymentIntent.id,
              amount,
              currency,
              status: 'succeeded',
-             metadata
+             metadata,
            });
-           
+
            return {
              success: true,
-             paymentId: paymentIntent.id
+             paymentId: paymentIntent.id,
            };
          }
-         
+
          return {
            success: false,
            error: 'Payment failed',
-           requiresAction: paymentIntent.status === 'requires_action'
+           requiresAction: paymentIntent.status === 'requires_action',
          };
        } catch (error) {
          return {
            success: false,
-           error: error.message
+           error: error.message,
          };
        }
      }
-     
+
      async setupPaymentMethod(customerId: string): Promise<SetupIntent> {
        const setupIntent = await this.stripe.setupIntents.create({
          customer: customerId,
          payment_method_types: ['card'],
-         usage: 'off_session'
+         usage: 'off_session',
        });
-       
+
        return {
          clientSecret: setupIntent.client_secret!,
-         id: setupIntent.id
+         id: setupIntent.id,
        };
      }
-     
+
      async handleWebhook(event: Stripe.Event) {
        switch (event.type) {
          case 'payment_intent.succeeded':
            await this.handlePaymentSuccess(event.data.object);
            break;
-           
+
          case 'payment_intent.failed':
            await this.handlePaymentFailure(event.data.object);
            break;
-           
+
          case 'invoice.paid':
            await this.handleInvoicePaid(event.data.object);
            break;
-           
+
          case 'invoice.payment_failed':
            await this.handleInvoicePaymentFailed(event.data.object);
            break;
-           
+
          case 'customer.subscription.updated':
            await this.handleSubscriptionUpdate(event.data.object);
            break;
-           
+
          case 'customer.subscription.deleted':
            await this.handleSubscriptionDeleted(event.data.object);
            break;
@@ -475,6 +472,7 @@ Implement a comprehensive billing and subscription system with multiple pricing 
    ```
 
 4. **Billing dashboard**
+
    ```tsx
    // components/billing/BillingDashboard.tsx
    const BillingDashboard: React.FC = () => {
@@ -482,7 +480,7 @@ Implement a comprehensive billing and subscription system with multiple pricing 
      const [usage, setUsage] = useState<UsageStats>();
      const [invoices, setInvoices] = useState<Invoice[]>([]);
      const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-     
+
      return (
        <div className="billing-dashboard">
          <div className="billing-overview">
@@ -493,20 +491,16 @@ Implement a comprehensive billing and subscription system with multiple pricing 
              onUpgrade={() => setShowUpgradeModal(true)}
              onCancel={() => setShowCancelModal(true)}
            />
-           
-           <UsageWidget
-             usage={usage}
-             limits={subscription?.plan.limits}
-             overage={usage?.overage}
-           />
-           
+
+           <UsageWidget usage={usage} limits={subscription?.plan.limits} overage={usage?.overage} />
+
            <BillingCycle
              currentPeriod={subscription?.currentPeriod}
              billingAmount={subscription?.billingAmount}
              dueDate={subscription?.dueDate}
            />
          </div>
-         
+
          <div className="billing-tabs">
            <Tabs>
              <TabPanel label="Subscription">
@@ -514,34 +508,34 @@ Implement a comprehensive billing and subscription system with multiple pricing 
                  subscription={subscription}
                  onUpdate={(updates) => updateSubscription(updates)}
                />
-               
+
                <PlanComparison
                  currentPlan={subscription?.planId}
                  plans={availablePlans}
                  onSelectPlan={(planId) => changePlan(planId)}
                />
              </TabPanel>
-             
+
              <TabPanel label="Usage">
                <UsageChart
                  data={usage?.history}
                  period={selectedPeriod}
                  onPeriodChange={setSelectedPeriod}
                />
-               
+
                <UsageBreakdown
                  contentGenerations={usage?.contentGenerations}
                  storage={usage?.storage}
                  apiCalls={usage?.apiCalls}
                  users={usage?.activeUsers}
                />
-               
+
                <OverageAlert
                  overages={usage?.overages}
                  estimatedCost={usage?.estimatedOverageCost}
                />
              </TabPanel>
-             
+
              <TabPanel label="Invoices">
                <InvoiceList
                  invoices={invoices}
@@ -549,7 +543,7 @@ Implement a comprehensive billing and subscription system with multiple pricing 
                  onPay={(invoiceId) => payInvoice(invoiceId)}
                />
              </TabPanel>
-             
+
              <TabPanel label="Payment Methods">
                <PaymentMethodList
                  methods={paymentMethods}
@@ -557,14 +551,12 @@ Implement a comprehensive billing and subscription system with multiple pricing 
                  onSetDefault={(methodId) => setDefaultPaymentMethod(methodId)}
                  onRemove={(methodId) => removePaymentMethod(methodId)}
                />
-               
-               <AddPaymentMethod
-                 onAdd={(method) => addPaymentMethod(method)}
-               />
+
+               <AddPaymentMethod onAdd={(method) => addPaymentMethod(method)} />
              </TabPanel>
            </Tabs>
          </div>
-         
+
          <UpgradeModal
            isOpen={showUpgradeModal}
            currentPlan={subscription?.plan}
@@ -572,7 +564,7 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            onUpgrade={(planId, billingPeriod) => upgradePlan(planId, billingPeriod)}
            onClose={() => setShowUpgradeModal(false)}
          />
-         
+
          <CancelSubscriptionModal
            isOpen={showCancelModal}
            subscription={subscription}
@@ -588,14 +580,11 @@ Implement a comprehensive billing and subscription system with multiple pricing 
    ```typescript
    // lib/billing/invoice-generator.ts
    class InvoiceGenerator {
-     async generateInvoice(
-       subscriptionId: string,
-       period: BillingPeriod
-     ): Promise<Invoice> {
+     async generateInvoice(subscriptionId: string, period: BillingPeriod): Promise<Invoice> {
        const subscription = await this.getSubscription(subscriptionId);
        const customer = await this.getCustomer(subscription.customerId);
        const usage = await this.getUsageForPeriod(subscriptionId, period);
-       
+
        const invoice: Invoice = {
          id: generateInvoiceNumber(),
          customerId: customer.id,
@@ -608,50 +597,50 @@ Implement a comprehensive billing and subscription system with multiple pricing 
          subtotal: 0,
          tax: 0,
          total: 0,
-         currency: subscription.currency
+         currency: subscription.currency,
        };
-       
+
        // Add subscription fee
        invoice.lineItems.push({
          description: `${subscription.plan.name} Plan - ${period.billingPeriod}`,
          quantity: 1,
          unitPrice: subscription.plan.pricing[period.billingPeriod],
-         amount: subscription.plan.pricing[period.billingPeriod]
+         amount: subscription.plan.pricing[period.billingPeriod],
        });
-       
+
        // Add usage-based charges
        const overages = await this.calculateOverages(usage, subscription.plan);
-       
+
        if (overages.contentGenerations > 0) {
          invoice.lineItems.push({
            description: `Additional Content Generations (${overages.contentGenerations})`,
            quantity: overages.contentGenerations,
-           unitPrice: 0.10,
-           amount: overages.contentGenerations * 0.10
+           unitPrice: 0.1,
+           amount: overages.contentGenerations * 0.1,
          });
        }
-       
+
        // Calculate totals
        invoice.subtotal = invoice.lineItems.reduce((sum, item) => sum + item.amount, 0);
        invoice.tax = await this.calculateTax(customer, invoice.subtotal);
        invoice.total = invoice.subtotal + invoice.tax;
-       
+
        // Save invoice
        await this.saveInvoice(invoice);
-       
+
        // Generate PDF
        await this.generatePDF(invoice);
-       
+
        return invoice;
      }
-     
+
      private async generatePDF(invoice: Invoice): Promise<Buffer> {
        const html = await this.renderInvoiceHTML(invoice);
-       
+
        const browser = await puppeteer.launch();
        const page = await browser.newPage();
        await page.setContent(html);
-       
+
        const pdf = await page.pdf({
          format: 'A4',
          printBackground: true,
@@ -659,15 +648,15 @@ Implement a comprehensive billing and subscription system with multiple pricing 
            top: '20mm',
            bottom: '20mm',
            left: '20mm',
-           right: '20mm'
-         }
+           right: '20mm',
+         },
        });
-       
+
        await browser.close();
-       
+
        // Store PDF
        await this.storePDF(invoice.id, pdf);
-       
+
        return pdf;
      }
    }
@@ -688,14 +677,14 @@ Implement a comprehensive billing and subscription system with multiple pricing 
 
 ## Pricing Tiers
 
-| Feature | Free | Starter ($49/mo) | Professional ($199/mo) | Enterprise (Custom) |
-|---------|------|-----------------|----------------------|-------------------|
-| Users | 1 | 5 | 20 | Unlimited |
-| Content Generations | 10/mo | 500/mo | 5000/mo | Unlimited |
-| Storage | 1 GB | 10 GB | 100 GB | Unlimited |
-| API Calls | 100/mo | 5000/mo | 50000/mo | Unlimited |
-| Custom Domains | 0 | 1 | 5 | Unlimited |
-| Support | Community | Email | Priority | Dedicated |
+| Feature             | Free      | Starter ($49/mo) | Professional ($199/mo) | Enterprise (Custom) |
+| ------------------- | --------- | ---------------- | ---------------------- | ------------------- |
+| Users               | 1         | 5                | 20                     | Unlimited           |
+| Content Generations | 10/mo     | 500/mo           | 5000/mo                | Unlimited           |
+| Storage             | 1 GB      | 10 GB            | 100 GB                 | Unlimited           |
+| API Calls           | 100/mo    | 5000/mo          | 50000/mo               | Unlimited           |
+| Custom Domains      | 0         | 1                | 5                      | Unlimited           |
+| Support             | Community | Email            | Priority               | Dedicated           |
 
 ## Acceptance Criteria
 

@@ -57,11 +57,13 @@ To add sample data for development:
 ### 4. Authentication Setup
 
 #### Enable Email/Password Auth:
+
 1. Go to Authentication > Providers in Supabase dashboard
 2. Enable Email provider
 3. Configure email templates as needed
 
 #### Enable Google OAuth:
+
 1. Go to Authentication > Providers
 2. Enable Google provider
 3. Add your Google OAuth credentials:
@@ -76,8 +78,8 @@ When ready to handle file uploads:
 
 ```sql
 -- Create storage buckets
-INSERT INTO storage.buckets (id, name, public) 
-VALUES 
+INSERT INTO storage.buckets (id, name, public)
+VALUES
   ('avatars', 'avatars', true),
   ('content-images', 'content-images', true),
   ('templates', 'templates', false);
@@ -110,6 +112,7 @@ Visit `http://localhost:3000/api/test-connection` to verify the database connect
 ### Row Level Security (RLS)
 
 All tables have RLS enabled with policies that ensure:
+
 - Users can only access data from their organization
 - Role-based permissions (admin, editor, viewer)
 - Soft delete support (deleted_at timestamp)
@@ -124,7 +127,7 @@ All tables have RLS enabled with policies that ensure:
 
 ## Type Safety
 
-TypeScript types are generated in `types/database.types.ts`. 
+TypeScript types are generated in `types/database.types.ts`.
 
 To regenerate types after schema changes:
 
@@ -155,16 +158,19 @@ The `lib/supabase/utils.ts` file provides helper functions:
 ## Troubleshooting
 
 ### Connection Issues
+
 - Verify environment variables are set correctly
 - Check if project is active in Supabase dashboard
 - Ensure RLS policies aren't blocking access
 
 ### Migration Errors
+
 - Check for syntax errors in SQL
 - Ensure extensions are enabled (uuid-ossp)
 - Verify foreign key relationships
 
 ### Type Errors
+
 - Regenerate types after schema changes
 - Ensure @/types path alias is configured
 

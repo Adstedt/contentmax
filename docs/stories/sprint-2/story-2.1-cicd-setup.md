@@ -1,20 +1,24 @@
 # Story 2.1: CI/CD Pipeline Setup
 
 ## User Story
+
 As a development team,
 I want automated testing and deployment pipelines,
 So that we can maintain code quality and deploy with confidence.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 2
 - **Dependencies**: Sprint 1 complete
 
 ## Description
+
 Set up GitHub Actions for automated testing, linting, type checking, and preview deployments to ensure code quality from early in development.
 
 ## Prerequisites
+
 - GitHub repository configured
 - Vercel account connected (see docs/external-services-setup.md)
 - Branch protection rules configured
@@ -22,6 +26,7 @@ Set up GitHub Actions for automated testing, linting, type checking, and preview
 ## Implementation Steps
 
 1. **Create main CI workflow**
+
    ```yaml
    # .github/workflows/ci.yml
    name: CI
@@ -30,7 +35,7 @@ Set up GitHub Actions for automated testing, linting, type checking, and preview
        branches: [main, develop]
      pull_request:
        branches: [main]
-   
+
    jobs:
      test:
        runs-on: ubuntu-latest
@@ -48,13 +53,14 @@ Set up GitHub Actions for automated testing, linting, type checking, and preview
    ```
 
 2. **Set up preview deployments**
+
    ```yaml
    # .github/workflows/preview.yml
    name: Preview Deployment
    on:
      pull_request:
        types: [opened, synchronize, reopened]
-   
+
    jobs:
      deploy:
        runs-on: ubuntu-latest
@@ -69,20 +75,22 @@ Set up GitHub Actions for automated testing, linting, type checking, and preview
    ```
 
 3. **Configure Dependabot**
+
    ```yaml
    # .github/dependabot.yml
    version: 2
    updates:
-     - package-ecosystem: "npm"
-       directory: "/"
+     - package-ecosystem: 'npm'
+       directory: '/'
        schedule:
-         interval: "weekly"
+         interval: 'weekly'
        open-pull-requests-limit: 10
        reviewers:
-         - "your-github-username"
+         - 'your-github-username'
    ```
 
 4. **Add test scripts to package.json**
+
    ```json
    {
      "scripts": {
@@ -122,22 +130,27 @@ SUPABASE_SERVICE_ROLE_KEY  # For integration tests
 ```
 
 ## PR Template
+
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -159,6 +172,7 @@ Brief description of changes
 ## Quality Gates
 
 ### Required Checks
+
 - Linting passes (0 errors)
 - Type checking passes
 - Tests pass (>80% coverage)
@@ -166,6 +180,7 @@ Brief description of changes
 - No security vulnerabilities
 
 ### Performance Metrics
+
 - CI pipeline completes in <5 minutes
 - Preview deployments ready in <3 minutes
 - Parallel job execution where possible

@@ -46,6 +46,7 @@ curl http://localhost:3000/api/test-connection
 ```
 
 You should see:
+
 ```json
 {
   "success": true,
@@ -57,6 +58,7 @@ You should see:
 ## Troubleshooting
 
 If you get errors:
+
 - Make sure you're logged into the correct Supabase project
 - Check that ALL the SQL from the migration file was copied
 - Look for any error messages in the SQL Editor output
@@ -65,6 +67,7 @@ If you get errors:
 ## Next Steps
 
 Once the database is set up:
+
 1. The authentication system can be implemented (Story 1.3)
 2. You can start using the database in your app
 3. RLS policies are already configured for security

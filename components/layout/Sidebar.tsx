@@ -12,7 +12,7 @@ import {
   Menu,
   X,
   FileText,
-  Database
+  Database,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,9 +25,7 @@ const navigation = [
   { name: 'Database', href: '/database', icon: Database },
 ];
 
-const bottomNavigation = [
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
+const bottomNavigation = [{ name: 'Settings', href: '/settings', icon: Settings }];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -91,8 +89,8 @@ export function Sidebar() {
                     isActive
                       ? 'bg-[#1a1a1a] text-white'
                       : isComingSoon
-                      ? 'text-[#666] cursor-not-allowed'
-                      : 'text-[#999] hover:text-white hover:bg-[#1a1a1a]'
+                        ? 'text-[#666] cursor-not-allowed'
+                        : 'text-[#999] hover:text-white hover:bg-[#1a1a1a]'
                   }
                 `}
               >

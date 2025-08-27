@@ -4,19 +4,16 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const supabase = createClient();
-    
+
     // Test basic connection
-    const { error } = await supabase
-      .from('organizations')
-      .select('count')
-      .limit(1);
+    const { error } = await supabase.from('organizations').select('count').limit(1);
 
     if (error) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Database connection failed',
-          error: error.message 
+          error: error.message,
         },
         { status: 500 }
       );
@@ -25,14 +22,14 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: 'Successfully connected to Supabase',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Connection test failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

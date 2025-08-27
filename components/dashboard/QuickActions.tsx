@@ -9,29 +9,29 @@ export function QuickActions() {
       description: 'Create new AI-powered content',
       icon: Plus,
       color: 'bg-[#10a37f] hover:bg-[#0e906d] text-white',
-      href: '/generate'
+      href: '/generate',
     },
     {
       title: 'Import Sitemap',
       description: 'Import from existing website',
       icon: Upload,
       color: 'bg-[#3b82f6] hover:bg-[#2563eb] text-white',
-      href: '/import'
+      href: '/import',
     },
     {
       title: 'Sync Taxonomy',
       description: 'Update content structure',
       icon: RefreshCw,
       color: 'bg-[#a855f7] hover:bg-[#9333ea] text-white',
-      href: '/taxonomy'
+      href: '/taxonomy',
     },
     {
       title: 'Analyze Gaps',
       description: 'Find content opportunities',
       icon: Search,
       color: 'bg-[#eab308] hover:bg-[#ca8a04] text-white',
-      href: '/analyze'
-    }
+      href: '/analyze',
+    },
   ];
 
   return (

@@ -1,11 +1,13 @@
 # ContentMax Coding Standards
 
 ## Overview
+
 This document defines the coding standards and conventions for the ContentMax project. All code must adhere to these standards to ensure consistency, maintainability, and quality across the codebase.
 
 ## General Principles
 
 ### 1. Code Quality
+
 - **Readability over cleverness** - Write code that junior developers can understand
 - **Self-documenting code** - Use clear variable and function names
 - **DRY (Don't Repeat Yourself)** - Extract common logic into reusable functions
@@ -13,6 +15,7 @@ This document defines the coding standards and conventions for the ContentMax pr
 - **YAGNI (You Aren't Gonna Need It)** - Don't add functionality until needed
 
 ### 2. Comments
+
 - Comment WHY, not WHAT - Code should be self-explanatory
 - Use JSDoc for all public functions and components
 - NO commented-out code in production
@@ -21,6 +24,7 @@ This document defines the coding standards and conventions for the ContentMax pr
 ## TypeScript Standards
 
 ### Type Safety
+
 ```typescript
 // ✅ GOOD - Explicit types
 interface User {
@@ -41,6 +45,7 @@ function processData(data: any): any {
 ```
 
 ### Naming Conventions
+
 - **Files**: kebab-case (e.g., `user-service.ts`, `auth-context.tsx`)
 - **Components**: PascalCase files and exports (e.g., `UserProfile.tsx`)
 - **Variables/Functions**: camelCase (e.g., `getUserById`)
@@ -49,6 +54,7 @@ function processData(data: any): any {
 - **Enums**: PascalCase for name, UPPER_SNAKE_CASE for values
 
 ### File Organization
+
 ```typescript
 // 1. Imports (grouped and ordered)
 import React, { useState, useEffect } from 'react'; // React
@@ -78,6 +84,7 @@ export function UserProfile({ user, onUpdate }: Props) {
 ## React/Next.js Standards
 
 ### Component Structure
+
 ```typescript
 // ✅ GOOD - Functional component with proper typing
 interface UserCardProps {
@@ -106,12 +113,14 @@ export function UserCard({ user, onClick }) {
 ```
 
 ### Hooks Rules
+
 - Custom hooks start with 'use' (e.g., `useAuth`, `useDebounce`)
 - Place hooks at the top of components
 - Extract complex logic into custom hooks
 - Document hook dependencies
 
 ### State Management
+
 ```typescript
 // ✅ GOOD - Clear state management
 const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +134,7 @@ const [state, setState] = useState({});
 ## API Standards
 
 ### Route Handlers (App Router)
+
 ```typescript
 // app/api/users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -152,25 +162,19 @@ export async function POST(request: NextRequest) {
 
     // 4. Return response
     return NextResponse.json({ data: user }, { status: 201 });
-    
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
-    
+
     console.error('User creation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
 
 ### Error Handling
+
 ```typescript
 // ✅ GOOD - Consistent error handling
 class AppError extends Error {
@@ -191,14 +195,11 @@ throw new AppError('User not found', 404, 'USER_NOT_FOUND');
 ## Database Standards (Supabase)
 
 ### Query Patterns
+
 ```typescript
 // ✅ GOOD - Type-safe queries with error handling
 async function getUserById(id: string): Promise<User | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from('users').select('*').eq('id', id).single();
 
   if (error) {
     console.error('Error fetching user:', error);
@@ -216,18 +217,20 @@ async function getUser(id: string) {
 ```
 
 ### Transactions
+
 ```typescript
 // Use RPC functions for transactions
 const { data, error } = await supabase.rpc('transfer_credits', {
   from_user_id: userId,
   to_user_id: targetId,
-  amount: 100
+  amount: 100,
 });
 ```
 
 ## Testing Standards
 
 ### Test Structure
+
 ```typescript
 // __tests__/components/UserCard.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -242,7 +245,7 @@ describe('UserCard', () => {
 
   it('should render user information', () => {
     render(<UserCard user={mockUser} />);
-    
+
     expect(screen.getByText('Test User')).toBeInTheDocument();
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
@@ -250,15 +253,16 @@ describe('UserCard', () => {
   it('should call onClick when clicked', () => {
     const handleClick = jest.fn();
     render(<UserCard user={mockUser} onClick={handleClick} />);
-    
+
     fireEvent.click(screen.getByText('Test User'));
-    
+
     expect(handleClick).toHaveBeenCalledWith('1');
   });
 });
 ```
 
 ### Test Naming
+
 - Use descriptive test names
 - Start with "should" for behavior tests
 - Group related tests with describe blocks
@@ -266,6 +270,7 @@ describe('UserCard', () => {
 ## CSS/Styling Standards
 
 ### Tailwind Classes Order
+
 ```tsx
 // ✅ GOOD - Consistent class order
 <div className="
@@ -289,6 +294,7 @@ describe('UserCard', () => {
 ```
 
 ### Component Styling
+
 ```typescript
 // ✅ GOOD - Using cn() utility for conditional classes
 import { cn } from '@/lib/utils';
@@ -306,41 +312,44 @@ import { cn } from '@/lib/utils';
 ## Security Standards
 
 ### Input Validation
+
 - Always validate user input on the server
 - Use Zod schemas for validation
 - Sanitize data before database operations
 - Never trust client-side validation alone
 
 ### Authentication Checks
+
 ```typescript
 // ✅ GOOD - Consistent auth pattern
 export async function protectedRoute(request: NextRequest) {
   const session = await getServerSession();
-  
+
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   // Check additional permissions if needed
   if (!hasPermission(session.user, 'resource:write')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
-  
+
   // Proceed with business logic
 }
 ```
 
 ### Environment Variables
+
 ```typescript
 // ✅ GOOD - Validate environment variables
 const requiredEnvVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'OPENAI_API_KEY'
+  'OPENAI_API_KEY',
 ];
 
-requiredEnvVars.forEach(varName => {
+requiredEnvVars.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(`Missing required environment variable: ${varName}`);
   }
@@ -350,6 +359,7 @@ requiredEnvVars.forEach(varName => {
 ## Performance Standards
 
 ### Image Optimization
+
 ```tsx
 // ✅ GOOD - Using Next.js Image component
 import Image from 'next/image';
@@ -362,22 +372,24 @@ import Image from 'next/image';
   priority
   placeholder="blur"
   blurDataURL={shimmer}
-/>
+/>;
 ```
 
 ### Code Splitting
+
 ```typescript
 // ✅ GOOD - Dynamic imports for heavy components
 const HeavyComponent = dynamic(
   () => import('@/components/HeavyComponent'),
-  { 
+  {
     loading: () => <Skeleton />,
-    ssr: false 
+    ssr: false
   }
 );
 ```
 
 ### Memoization
+
 ```typescript
 // ✅ GOOD - Memoize expensive computations
 const expensiveValue = useMemo(() => {
@@ -392,6 +404,7 @@ const memoizedCallback = useCallback((id: string) => {
 ## Git Standards
 
 ### Commit Messages
+
 ```bash
 # Format: <type>(<scope>): <subject>
 
@@ -403,6 +416,7 @@ test(auth): add login flow tests
 ```
 
 ### Branch Naming
+
 - `feature/` - New features (e.g., `feature/user-dashboard`)
 - `fix/` - Bug fixes (e.g., `fix/login-error`)
 - `refactor/` - Code refactoring (e.g., `refactor/api-structure`)
@@ -411,6 +425,7 @@ test(auth): add login flow tests
 ## Code Review Checklist
 
 Before submitting PR:
+
 - [ ] Code follows naming conventions
 - [ ] TypeScript types are properly defined
 - [ ] No `any` types without justification
@@ -432,6 +447,7 @@ Before submitting PR:
 ## Exceptions
 
 Exceptions to these standards must be:
+
 1. Documented with clear justification
 2. Marked with appropriate comments
 3. Approved by technical lead

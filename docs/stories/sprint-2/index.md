@@ -1,9 +1,11 @@
 # Sprint 2: Data Ingestion & Processing
 
 ## Sprint Goal
+
 Build comprehensive data ingestion pipeline with CI/CD for quality assurance, enabling import of sitemaps, content scraping, and Google Search Console integration.
 
 ## Duration
+
 2 weeks
 
 ## Stories
@@ -46,11 +48,13 @@ Build comprehensive data ingestion pipeline with CI/CD for quality assurance, en
    - **Size**: M (4 hours)
 
 ## Dependencies
+
 - Sprint 1 must be complete
 - External services configured (Google Cloud, GitHub)
 - Supabase Edge Functions deployed
 
 ## Definition of Done
+
 - [ ] CI/CD pipeline catching code issues
 - [ ] Can import and parse sitemaps
 - [ ] Content scraping respects rate limits
@@ -59,11 +63,13 @@ Build comprehensive data ingestion pipeline with CI/CD for quality assurance, en
 - [ ] Import UI provides clear feedback
 
 ## Technical Risks
+
 - Rate limiting too aggressive → IP blocking
 - Large sitemaps → Memory issues
 - API quotas → Implement caching
 
 ## Success Metrics
+
 - Scraping success rate >90%
 - Processing speed: 100 URLs/minute
 - CI pipeline <5 minutes

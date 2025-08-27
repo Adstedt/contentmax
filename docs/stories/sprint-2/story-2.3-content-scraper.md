@@ -1,35 +1,39 @@
 # Story 2.3: Content Scraper with Rate Limiting
 
 ## User Story
+
 As a content analyst,
 I want to automatically scrape and analyze existing content from my site,
 So that I can identify what content exists and what needs improvement.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 2
 - **Dependencies**: Task 2.2
 
 ## Description
+
 Build a robust web scraper with rate limiting, robots.txt compliance, and content structure analysis to extract and analyze existing website content.
 
 ## Implementation Steps
 
 1. **Set up Playwright for scraping**
+
    ```typescript
    import { chromium, Browser, Page } from 'playwright';
-   
+
    class ContentScraper {
      private browser: Browser;
-     
+
      async initialize() {
        this.browser = await chromium.launch({
          headless: true,
-         args: ['--disable-blink-features=AutomationControlled']
+         args: ['--disable-blink-features=AutomationControlled'],
        });
      }
-     
+
      async scrapePage(url: string): Promise<PageContent> {
        const page = await this.browser.newPage();
        // Set user agent, viewport
@@ -39,12 +43,13 @@ Build a robust web scraper with rate limiting, robots.txt compliance, and conten
    ```
 
 2. **Implement rate limiting**
+
    ```typescript
    class RateLimiter {
      private queue: ScrapingJob[] = [];
      private concurrency = 3;
      private delayMs = 1000;
-     
+
      async execute(job: ScrapingJob): Promise<ScrapingResult> {
        // Queue management
        // Respect rate limits
@@ -54,12 +59,13 @@ Build a robust web scraper with rate limiting, robots.txt compliance, and conten
    ```
 
 3. **Check robots.txt compliance**
+
    ```typescript
    import robotsParser from 'robots-txt-parser';
-   
+
    class RobotsChecker {
      private robots: Map<string, RobotsParser> = new Map();
-     
+
      async canScrape(url: string): Promise<boolean> {
        const robotsUrl = new URL('/robots.txt', url).href;
        // Fetch and parse robots.txt
@@ -69,6 +75,7 @@ Build a robust web scraper with rate limiting, robots.txt compliance, and conten
    ```
 
 4. **Extract structured content**
+
    ```typescript
    interface ExtractedContent {
      title: string;
@@ -81,7 +88,7 @@ Build a robust web scraper with rate limiting, robots.txt compliance, and conten
      schema: any[];
      contentLength: number;
    }
-   
+
    function extractContent(html: string): ExtractedContent {
      // Parse HTML with cheerio
      // Extract structured data
@@ -118,13 +125,13 @@ Build a robust web scraper with rate limiting, robots.txt compliance, and conten
 
 ```typescript
 interface RateLimitConfig {
-  maxConcurrency: number;      // Max parallel requests (default: 3)
+  maxConcurrency: number; // Max parallel requests (default: 3)
   delayBetweenRequests: number; // Milliseconds (default: 1000)
-  respectRobotsTxt: boolean;    // Always true
-  timeout: number;              // Page timeout (default: 30000)
-  retryAttempts: number;        // Max retries (default: 3)
-  backoffMultiplier: number;    // Exponential backoff (default: 2)
-  userAgent: string;            // Custom user agent
+  respectRobotsTxt: boolean; // Always true
+  timeout: number; // Page timeout (default: 30000)
+  retryAttempts: number; // Max retries (default: 3)
+  backoffMultiplier: number; // Exponential backoff (default: 2)
+  userAgent: string; // Custom user agent
 }
 
 const defaultConfig: RateLimitConfig = {
@@ -134,7 +141,7 @@ const defaultConfig: RateLimitConfig = {
   timeout: 30000,
   retryAttempts: 3,
   backoffMultiplier: 2,
-  userAgent: 'ContentMax/1.0 (https://contentmax.ai/bot)'
+  userAgent: 'ContentMax/1.0 (https://contentmax.ai/bot)',
 };
 ```
 
@@ -160,7 +167,7 @@ class ScrapingQueue {
     // Store in database
     // Start processing
   }
-  
+
   async getProgress(jobId: string): Promise<QueueProgress> {
     // Return current progress
   }

@@ -1,22 +1,26 @@
 # Story 8.2: Notification & Communication System
 
 ## User Story
+
 As a user,
 I want to receive timely notifications about important events and updates,
 So that I can stay informed about my content generation activities and system status.
 
 ## Size & Priority
+
 - **Size**: M (6 hours)
 - **Priority**: P2 - Medium
 - **Sprint**: 8
 - **Dependencies**: None
 
 ## Description
+
 Implement a comprehensive notification system with in-app notifications, email notifications, push notifications, and customizable preferences for different event types.
 
 ## Implementation Steps
 
 1. **Notification service**
+
    ```typescript
    // lib/notifications/notification-service.ts
    interface Notification {
@@ -35,8 +39,8 @@ Implement a comprehensive notification system with in-app notifications, email n
      readAt?: Date;
      expiresAt?: Date;
    }
-   
-   type NotificationType = 
+
+   type NotificationType =
      | 'content-generated'
      | 'generation-failed'
      | 'bulk-complete'
@@ -47,39 +51,36 @@ Implement a comprehensive notification system with in-app notifications, email n
      | 'security-alert'
      | 'team-invitation'
      | 'integration-status';
-   
+
    type NotificationChannel = 'in-app' | 'email' | 'push' | 'sms' | 'slack';
-   
+
    class NotificationService {
      private channels: Map<NotificationChannel, NotificationChannel>;
      private queue: NotificationQueue;
      private preferences: UserPreferences;
-     
+
      async send(notification: CreateNotificationDto): Promise<void> {
        // Check user preferences
        const userPrefs = await this.getUserPreferences(notification.userId);
-       const enabledChannels = this.getEnabledChannels(
-         notification.type,
-         userPrefs
-       );
-       
+       const enabledChannels = this.getEnabledChannels(notification.type, userPrefs);
+
        // Create notification record
        const notif = await this.createNotification({
          ...notification,
          channel: enabledChannels,
-         status: 'pending'
+         status: 'pending',
        });
-       
+
        // Send through each channel
        for (const channel of enabledChannels) {
          await this.sendToChannel(notif, channel);
        }
      }
-     
+
      async sendBatch(notifications: CreateNotificationDto[]): Promise<void> {
        // Group by user for batching
        const grouped = this.groupByUser(notifications);
-       
+
        for (const [userId, userNotifications] of grouped) {
          // Check if we should batch or send individually
          if (this.shouldBatch(userNotifications)) {
@@ -91,7 +92,7 @@ Implement a comprehensive notification system with in-app notifications, email n
          }
        }
      }
-     
+
      private async sendToChannel(
        notification: Notification,
        channel: NotificationChannel
@@ -100,7 +101,7 @@ Implement a comprehensive notification system with in-app notifications, email n
        if (!handler) {
          throw new Error(`Channel ${channel} not configured`);
        }
-       
+
        try {
          await handler.send(notification);
          await this.updateStatus(notification.id, 'sent', channel);
@@ -108,48 +109,49 @@ Implement a comprehensive notification system with in-app notifications, email n
          await this.handleSendError(notification, channel, error);
        }
      }
-     
+
      private shouldBatch(notifications: Notification[]): boolean {
        // Batch if multiple notifications of same type within short time
-       const types = new Set(notifications.map(n => n.type));
+       const types = new Set(notifications.map((n) => n.type));
        const timeRange = this.getTimeRange(notifications);
-       
+
        return types.size === 1 && timeRange < 300000; // 5 minutes
      }
-     
+
      async markAsRead(notificationId: string): Promise<void> {
        await this.updateNotification(notificationId, {
          status: 'read',
-         readAt: new Date()
+         readAt: new Date(),
        });
-       
+
        // Update unread count
        await this.updateUnreadCount(notification.userId);
      }
-     
+
      async getUnreadCount(userId: string): Promise<number> {
        const { count } = await supabase
          .from('notifications')
          .select('*', { count: 'exact', head: true })
          .eq('user_id', userId)
          .eq('status', 'delivered');
-       
+
        return count || 0;
      }
    }
    ```
 
 2. **Notification channels**
+
    ```typescript
    // lib/notifications/channels/email-channel.ts
    class EmailNotificationChannel implements NotificationChannel {
      private emailService: EmailService;
      private templates: EmailTemplates;
-     
+
      async send(notification: Notification): Promise<void> {
        const template = await this.getTemplate(notification.type);
        const user = await this.getUser(notification.userId);
-       
+
        const email = {
          to: user.email,
          subject: this.renderSubject(template.subject, notification),
@@ -159,36 +161,36 @@ Implement a comprehensive notification system with in-app notifications, email n
          tags: [notification.type],
          metadata: {
            notificationId: notification.id,
-           userId: notification.userId
-         }
+           userId: notification.userId,
+         },
        };
-       
+
        // Add action buttons
        if (notification.actions) {
          email.html = this.addActionButtons(email.html, notification.actions);
        }
-       
+
        await this.emailService.send(email);
      }
-     
+
      private renderHTML(template: string, notification: Notification): string {
        return handlebars.compile(template)({
          title: notification.title,
          message: notification.message,
          data: notification.data,
          appUrl: process.env.NEXT_PUBLIC_APP_URL,
-         unsubscribeUrl: this.getUnsubscribeUrl(notification.userId)
+         unsubscribeUrl: this.getUnsubscribeUrl(notification.userId),
        });
      }
    }
-   
+
    // lib/notifications/channels/push-channel.ts
    class PushNotificationChannel implements NotificationChannel {
      private webPush: WebPushService;
-     
+
      async send(notification: Notification): Promise<void> {
        const subscriptions = await this.getUserSubscriptions(notification.userId);
-       
+
        const payload = {
          title: notification.title,
          body: notification.message,
@@ -198,42 +200,34 @@ Implement a comprehensive notification system with in-app notifications, email n
          data: {
            notificationId: notification.id,
            url: notification.data?.url || '/',
-           actions: notification.actions
+           actions: notification.actions,
          },
-         requireInteraction: notification.priority === 'urgent'
+         requireInteraction: notification.priority === 'urgent',
        };
-       
+
        // Send to all user's devices
-       await Promise.all(
-         subscriptions.map(sub => 
-           this.webPush.sendNotification(sub, payload)
-         )
-       );
+       await Promise.all(subscriptions.map((sub) => this.webPush.sendNotification(sub, payload)));
      }
    }
-   
+
    // lib/notifications/channels/in-app-channel.ts
    class InAppNotificationChannel implements NotificationChannel {
      private realtimeService: RealtimeService;
-     
+
      async send(notification: Notification): Promise<void> {
        // Store in database
        await this.storeNotification(notification);
-       
+
        // Send real-time update
-       await this.realtimeService.broadcast(
-         `user:${notification.userId}`,
-         'notification',
-         {
-           id: notification.id,
-           type: notification.type,
-           title: notification.title,
-           message: notification.message,
-           priority: notification.priority,
-           timestamp: notification.createdAt
-         }
-       );
-       
+       await this.realtimeService.broadcast(`user:${notification.userId}`, 'notification', {
+         id: notification.id,
+         type: notification.type,
+         title: notification.title,
+         message: notification.message,
+         priority: notification.priority,
+         timestamp: notification.createdAt,
+       });
+
        // Update notification badge
        await this.updateBadgeCount(notification.userId);
      }
@@ -241,6 +235,7 @@ Implement a comprehensive notification system with in-app notifications, email n
    ```
 
 3. **Notification preferences**
+
    ```typescript
    // lib/notifications/preferences.ts
    interface NotificationPreferences {
@@ -251,7 +246,7 @@ Implement a comprehensive notification system with in-app notifications, email n
      quiet: QuietHours;
      frequency: FrequencySettings;
    }
-   
+
    interface EmailPreferences {
      enabled: boolean;
      types: {
@@ -260,36 +255,36 @@ Implement a comprehensive notification system with in-app notifications, email n
      digest: 'immediate' | 'hourly' | 'daily' | 'weekly';
      format: 'html' | 'text';
    }
-   
+
    class NotificationPreferencesManager {
      async getUserPreferences(userId: string): Promise<NotificationPreferences> {
        let prefs = await this.loadPreferences(userId);
-       
+
        if (!prefs) {
          prefs = this.getDefaultPreferences(userId);
          await this.savePreferences(prefs);
        }
-       
+
        return prefs;
      }
-     
+
      async updatePreferences(
        userId: string,
        updates: Partial<NotificationPreferences>
      ): Promise<void> {
        const current = await this.getUserPreferences(userId);
        const updated = { ...current, ...updates };
-       
+
        // Validate preferences
        this.validatePreferences(updated);
-       
+
        // Save to database
        await this.savePreferences(updated);
-       
+
        // Update notification service
        await this.notificationService.updateUserPreferences(userId, updated);
      }
-     
+
      private getDefaultPreferences(userId: string): NotificationPreferences {
        return {
          userId,
@@ -305,10 +300,10 @@ Implement a comprehensive notification system with in-app notifications, email n
              'system-maintenance': true,
              'security-alert': true,
              'team-invitation': true,
-             'integration-status': false
+             'integration-status': false,
            },
            digest: 'immediate',
-           format: 'html'
+           format: 'html',
          },
          push: {
            enabled: false,
@@ -322,33 +317,33 @@ Implement a comprehensive notification system with in-app notifications, email n
              'system-maintenance': true,
              'security-alert': true,
              'team-invitation': true,
-             'integration-status': false
+             'integration-status': false,
            },
            sound: true,
-           vibrate: true
+           vibrate: true,
          },
          inApp: {
            enabled: true,
            showBadge: true,
            playSound: false,
-           desktop: true
+           desktop: true,
          },
          quiet: {
            enabled: false,
            start: '22:00',
            end: '08:00',
            timezone: 'UTC',
-           override: ['urgent', 'security-alert']
+           override: ['urgent', 'security-alert'],
          },
          frequency: {
            maxPerHour: 10,
            maxPerDay: 50,
            batchSimilar: true,
-           batchWindow: 300000 // 5 minutes
-         }
+           batchWindow: 300000, // 5 minutes
+         },
        };
      }
-     
+
      shouldSendNotification(
        type: NotificationType,
        channel: NotificationChannel,
@@ -356,28 +351,29 @@ Implement a comprehensive notification system with in-app notifications, email n
      ): boolean {
        // Check if channel is enabled
        if (!prefs[channel]?.enabled) return false;
-       
+
        // Check if type is enabled for channel
        if (!prefs[channel]?.types?.[type]) return false;
-       
+
        // Check quiet hours
        if (this.isQuietHours(prefs.quiet)) {
          if (!prefs.quiet.override.includes(type)) {
            return false;
          }
        }
-       
+
        // Check frequency limits
        if (this.exceedsFrequencyLimit(prefs.frequency)) {
          return false;
        }
-       
+
        return true;
      }
    }
    ```
 
 4. **Notification UI components**
+
    ```tsx
    // components/notifications/NotificationCenter.tsx
    const NotificationCenter: React.FC = () => {
@@ -385,59 +381,50 @@ Implement a comprehensive notification system with in-app notifications, email n
      const [unreadCount, setUnreadCount] = useState(0);
      const [isOpen, setIsOpen] = useState(false);
      const [filter, setFilter] = useState<NotificationType | 'all'>('all');
-     
+
      useEffect(() => {
        // Subscribe to real-time notifications
        const subscription = supabase
          .from('notifications')
          .on('INSERT', (payload) => {
-           setNotifications(prev => [payload.new, ...prev]);
-           setUnreadCount(prev => prev + 1);
-           
+           setNotifications((prev) => [payload.new, ...prev]);
+           setUnreadCount((prev) => prev + 1);
+
            // Show toast for important notifications
            if (payload.new.priority === 'high' || payload.new.priority === 'urgent') {
              showToast(payload.new);
            }
          })
          .subscribe();
-       
+
        return () => subscription.unsubscribe();
      }, []);
-     
+
      const markAsRead = async (notificationId: string) => {
        await notificationService.markAsRead(notificationId);
-       
-       setNotifications(prev =>
-         prev.map(n => 
-           n.id === notificationId ? { ...n, status: 'read' } : n
-         )
+
+       setNotifications((prev) =>
+         prev.map((n) => (n.id === notificationId ? { ...n, status: 'read' } : n))
        );
-       
-       setUnreadCount(prev => Math.max(0, prev - 1));
+
+       setUnreadCount((prev) => Math.max(0, prev - 1));
      };
-     
+
      const markAllAsRead = async () => {
        await notificationService.markAllAsRead();
-       
-       setNotifications(prev =>
-         prev.map(n => ({ ...n, status: 'read' }))
-       );
-       
+
+       setNotifications((prev) => prev.map((n) => ({ ...n, status: 'read' })));
+
        setUnreadCount(0);
      };
-     
+
      return (
        <>
-         <button
-           className="notification-bell"
-           onClick={() => setIsOpen(!isOpen)}
-         >
+         <button className="notification-bell" onClick={() => setIsOpen(!isOpen)}>
            <BellIcon />
-           {unreadCount > 0 && (
-             <span className="notification-badge">{unreadCount}</span>
-           )}
+           {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
          </button>
-         
+
          {isOpen && (
            <div className="notification-dropdown">
              <div className="notification-header">
@@ -447,7 +434,7 @@ Implement a comprehensive notification system with in-app notifications, email n
                  <Link href="/settings/notifications">Settings</Link>
                </div>
              </div>
-             
+
              <div className="notification-filters">
                <button
                  onClick={() => setFilter('all')}
@@ -468,12 +455,12 @@ Implement a comprehensive notification system with in-app notifications, email n
                  System
                </button>
              </div>
-             
+
              <div className="notification-list">
                {filteredNotifications.length === 0 ? (
                  <EmptyState message="No notifications" />
                ) : (
-                 filteredNotifications.map(notification => (
+                 filteredNotifications.map((notification) => (
                    <NotificationItem
                      key={notification.id}
                      notification={notification}
@@ -483,7 +470,7 @@ Implement a comprehensive notification system with in-app notifications, email n
                  ))
                )}
              </div>
-             
+
              <div className="notification-footer">
                <Link href="/notifications">View all notifications</Link>
              </div>
@@ -492,47 +479,49 @@ Implement a comprehensive notification system with in-app notifications, email n
        </>
      );
    };
-   
+
    // Notification preferences UI
    const NotificationPreferences: React.FC = () => {
      const [preferences, setPreferences] = useState<NotificationPreferences>();
      const [saving, setSaving] = useState(false);
-     
+
      const handleToggle = (channel: string, type: string, value: boolean) => {
-       setPreferences(prev => ({
+       setPreferences((prev) => ({
          ...prev!,
          [channel]: {
            ...prev![channel],
            types: {
              ...prev![channel].types,
-             [type]: value
-           }
-         }
+             [type]: value,
+           },
+         },
        }));
      };
-     
+
      const savePreferences = async () => {
        setSaving(true);
        await notificationService.updatePreferences(preferences);
        setSaving(false);
        showToast('Preferences saved');
      };
-     
+
      return (
        <div className="notification-preferences">
          <h2>Notification Preferences</h2>
-         
+
          <div className="preference-section">
            <h3>Email Notifications</h3>
            <Switch
              checked={preferences?.email.enabled}
-             onChange={(v) => setPreferences(prev => ({
-               ...prev!,
-               email: { ...prev!.email, enabled: v }
-             }))}
+             onChange={(v) =>
+               setPreferences((prev) => ({
+                 ...prev!,
+                 email: { ...prev!.email, enabled: v },
+               }))
+             }
              label="Enable email notifications"
            />
-           
+
            {preferences?.email.enabled && (
              <>
                <div className="notification-types">
@@ -545,24 +534,26 @@ Implement a comprehensive notification system with in-app notifications, email n
                    />
                  ))}
                </div>
-               
+
                <Select
                  value={preferences.email.digest}
-                 onChange={(v) => setPreferences(prev => ({
-                   ...prev!,
-                   email: { ...prev!.email, digest: v }
-                 }))}
+                 onChange={(v) =>
+                   setPreferences((prev) => ({
+                     ...prev!,
+                     email: { ...prev!.email, digest: v },
+                   }))
+                 }
                  options={[
                    { value: 'immediate', label: 'Send immediately' },
                    { value: 'hourly', label: 'Hourly digest' },
                    { value: 'daily', label: 'Daily digest' },
-                   { value: 'weekly', label: 'Weekly digest' }
+                   { value: 'weekly', label: 'Weekly digest' },
                  ]}
                />
              </>
            )}
          </div>
-         
+
          <div className="preference-section">
            <h3>Push Notifications</h3>
            <PushNotificationSetup
@@ -570,15 +561,15 @@ Implement a comprehensive notification system with in-app notifications, email n
              onEnable={() => enablePushNotifications()}
            />
          </div>
-         
+
          <div className="preference-section">
            <h3>Quiet Hours</h3>
            <QuietHoursSettings
              settings={preferences?.quiet}
-             onChange={(quiet) => setPreferences(prev => ({ ...prev!, quiet }))}
+             onChange={(quiet) => setPreferences((prev) => ({ ...prev!, quiet }))}
            />
          </div>
-         
+
          <button onClick={savePreferences} disabled={saving}>
            {saving ? 'Saving...' : 'Save Preferences'}
          </button>
@@ -592,52 +583,52 @@ Implement a comprehensive notification system with in-app notifications, email n
    // lib/notifications/templates.ts
    class NotificationTemplateEngine {
      private templates = new Map<NotificationType, NotificationTemplate>();
-     
+
      constructor() {
        this.loadTemplates();
      }
-     
+
      private loadTemplates() {
        this.templates.set('content-generated', {
          title: 'Content Generation Complete',
          message: 'Your {{contentType}} content for "{{title}}" has been generated successfully.',
          email: {
            subject: '✨ Your content is ready!',
-           template: 'content-generated'
+           template: 'content-generated',
          },
          actions: [
            { label: 'View Content', action: 'view', primary: true },
-           { label: 'Edit', action: 'edit' }
-         ]
+           { label: 'Edit', action: 'edit' },
+         ],
        });
-       
+
        this.templates.set('generation-failed', {
          title: 'Content Generation Failed',
          message: 'Failed to generate {{contentType}} content: {{error}}',
          email: {
            subject: '⚠️ Content generation issue',
-           template: 'generation-failed'
+           template: 'generation-failed',
          },
          actions: [
            { label: 'Retry', action: 'retry', primary: true },
-           { label: 'View Details', action: 'details' }
-         ]
+           { label: 'View Details', action: 'details' },
+         ],
        });
-       
+
        this.templates.set('usage-alert', {
          title: 'Usage Alert',
          message: "You've used {{percentage}}% of your monthly {{resource}} allowance.",
          email: {
            subject: '📊 Usage alert for your account',
-           template: 'usage-alert'
+           template: 'usage-alert',
          },
          actions: [
            { label: 'View Usage', action: 'usage' },
-           { label: 'Upgrade Plan', action: 'upgrade' }
-         ]
+           { label: 'Upgrade Plan', action: 'upgrade' },
+         ],
        });
      }
-     
+
      render(
        type: NotificationType,
        data: any
@@ -646,14 +637,14 @@ Implement a comprehensive notification system with in-app notifications, email n
        if (!template) {
          throw new Error(`Template not found for type: ${type}`);
        }
-       
+
        return {
          title: this.interpolate(template.title, data),
          message: this.interpolate(template.message, data),
-         actions: template.actions
+         actions: template.actions,
        };
      }
-     
+
      private interpolate(template: string, data: any): string {
        return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
          return data[key] || match;

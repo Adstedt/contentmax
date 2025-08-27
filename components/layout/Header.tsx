@@ -13,9 +13,7 @@ export function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-white">{title}</h2>
-          {subtitle && (
-            <p className="mt-0.5 text-sm text-[#999]">{subtitle}</p>
-          )}
+          {subtitle && <p className="mt-0.5 text-sm text-[#999]">{subtitle}</p>}
         </div>
         <UserDropdown />
       </div>

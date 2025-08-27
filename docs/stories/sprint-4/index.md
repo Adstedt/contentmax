@@ -1,9 +1,11 @@
 # Sprint 4: Content Generation Engine
 
 ## Sprint Goal
+
 Build AI-powered content generation system with component architecture, template management, and OpenAI integration supporting multiple languages.
 
 ## Duration
+
 2 weeks
 
 ## Stories
@@ -41,6 +43,7 @@ Build AI-powered content generation system with component architecture, template
    - **Note**: UI remains English, only content is multilingual
 
 ## Component Types
+
 - HeroComponent
 - FAQComponent
 - ProductGridComponent
@@ -48,15 +51,18 @@ Build AI-powered content generation system with component architecture, template
 - TestimonialComponent
 
 ## Supported Languages
+
 - English, Spanish, French, German, Italian
 - Portuguese, Dutch, Polish, Swedish, Norwegian
 
 ## Dependencies
+
 - OpenAI API key configured
 - Supabase Edge Functions deployed
 - Template system designed
 
 ## Definition of Done
+
 - [ ] Can generate content for single page
 - [ ] Templates working for all content types
 - [ ] OpenAI integration resilient to failures
@@ -64,6 +70,7 @@ Build AI-powered content generation system with component architecture, template
 - [ ] Queue system handles concurrent jobs
 
 ## Quality Requirements
+
 - Generated content passes validation
 - Cost per generation <$0.10
 - Generation time <30 seconds per page

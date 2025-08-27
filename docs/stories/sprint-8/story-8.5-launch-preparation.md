@@ -1,28 +1,32 @@
 # Story 8.5: Launch Preparation & Go-Live
 
 ## User Story
+
 As a product owner,
 I want to ensure all launch preparations are complete and validated,
 So that ContentMax can be successfully launched with minimal risk and maximum reliability.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 8
 - **Dependencies**: Task 8.4 (Production Setup)
 
 ## Description
+
 Complete final launch preparations including performance testing, load testing, rollback planning, launch checklist verification, and coordination of the go-live process for ContentMax.
 
 ## Implementation Steps
 
 1. **Performance testing suite**
+
    ```typescript
    // tests/performance/performance-tests.ts
    import { test, expect } from '@playwright/test';
    import lighthouse from 'lighthouse';
    import * as chromeLauncher from 'chrome-launcher';
-   
+
    export class PerformanceTests {
      private metrics: PerformanceMetrics = {
        fcp: 0, // First Contentful Paint
@@ -32,21 +36,21 @@ Complete final launch preparations including performance testing, load testing, 
        ttfb: 0, // Time to First Byte
        tti: 0, // Time to Interactive
      };
-     
+
      async runLighthouseTest(url: string): Promise<LighthouseResult> {
        const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
-       
+
        const options = {
          logLevel: 'info',
          output: 'json',
          port: chrome.port,
        };
-       
+
        const runnerResult = await lighthouse(url, options);
        await chrome.kill();
-       
+
        const report = runnerResult.lhr;
-       
+
        return {
          performance: report.categories.performance.score * 100,
          accessibility: report.categories.accessibility.score * 100,
@@ -61,36 +65,29 @@ Complete final launch preparations including performance testing, load testing, 
          },
        };
      }
-     
+
      async testCoreWebVitals(): Promise<boolean> {
-       const pages = [
-         '/',
-         '/dashboard',
-         '/content',
-         '/generate',
-         '/taxonomy',
-         '/templates',
-       ];
-       
+       const pages = ['/', '/dashboard', '/content', '/generate', '/taxonomy', '/templates'];
+
        const results = [];
-       
+
        for (const page of pages) {
          const url = `${process.env.NEXT_PUBLIC_APP_URL}${page}`;
          const result = await this.runLighthouseTest(url);
-         
+
          results.push({
            page,
            ...result,
            passed: this.validateMetrics(result.metrics),
          });
        }
-       
+
        // Generate performance report
        await this.generateReport(results);
-       
-       return results.every(r => r.passed);
+
+       return results.every((r) => r.passed);
      }
-     
+
      private validateMetrics(metrics: PerformanceMetrics): boolean {
        const thresholds = {
          fcp: 1800, // 1.8s
@@ -100,12 +97,12 @@ Complete final launch preparations including performance testing, load testing, 
          ttfb: 600, // 600ms
          tti: 3800, // 3.8s
        };
-       
+
        return Object.entries(metrics).every(([key, value]) => {
          return value <= thresholds[key];
        });
      }
-     
+
      async testAPIPerformance(): Promise<APIPerformanceResult> {
        const endpoints = [
          { path: '/api/health', method: 'GET' },
@@ -114,27 +111,27 @@ Complete final launch preparations including performance testing, load testing, 
          { path: '/api/taxonomy', method: 'GET' },
          { path: '/api/templates', method: 'GET' },
        ];
-       
+
        const results = [];
-       
+
        for (const endpoint of endpoints) {
          const times = [];
-         
+
          // Run multiple iterations
          for (let i = 0; i < 100; i++) {
            const start = performance.now();
-           
+
            await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint.path}`, {
              method: endpoint.method,
              headers: {
                'Content-Type': 'application/json',
-               'Authorization': `Bearer ${process.env.TEST_API_KEY}`,
+               Authorization: `Bearer ${process.env.TEST_API_KEY}`,
              },
            });
-           
+
            times.push(performance.now() - start);
          }
-         
+
          results.push({
            endpoint: endpoint.path,
            method: endpoint.method,
@@ -145,7 +142,7 @@ Complete final launch preparations including performance testing, load testing, 
            p99: this.percentile(times, 99),
          });
        }
-       
+
        return {
          endpoints: results,
          summary: {
@@ -154,7 +151,7 @@ Complete final launch preparations including performance testing, load testing, 
          },
        };
      }
-     
+
      private percentile(arr: number[], p: number): number {
        const sorted = arr.sort((a, b) => a - b);
        const index = Math.ceil((p / 100) * sorted.length) - 1;
@@ -164,14 +161,15 @@ Complete final launch preparations including performance testing, load testing, 
    ```
 
 2. **Load testing configuration**
+
    ```typescript
    // tests/load/load-tests.ts
    import { check, sleep } from 'k6';
    import http from 'k6/http';
    import { Rate } from 'k6/metrics';
-   
+
    export const errorRate = new Rate('errors');
-   
+
    export const options = {
      stages: [
        { duration: '2m', target: 100 }, // Ramp up to 100 users
@@ -188,10 +186,10 @@ Complete final launch preparations including performance testing, load testing, 
        errors: ['rate<0.1'], // Custom error rate under 10%
      },
    };
-   
+
    export default function loadTest() {
      const BASE_URL = __ENV.BASE_URL || 'https://contentmax.ai';
-     
+
      // Test scenarios
      const scenarios = [
        () => testHomePage(BASE_URL),
@@ -200,45 +198,41 @@ Complete final launch preparations including performance testing, load testing, 
        () => testTaxonomyVisualization(BASE_URL),
        () => testBulkOperations(BASE_URL),
      ];
-     
+
      // Randomly execute scenarios
      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
      scenario();
-     
+
      sleep(Math.random() * 3 + 1); // Random sleep 1-4 seconds
    }
-   
+
    function testHomePage(baseUrl: string) {
      const response = http.get(baseUrl);
-     
+
      check(response, {
        'homepage status is 200': (r) => r.status === 200,
        'homepage loads quickly': (r) => r.timings.duration < 500,
      });
-     
+
      errorRate.add(response.status !== 200);
    }
-   
+
    function testAuthentication(baseUrl: string) {
      const loginData = {
        email: `user${Math.random()}@test.com`,
        password: 'testPassword123',
      };
-     
-     const response = http.post(
-       `${baseUrl}/api/auth/login`,
-       JSON.stringify(loginData),
-       {
-         headers: { 'Content-Type': 'application/json' },
-       }
-     );
-     
+
+     const response = http.post(`${baseUrl}/api/auth/login`, JSON.stringify(loginData), {
+       headers: { 'Content-Type': 'application/json' },
+     });
+
      check(response, {
        'auth response is 200 or 401': (r) => [200, 401].includes(r.status),
        'auth responds quickly': (r) => r.timings.duration < 300,
      });
    }
-   
+
    function testContentGeneration(baseUrl: string) {
      const generateData = {
        template: 'product-description',
@@ -247,66 +241,60 @@ Complete final launch preparations including performance testing, load testing, 
          category: 'Electronics',
        },
      };
-     
-     const response = http.post(
-       `${baseUrl}/api/generate`,
-       JSON.stringify(generateData),
-       {
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': 'Bearer test-token',
-         },
-         timeout: '60s',
-       }
-     );
-     
+
+     const response = http.post(`${baseUrl}/api/generate`, JSON.stringify(generateData), {
+       headers: {
+         'Content-Type': 'application/json',
+         Authorization: 'Bearer test-token',
+       },
+       timeout: '60s',
+     });
+
      check(response, {
        'generation completes': (r) => r.status === 200 || r.status === 401,
        'generation within timeout': (r) => r.timings.duration < 60000,
      });
-     
+
      errorRate.add(![200, 401].includes(response.status));
    }
-   
+
    function testTaxonomyVisualization(baseUrl: string) {
      const response = http.get(`${baseUrl}/api/taxonomy/nodes?limit=100`, {
        headers: {
-         'Authorization': 'Bearer test-token',
+         Authorization: 'Bearer test-token',
        },
      });
-     
+
      check(response, {
        'taxonomy loads': (r) => r.status === 200 || r.status === 401,
        'taxonomy response time': (r) => r.timings.duration < 1000,
      });
    }
-   
+
    function testBulkOperations(baseUrl: string) {
      const bulkData = {
        operation: 'generate',
-       items: Array(10).fill(null).map((_, i) => ({
-         id: i,
-         template: 'product-description',
-       })),
+       items: Array(10)
+         .fill(null)
+         .map((_, i) => ({
+           id: i,
+           template: 'product-description',
+         })),
      };
-     
-     const response = http.post(
-       `${baseUrl}/api/bulk`,
-       JSON.stringify(bulkData),
-       {
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': 'Bearer test-token',
-         },
-         timeout: '300s',
-       }
-     );
-     
+
+     const response = http.post(`${baseUrl}/api/bulk`, JSON.stringify(bulkData), {
+       headers: {
+         'Content-Type': 'application/json',
+         Authorization: 'Bearer test-token',
+       },
+       timeout: '300s',
+     });
+
      check(response, {
        'bulk operation accepted': (r) => [200, 202, 401].includes(r.status),
      });
    }
-   
+
    // Stress test configuration
    export const stressTestOptions = {
      stages: [
@@ -323,17 +311,18 @@ Complete final launch preparations including performance testing, load testing, 
    ```
 
 3. **Rollback strategy and automation**
+
    ```typescript
    // scripts/rollback/rollback-manager.ts
    import { exec } from 'child_process';
    import { promisify } from 'util';
-   
+
    const execAsync = promisify(exec);
-   
+
    export class RollbackManager {
      private deploymentHistory: Deployment[] = [];
      private currentDeployment: Deployment | null = null;
-     
+
      async createDeploymentSnapshot(): Promise<DeploymentSnapshot> {
        const snapshot: DeploymentSnapshot = {
          id: crypto.randomUUID(),
@@ -343,97 +332,90 @@ Complete final launch preparations including performance testing, load testing, 
          environmentVars: this.captureEnvironmentVars(),
          vercelDeployment: await this.getVercelDeploymentId(),
        };
-       
+
        // Store snapshot
        await this.storeSnapshot(snapshot);
-       
+
        return snapshot;
      }
-     
+
      async rollback(targetVersion?: string): Promise<RollbackResult> {
        console.log('🚨 Initiating rollback procedure...');
-       
+
        try {
          // 1. Get target deployment
-         const target = targetVersion 
+         const target = targetVersion
            ? await this.getDeployment(targetVersion)
            : await this.getPreviousStableDeployment();
-         
+
          if (!target) {
            throw new Error('No valid rollback target found');
          }
-         
+
          console.log(`📌 Rolling back to version: ${target.id}`);
-         
+
          // 2. Create backup of current state
          const currentBackup = await this.createDeploymentSnapshot();
          console.log('✅ Current state backed up');
-         
+
          // 3. Rollback database
          if (target.databaseBackup) {
            await this.rollbackDatabase(target.databaseBackup);
            console.log('✅ Database rolled back');
          }
-         
+
          // 4. Rollback Vercel deployment
          await this.rollbackVercelDeployment(target.vercelDeployment);
          console.log('✅ Application deployment rolled back');
-         
+
          // 5. Restore environment variables
          await this.restoreEnvironmentVars(target.environmentVars);
          console.log('✅ Environment variables restored');
-         
+
          // 6. Clear caches
          await this.clearAllCaches();
          console.log('✅ Caches cleared');
-         
+
          // 7. Run health checks
          const healthCheck = await this.runHealthChecks();
-         
+
          if (!healthCheck.passed) {
            throw new Error('Health checks failed after rollback');
          }
-         
+
          console.log('✅ Health checks passed');
-         
+
          // 8. Notify team
          await this.notifyRollbackComplete(target);
-         
+
          return {
            success: true,
            rolledBackTo: target.id,
            timestamp: new Date().toISOString(),
            healthCheck,
          };
-         
        } catch (error) {
          console.error('❌ Rollback failed:', error);
-         
+
          // Attempt emergency recovery
          await this.emergencyRecovery();
-         
+
          throw error;
        }
      }
-     
+
      private async rollbackDatabase(backupId: string): Promise<void> {
        // Download backup from S3
-       await execAsync(
-         `aws s3 cp s3://contentmax-backups/database/${backupId} /tmp/restore.sql`
-       );
-       
+       await execAsync(`aws s3 cp s3://contentmax-backups/database/${backupId} /tmp/restore.sql`);
+
        // Restore to Supabase
-       await execAsync(
-         `supabase db push --db-url ${process.env.DATABASE_URL} < /tmp/restore.sql`
-       );
+       await execAsync(`supabase db push --db-url ${process.env.DATABASE_URL} < /tmp/restore.sql`);
      }
-     
+
      private async rollbackVercelDeployment(deploymentId: string): Promise<void> {
-       await execAsync(
-         `vercel rollback ${deploymentId} --token ${process.env.VERCEL_TOKEN}`
-       );
+       await execAsync(`vercel rollback ${deploymentId} --token ${process.env.VERCEL_TOKEN}`);
      }
-     
+
      private async clearAllCaches(): Promise<void> {
        // Clear Cloudflare cache
        await fetch(
@@ -441,30 +423,30 @@ Complete final launch preparations including performance testing, load testing, 
          {
            method: 'POST',
            headers: {
-             'Authorization': `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+             Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
              'Content-Type': 'application/json',
            },
            body: JSON.stringify({ purge_everything: true }),
          }
        );
-       
+
        // Clear Redis cache if applicable
        // await redis.flushall();
      }
-     
+
      private async emergencyRecovery(): Promise<void> {
        console.log('🆘 Attempting emergency recovery...');
-       
+
        // Switch to maintenance mode
        await this.enableMaintenanceMode();
-       
+
        // Restore last known good configuration
        const lastGoodConfig = await this.getLastKnownGoodConfig();
-       
+
        if (lastGoodConfig) {
          await this.applyConfiguration(lastGoodConfig);
        }
-       
+
        // Alert on-call engineer
        await this.alertOnCall({
          severity: 'critical',
@@ -472,17 +454,14 @@ Complete final launch preparations including performance testing, load testing, 
        });
      }
    }
-   
+
    // scripts/rollback/rollback-cli.ts
    import { Command } from 'commander';
-   
+
    const program = new Command();
-   
-   program
-     .name('rollback')
-     .description('ContentMax rollback utility')
-     .version('1.0.0');
-   
+
+   program.name('rollback').description('ContentMax rollback utility').version('1.0.0');
+
    program
      .command('execute [version]')
      .description('Execute rollback to specified version or previous stable')
@@ -490,7 +469,7 @@ Complete final launch preparations including performance testing, load testing, 
      .option('--force', 'Force rollback even if health checks fail')
      .action(async (version, options) => {
        const manager = new RollbackManager();
-       
+
        if (options.dryRun) {
          console.log('🔍 DRY RUN MODE - No changes will be made');
          await manager.simulateRollback(version);
@@ -498,32 +477,35 @@ Complete final launch preparations including performance testing, load testing, 
          const confirmation = await confirm(
            '⚠️  This will rollback the production environment. Continue?'
          );
-         
+
          if (confirmation || options.force) {
            await manager.rollback(version);
          }
        }
      });
-   
+
    program
      .command('list')
      .description('List available rollback points')
      .action(async () => {
        const manager = new RollbackManager();
        const deployments = await manager.listDeployments();
-       
-       console.table(deployments.map(d => ({
-         Version: d.id,
-         Date: d.timestamp,
-         Commit: d.gitCommit.slice(0, 7),
-         Status: d.status,
-       })));
+
+       console.table(
+         deployments.map((d) => ({
+           Version: d.id,
+           Date: d.timestamp,
+           Commit: d.gitCommit.slice(0, 7),
+           Status: d.status,
+         }))
+       );
      });
-   
+
    program.parse();
    ```
 
 4. **Launch checklist automation**
+
    ```typescript
    // scripts/launch/launch-checklist.ts
    export class LaunchChecklist {
@@ -550,7 +532,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: false,
          check: async () => this.checkCDNStatus(),
        },
-       
+
        // Security checks
        {
          id: 'sec-headers',
@@ -573,7 +555,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: false,
          check: async () => this.checkCSP(),
        },
-       
+
        // Database checks
        {
          id: 'db-migrations',
@@ -596,7 +578,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: false,
          check: async () => this.checkDatabaseIndexes(),
        },
-       
+
        // Application checks
        {
          id: 'app-health',
@@ -619,7 +601,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: true,
          check: async () => this.checkAPIEndpoints(),
        },
-       
+
        // Monitoring checks
        {
          id: 'mon-sentry',
@@ -642,7 +624,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: true,
          check: async () => this.checkAlertConfiguration(),
        },
-       
+
        // Performance checks
        {
          id: 'perf-lighthouse',
@@ -658,7 +640,7 @@ Complete final launch preparations including performance testing, load testing, 
          critical: true,
          check: async () => this.checkLoadTestResults(),
        },
-       
+
        // Documentation checks
        {
          id: 'doc-readme',
@@ -682,22 +664,22 @@ Complete final launch preparations including performance testing, load testing, 
          check: async () => this.checkRunbook(),
        },
      ];
-     
+
      async runChecklist(): Promise<ChecklistResult> {
        console.log('🚀 Running launch checklist...\n');
-       
+
        const results: CheckResult[] = [];
-       const categories = new Set(this.checks.map(c => c.category));
-       
+       const categories = new Set(this.checks.map((c) => c.category));
+
        for (const category of categories) {
          console.log(`\n📋 ${category.toUpperCase()}`);
          console.log('─'.repeat(40));
-         
-         const categoryChecks = this.checks.filter(c => c.category === category);
-         
+
+         const categoryChecks = this.checks.filter((c) => c.category === category);
+
          for (const check of categoryChecks) {
            process.stdout.write(`  ⏳ ${check.name}...`);
-           
+
            try {
              const result = await check.check();
              results.push({
@@ -706,7 +688,7 @@ Complete final launch preparations including performance testing, load testing, 
                message: result.message,
                details: result.details,
              });
-             
+
              if (result.success) {
                process.stdout.write('\r  ✅ ' + check.name + '\n');
              } else {
@@ -725,7 +707,7 @@ Complete final launch preparations including performance testing, load testing, 
            }
          }
        }
-       
+
        // Generate summary
        const summary = this.generateSummary(results);
        console.log('\n' + '═'.repeat(50));
@@ -735,44 +717,46 @@ Complete final launch preparations including performance testing, load testing, 
        console.log(`✅ Passed: ${summary.passed}`);
        console.log(`❌ Failed: ${summary.failed}`);
        console.log(`🔴 Critical Failures: ${summary.criticalFailures}`);
-       
+
        if (summary.criticalFailures > 0) {
          console.log('\n⚠️  LAUNCH BLOCKED: Critical checks failed!');
          console.log('Failed critical checks:');
          results
-           .filter(r => !r.passed && r.critical)
-           .forEach(r => console.log(`  - ${r.name}: ${r.message}`));
+           .filter((r) => !r.passed && r.critical)
+           .forEach((r) => console.log(`  - ${r.name}: ${r.message}`));
        } else if (summary.failed > 0) {
          console.log('\n⚠️  WARNING: Some non-critical checks failed');
          console.log('Consider addressing these before launch');
        } else {
          console.log('\n✨ ALL CHECKS PASSED! Ready for launch! 🚀');
        }
-       
+
        // Save report
        await this.saveReport(results);
-       
+
        return {
          results,
          summary,
          canLaunch: summary.criticalFailures === 0,
        };
      }
-     
+
      private async checkSSLCertificate(): Promise<CheckResult> {
        const { exec } = require('child_process');
        const { promisify } = require('util');
        const execAsync = promisify(exec);
-       
+
        try {
          const { stdout } = await execAsync(
            `echo | openssl s_client -connect contentmax.ai:443 -servername contentmax.ai 2>/dev/null | openssl x509 -noout -dates`
          );
-         
+
          const notAfter = stdout.match(/notAfter=(.*)/)?.[1];
          const expiryDate = new Date(notAfter!);
-         const daysUntilExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-         
+         const daysUntilExpiry = Math.floor(
+           (expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+         );
+
          return {
            success: daysUntilExpiry > 30,
            message: `Certificate expires in ${daysUntilExpiry} days`,
@@ -785,12 +769,12 @@ Complete final launch preparations including performance testing, load testing, 
          };
        }
      }
-     
+
      private async checkHealthEndpoint(): Promise<CheckResult> {
        try {
          const response = await fetch('https://contentmax.ai/api/health');
          const data = await response.json();
-         
+
          return {
            success: response.ok && data.status === 'healthy',
            message: data.status,
@@ -803,117 +787,115 @@ Complete final launch preparations including performance testing, load testing, 
          };
        }
      }
-     
+
      private generateSummary(results: CheckResult[]): ChecklistSummary {
        return {
          total: results.length,
-         passed: results.filter(r => r.passed).length,
-         failed: results.filter(r => !r.passed).length,
-         criticalFailures: results.filter(r => !r.passed && r.critical).length,
+         passed: results.filter((r) => r.passed).length,
+         failed: results.filter((r) => !r.passed).length,
+         criticalFailures: results.filter((r) => !r.passed && r.critical).length,
        };
      }
-     
+
      private async saveReport(results: CheckResult[]): Promise<void> {
        const report = {
          timestamp: new Date().toISOString(),
          results,
          summary: this.generateSummary(results),
        };
-       
+
        const fs = require('fs').promises;
-       await fs.writeFile(
-         `launch-report-${Date.now()}.json`,
-         JSON.stringify(report, null, 2)
-       );
+       await fs.writeFile(`launch-report-${Date.now()}.json`, JSON.stringify(report, null, 2));
      }
    }
    ```
 
 5. **Go-live coordination script**
+
    ```typescript
    // scripts/launch/go-live.ts
    import { LaunchChecklist } from './launch-checklist';
    import { RollbackManager } from '../rollback/rollback-manager';
    import { MonitoringSetup } from '../../lib/monitoring/monitoring-setup';
-   
+
    export class GoLiveCoordinator {
      private checklist: LaunchChecklist;
      private rollback: RollbackManager;
      private startTime: number;
-     
+
      constructor() {
        this.checklist = new LaunchChecklist();
        this.rollback = new RollbackManager();
        this.startTime = Date.now();
      }
-     
+
      async executeLaunch(): Promise<LaunchResult> {
        console.log('🚀 CONTENTMAX GO-LIVE SEQUENCE INITIATED');
-       console.log('=' .repeat(50));
+       console.log('='.repeat(50));
        console.log(`Start time: ${new Date().toISOString()}`);
-       console.log('=' .repeat(50) + '\n');
-       
+       console.log('='.repeat(50) + '\n');
+
        try {
          // Phase 1: Pre-launch validation
          console.log('📋 PHASE 1: Pre-launch Validation');
          const checklistResult = await this.checklist.runChecklist();
-         
+
          if (!checklistResult.canLaunch) {
            throw new Error('Pre-launch validation failed - critical checks not passing');
          }
-         
+
          // Phase 2: Create rollback point
          console.log('\n📸 PHASE 2: Creating Rollback Point');
          const snapshot = await this.rollback.createDeploymentSnapshot();
          console.log(`✅ Rollback point created: ${snapshot.id}`);
-         
+
          // Phase 3: Enable maintenance mode
          console.log('\n🔧 PHASE 3: Enabling Maintenance Mode');
          await this.enableMaintenanceMode();
          console.log('✅ Maintenance mode active');
-         
+
          // Phase 4: Database migrations
          console.log('\n💾 PHASE 4: Running Database Migrations');
          await this.runDatabaseMigrations();
          console.log('✅ Database migrations complete');
-         
+
          // Phase 5: Deploy application
          console.log('\n🚢 PHASE 5: Deploying Application');
          const deployment = await this.deployApplication();
          console.log(`✅ Application deployed: ${deployment.url}`);
-         
+
          // Phase 6: Smoke tests
          console.log('\n🧪 PHASE 6: Running Smoke Tests');
          await this.runSmokeTests(deployment.url);
          console.log('✅ Smoke tests passed');
-         
+
          // Phase 7: Switch traffic
          console.log('\n🔀 PHASE 7: Switching Traffic');
          await this.switchTraffic(deployment.url);
          console.log('✅ Traffic switched to new deployment');
-         
+
          // Phase 8: Disable maintenance mode
          console.log('\n✨ PHASE 8: Disabling Maintenance Mode');
          await this.disableMaintenanceMode();
          console.log('✅ Site is now live!');
-         
+
          // Phase 9: Post-launch monitoring
          console.log('\n📊 PHASE 9: Post-launch Monitoring');
          await this.startPostLaunchMonitoring();
          console.log('✅ Monitoring active');
-         
+
          // Phase 10: Notification
          console.log('\n📢 PHASE 10: Sending Notifications');
          await this.notifyLaunchComplete();
          console.log('✅ Team notified');
-         
+
          const duration = Date.now() - this.startTime;
-         
-         console.log('\n' + '=' .repeat(50));
+
+         console.log('\n' + '='.repeat(50));
          console.log('🎉 LAUNCH SUCCESSFUL! 🎉');
          console.log(`Total duration: ${Math.round(duration / 1000)}s`);
-         console.log('=' .repeat(50));
-         
+         console.log('='.repeat(50));
+
          return {
            success: true,
            deploymentId: deployment.id,
@@ -921,50 +903,49 @@ Complete final launch preparations including performance testing, load testing, 
            duration,
            snapshot: snapshot.id,
          };
-         
        } catch (error) {
          console.error('\n❌ LAUNCH FAILED:', error.message);
          console.log('\n🔄 Initiating automatic rollback...');
-         
+
          await this.rollback.rollback();
-         
+
          await this.notifyLaunchFailed(error);
-         
+
          throw error;
        }
      }
-     
+
      private async enableMaintenanceMode(): Promise<void> {
        // Update environment variable
        await this.updateEnvironmentVariable('MAINTENANCE_MODE', 'true');
-       
+
        // Wait for propagation
        await this.sleep(5000);
      }
-     
+
      private async disableMaintenanceMode(): Promise<void> {
        await this.updateEnvironmentVariable('MAINTENANCE_MODE', 'false');
        await this.sleep(5000);
      }
-     
+
      private async deployApplication(): Promise<Deployment> {
        const { exec } = require('child_process');
        const { promisify } = require('util');
        const execAsync = promisify(exec);
-       
+
        // Deploy to Vercel
        const { stdout } = await execAsync('vercel --prod --token $VERCEL_TOKEN');
-       
+
        const urlMatch = stdout.match(/https:\/\/[^\s]+/);
        const url = urlMatch?.[0] || '';
-       
+
        return {
          id: crypto.randomUUID(),
          url,
          timestamp: new Date().toISOString(),
        };
      }
-     
+
      private async runSmokeTests(url: string): Promise<void> {
        const tests = [
          { path: '/', expectedStatus: 200 },
@@ -972,10 +953,10 @@ Complete final launch preparations including performance testing, load testing, 
          { path: '/login', expectedStatus: 200 },
          { path: '/dashboard', expectedStatus: 302 }, // Redirect when not logged in
        ];
-       
+
        for (const test of tests) {
          const response = await fetch(`${url}${test.path}`);
-         
+
          if (response.status !== test.expectedStatus) {
            throw new Error(
              `Smoke test failed: ${test.path} returned ${response.status}, expected ${test.expectedStatus}`
@@ -983,32 +964,32 @@ Complete final launch preparations including performance testing, load testing, 
          }
        }
      }
-     
+
      private async switchTraffic(newUrl: string): Promise<void> {
        // Update DNS or load balancer
        // This is environment-specific
        console.log(`  Switching production traffic to ${newUrl}`);
      }
-     
+
      private async startPostLaunchMonitoring(): Promise<void> {
        // Initialize enhanced monitoring
        MonitoringSetup.initializeSentry();
        MonitoringSetup.initializeMetrics();
-       
+
        // Start monitoring critical metrics
        setInterval(async () => {
          const metrics = await this.collectMetrics();
-         
+
          if (metrics.errorRate > 0.05) {
            console.warn('⚠️  High error rate detected:', metrics.errorRate);
          }
-         
+
          if (metrics.responseTime > 1000) {
            console.warn('⚠️  High response time detected:', metrics.responseTime);
          }
        }, 60000); // Check every minute
      }
-     
+
      private async notifyLaunchComplete(): Promise<void> {
        const message = {
          text: '🎉 ContentMax is now LIVE!',
@@ -1042,20 +1023,20 @@ Complete final launch preparations including performance testing, load testing, 
            },
          ],
        };
-       
+
        // Send to Slack/Discord/Email
        await this.sendNotification(message);
      }
-     
+
      private sleep(ms: number): Promise<void> {
-       return new Promise(resolve => setTimeout(resolve, ms));
+       return new Promise((resolve) => setTimeout(resolve, ms));
      }
    }
-   
+
    // Entry point
    async function main() {
      const coordinator = new GoLiveCoordinator();
-     
+
      try {
        await coordinator.executeLaunch();
        process.exit(0);
@@ -1064,7 +1045,7 @@ Complete final launch preparations including performance testing, load testing, 
        process.exit(1);
      }
    }
-   
+
    if (require.main === module) {
      main();
    }
@@ -1085,23 +1066,27 @@ Complete final launch preparations including performance testing, load testing, 
 ## Launch Timeline
 
 ### T-7 Days
+
 - [ ] Code freeze for launch features
 - [ ] Begin performance testing
 - [ ] Security audit initiated
 
 ### T-3 Days
+
 - [ ] Load testing completed
 - [ ] All critical bugs resolved
 - [ ] Documentation finalized
 - [ ] Team training completed
 
 ### T-1 Day
+
 - [ ] Final launch checklist run
 - [ ] Rollback procedures tested
 - [ ] Team briefing conducted
 - [ ] Monitoring dashboards prepared
 
 ### Launch Day
+
 - [ ] 09:00 - Final system checks
 - [ ] 10:00 - Create rollback point
 - [ ] 10:30 - Enable maintenance mode

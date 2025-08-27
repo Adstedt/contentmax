@@ -1,82 +1,73 @@
-import React from 'react'
-import { cn } from '@/lib/utils'
-import { AlertCircle, CheckCircle, Info, XCircle, X } from 'lucide-react'
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { AlertCircle, CheckCircle, Info, XCircle, X } from 'lucide-react';
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'info' | 'success' | 'warning' | 'error'
-  title?: string
-  dismissible?: boolean
-  onDismiss?: () => void
-  icon?: React.ReactNode
-  showIcon?: boolean
+  variant?: 'info' | 'success' | 'warning' | 'error';
+  title?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
+  icon?: React.ReactNode;
+  showIcon?: boolean;
 }
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  ({ 
-    variant = 'info', 
-    title, 
-    dismissible = false,
-    onDismiss,
-    icon,
-    showIcon = true,
-    className, 
-    children, 
-    ...props 
-  }, ref) => {
+  (
+    {
+      variant = 'info',
+      title,
+      dismissible = false,
+      onDismiss,
+      icon,
+      showIcon = true,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const variants = {
       info: {
         container: 'bg-blue-50 border-blue-200 text-blue-800',
         icon: <Info className="h-5 w-5 text-blue-400" />,
-        title: 'text-blue-800'
+        title: 'text-blue-800',
       },
       success: {
         container: 'bg-green-50 border-green-200 text-green-800',
         icon: <CheckCircle className="h-5 w-5 text-green-400" />,
-        title: 'text-green-800'
+        title: 'text-green-800',
       },
       warning: {
         container: 'bg-yellow-50 border-yellow-200 text-yellow-800',
         icon: <AlertCircle className="h-5 w-5 text-yellow-400" />,
-        title: 'text-yellow-800'
+        title: 'text-yellow-800',
       },
       error: {
         container: 'bg-red-50 border-red-200 text-red-800',
         icon: <XCircle className="h-5 w-5 text-red-400" />,
-        title: 'text-red-800'
-      }
-    }
+        title: 'text-red-800',
+      },
+    };
 
-    const variantStyles = variants[variant]
-    const displayIcon = icon || variantStyles.icon
+    const variantStyles = variants[variant];
+    const displayIcon = icon || variantStyles.icon;
 
     return (
       <div
         ref={ref}
         role="alert"
-        className={cn(
-          'rounded-md border p-4',
-          variantStyles.container,
-          className
-        )}
+        className={cn('rounded-md border p-4', variantStyles.container, className)}
         {...props}
       >
         <div className="flex">
-          {showIcon && displayIcon && (
-            <div className="flex-shrink-0">
-              {displayIcon}
-            </div>
-          )}
+          {showIcon && displayIcon && <div className="flex-shrink-0">{displayIcon}</div>}
           <div className={cn('flex-1', showIcon && displayIcon && 'ml-3')}>
             {title && (
               <h3 className={cn('text-sm font-medium', variantStyles.title, children && 'mb-1')}>
                 {title}
               </h3>
             )}
-            {children && (
-              <div className="text-sm">
-                {children}
-              </div>
-            )}
+            {children && <div className="text-sm">{children}</div>}
           </div>
           {(dismissible || onDismiss) && (
             <div className="ml-auto pl-3">
@@ -99,10 +90,10 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
           )}
         </div>
       </div>
-    )
+    );
   }
-)
+);
 
-Alert.displayName = 'Alert'
+Alert.displayName = 'Alert';
 
-export default Alert
+export default Alert;

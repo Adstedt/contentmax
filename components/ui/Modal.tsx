@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import React, { useEffect, useCallback } from 'react'
-import { cn } from '@/lib/utils'
-import { X } from 'lucide-react'
+import React, { useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 export interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  title?: string
-  children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  closeOnOverlayClick?: boolean
-  showCloseButton?: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  closeOnOverlayClick?: boolean;
+  showCloseButton?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -21,37 +21,40 @@ const Modal: React.FC<ModalProps> = ({
   children,
   size = 'md',
   closeOnOverlayClick = true,
-  showCloseButton = true
+  showCloseButton = true,
 }) => {
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
-  }
+    xl: 'max-w-4xl',
+  };
 
-  const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
-    }
-  }, [onClose])
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen, handleEscape])
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, handleEscape]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 overflow-y-auto"
       aria-labelledby="modal-title"
       role="dialog"
@@ -91,13 +94,11 @@ const Modal: React.FC<ModalProps> = ({
             </div>
           )}
 
-          <div className="px-6 py-4">
-            {children}
-          </div>
+          <div className="px-6 py-4">{children}</div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Modal
+export default Modal;

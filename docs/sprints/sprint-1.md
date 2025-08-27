@@ -1,12 +1,15 @@
 # Sprint 1: Foundation & Core Setup
 
 ## Sprint Goal
+
 Establish project foundation, authentication system, and basic dashboard interface.
 
 ## Duration
+
 2 weeks
 
 ## Sprint Overview
+
 This sprint lays the groundwork for the entire ContentMax application. Focus is on creating a solid technical foundation with Next.js 15, Supabase authentication, and core UI components.
 
 ---
@@ -14,9 +17,11 @@ This sprint lays the groundwork for the entire ContentMax application. Focus is 
 ## Tasks
 
 ### Task 1.1: Project Initialization
+
 **Size**: M (4 hours) | **Priority**: P0 - Critical | **Dependencies**: None
 
 **Implementation Steps**:
+
 ```bash
 # Create Next.js app with TypeScript
 npx create-next-app@latest contentmax --typescript --tailwind --app --src-dir --import-alias "@/*"
@@ -27,6 +32,7 @@ npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
 ```
 
 **Files to Create/Modify**:
+
 - `package.json` - Exact versions from architecture
 - `tailwind.config.ts` - Custom design system configuration
 - `.eslintrc.json` - Linting rules
@@ -34,6 +40,7 @@ npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
 - `tsconfig.json` - TypeScript configuration
 
 **Acceptance Criteria**:
+
 - [ ] Next.js 15 project initialized with TypeScript
 - [ ] Tailwind CSS configured with custom design tokens
 - [ ] ESLint and Prettier working with pre-commit hooks
@@ -43,9 +50,11 @@ npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
 ---
 
 ### Task 1.2: Supabase Setup & Database Schema
+
 **Size**: L (8 hours) | **Priority**: P0 - Critical | **Dependencies**: Task 1.1
 
 **Implementation Steps**:
+
 1. Create Supabase project and get credentials
 2. Install Supabase client libraries
 3. Create initial database schema migration
@@ -70,12 +79,14 @@ CREATE TABLE users (
 ```
 
 **Files to Create**:
+
 - `supabase/migrations/001_initial_schema.sql`
 - `lib/supabase/client.ts` - Client-side Supabase instance
 - `lib/supabase/server.ts` - Server-side Supabase instance
 - `types/database.types.ts` - Generated database types
 
 **Acceptance Criteria**:
+
 - [ ] Supabase project created and configured
 - [ ] Database schema migration applied successfully
 - [ ] Type-safe database client configured
@@ -84,28 +95,33 @@ CREATE TABLE users (
 ---
 
 ### Task 1.3: Authentication Implementation
+
 **Size**: L (8 hours) | **Priority**: P0 - Critical | **Dependencies**: Task 1.2
 
 **Implementation Steps**:
+
 1. Configure Supabase Auth with Google OAuth
 2. Create authentication UI components
 3. Set up middleware for route protection
 4. Implement login/signup flows
 
 **Files to Create**:
+
 - `app/auth/login/page.tsx` - Login page
-- `app/auth/signup/page.tsx` - Signup page  
+- `app/auth/signup/page.tsx` - Signup page
 - `app/auth/callback/route.ts` - OAuth callback handler
 - `middleware.ts` - Route protection middleware
 - `components/auth/LoginForm.tsx` - Login form component
 - `components/auth/SignupForm.tsx` - Signup form component
 
 **Technical Notes**:
+
 - Use Supabase Auth with email/password + Google OAuth
 - Implement proper error handling for auth failures
 - Add loading states during authentication
 
 **Acceptance Criteria**:
+
 - [ ] Users can sign up with email/password
 - [ ] Google OAuth login working
 - [ ] Protected routes redirect unauthenticated users
@@ -115,25 +131,30 @@ CREATE TABLE users (
 ---
 
 ### Task 1.4: Basic Dashboard UI
+
 **Size**: M (4 hours) | **Priority**: P0 - Critical | **Dependencies**: Task 1.3
 
 **Implementation Steps**:
+
 1. Create dashboard layout with sidebar and header
 2. Add placeholder metric cards
 3. Implement basic navigation structure
 
 **Files to Create**:
+
 - `app/dashboard/page.tsx` - Main dashboard page
 - `components/dashboard/MetricCard.tsx` - Metric display component
 - `components/layout/Sidebar.tsx` - Navigation sidebar
 - `components/layout/Header.tsx` - Top header with user menu
 
 **UI Requirements**:
+
 - Responsive layout for desktop and mobile
 - Clean, professional design following Tailwind patterns
 - Placeholder metrics: "Sites Analyzed", "Content Generated", "Pages Published"
 
 **Acceptance Criteria**:
+
 - [ ] Dashboard loads after authentication
 - [ ] Sidebar navigation functional
 - [ ] Header shows user info and logout option
@@ -142,15 +163,18 @@ CREATE TABLE users (
 
 ---
 
-### Task 1.5: Component Library Setup  
+### Task 1.5: Component Library Setup
+
 **Size**: S (2 hours) | **Priority**: P1 - High | **Dependencies**: Task 1.1
 
 **Implementation Steps**:
+
 1. Create base UI components using Tailwind
 2. Implement consistent styling patterns
 3. Add TypeScript prop interfaces
 
 **Files to Create**:
+
 - `components/ui/Button.tsx` - Reusable button component
 - `components/ui/Card.tsx` - Card container component
 - `components/ui/Input.tsx` - Form input component
@@ -158,12 +182,14 @@ CREATE TABLE users (
 - `components/ui/Modal.tsx` - Modal dialog component
 
 **Design Requirements**:
+
 - Follow consistent color scheme and spacing
 - Include hover states and focus management
 - Support different sizes and variants
 - Accessible with proper ARIA attributes
 
 **Acceptance Criteria**:
+
 - [ ] All base UI components implemented
 - [ ] Components follow consistent design patterns
 - [ ] TypeScript interfaces defined for all props
@@ -174,11 +200,13 @@ CREATE TABLE users (
 ## Dependencies & Prerequisites
 
 **External Dependencies**:
+
 - Supabase project created with valid credentials
 - Google OAuth app configured for authentication
 - Domain configured for OAuth callbacks
 
 **Technical Prerequisites**:
+
 - Node.js 18+ installed
 - Git repository initialized
 - Access to Supabase dashboard
@@ -188,6 +216,7 @@ CREATE TABLE users (
 ## Definition of Done
 
 **Sprint 1 is complete when**:
+
 - [ ] User can create account and log in successfully
 - [ ] Dashboard loads with basic layout and navigation
 - [ ] All authentication flows working (email/password + Google OAuth)
@@ -197,6 +226,7 @@ CREATE TABLE users (
 - [ ] Development environment fully configured with linting/formatting
 
 **Demo Criteria**:
+
 - Show complete signup → login → dashboard flow
 - Demonstrate responsive design on different screen sizes
 - Show Google OAuth integration working
@@ -207,12 +237,14 @@ CREATE TABLE users (
 ## Technical Warnings
 
 ⚠️ **Critical Setup Items**:
+
 - Ensure Supabase Row Level Security (RLS) is configured properly
 - Test OAuth callback URLs in both development and production
 - Verify environment variables are properly secured
 - Double-check database migration runs successfully
 
 ⚠️ **Common Pitfalls**:
+
 - Supabase client/server configuration differences
 - OAuth redirect URI mismatches
 - Middleware infinite redirect loops

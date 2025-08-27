@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import React, { useState, useRef, useEffect } from 'react'
-import { cn } from '@/lib/utils'
+import React, { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 export interface TooltipProps {
-  content: React.ReactNode
-  children: React.ReactNode
-  position?: 'top' | 'bottom' | 'left' | 'right'
-  delay?: number
-  className?: string
+  content: React.ReactNode;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  delay?: number;
+  className?: string;
 }
 
 const Tooltip: React.FC<TooltipProps> = ({
@@ -16,55 +16,71 @@ const Tooltip: React.FC<TooltipProps> = ({
   children,
   position = 'top',
   delay = 200,
-  className
+  className,
 }) => {
-  const [isVisible, setIsVisible] = useState(false)
-  const [coords, setCoords] = useState({ x: 0, y: 0 })
-  const triggerRef = useRef<HTMLDivElement>(null)
-  const tooltipRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const [isVisible, setIsVisible] = useState(false);
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const positionClasses = {
     top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
     bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
     left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2'
-  }
+    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+  };
 
   const arrowClasses = {
     top: 'top-full left-1/2 -translate-x-1/2 -mt-1',
     bottom: 'bottom-full left-1/2 -translate-x-1/2 -mb-1',
     left: 'left-full top-1/2 -translate-y-1/2 -ml-1',
-    right: 'right-full top-1/2 -translate-y-1/2 -mr-1'
-  }
+    right: 'right-full top-1/2 -translate-y-1/2 -mr-1',
+  };
 
   const arrowStyles = {
-    top: { borderTop: '4px solid #1f2937', borderLeft: '4px solid transparent', borderRight: '4px solid transparent' },
-    bottom: { borderBottom: '4px solid #1f2937', borderLeft: '4px solid transparent', borderRight: '4px solid transparent' },
-    left: { borderLeft: '4px solid #1f2937', borderTop: '4px solid transparent', borderBottom: '4px solid transparent' },
-    right: { borderRight: '4px solid #1f2937', borderTop: '4px solid transparent', borderBottom: '4px solid transparent' }
-  }
+    top: {
+      borderTop: '4px solid #1f2937',
+      borderLeft: '4px solid transparent',
+      borderRight: '4px solid transparent',
+    },
+    bottom: {
+      borderBottom: '4px solid #1f2937',
+      borderLeft: '4px solid transparent',
+      borderRight: '4px solid transparent',
+    },
+    left: {
+      borderLeft: '4px solid #1f2937',
+      borderTop: '4px solid transparent',
+      borderBottom: '4px solid transparent',
+    },
+    right: {
+      borderRight: '4px solid #1f2937',
+      borderTop: '4px solid transparent',
+      borderBottom: '4px solid transparent',
+    },
+  };
 
   const showTooltip = () => {
     timeoutRef.current = setTimeout(() => {
-      setIsVisible(true)
-    }, delay)
-  }
+      setIsVisible(true);
+    }, delay);
+  };
 
   const hideTooltip = () => {
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
+      clearTimeout(timeoutRef.current);
     }
-    setIsVisible(false)
-  }
+    setIsVisible(false);
+  };
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   return (
     <div className="relative inline-block">
@@ -77,7 +93,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       >
         {children}
       </div>
-      
+
       {isVisible && (
         <div
           ref={tooltipRef}
@@ -97,7 +113,7 @@ const Tooltip: React.FC<TooltipProps> = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Tooltip
+export default Tooltip;

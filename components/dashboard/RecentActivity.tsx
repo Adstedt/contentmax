@@ -18,7 +18,7 @@ const mockActivities: ActivityItem[] = [
     title: 'Blog Post Published',
     description: 'Ultimate Guide to Content Marketing Strategy',
     timestamp: '2 hours ago',
-    user: 'Sarah Johnson'
+    user: 'Sarah Johnson',
   },
   {
     id: '2',
@@ -26,7 +26,7 @@ const mockActivities: ActivityItem[] = [
     title: 'Review Completed',
     description: '5 articles reviewed and approved',
     timestamp: '4 hours ago',
-    user: 'Mike Chen'
+    user: 'Mike Chen',
   },
   {
     id: '3',
@@ -34,14 +34,14 @@ const mockActivities: ActivityItem[] = [
     title: 'New Content Generated',
     description: '12 new product descriptions created',
     timestamp: '6 hours ago',
-    user: 'AI Assistant'
+    user: 'AI Assistant',
   },
   {
     id: '4',
     type: 'alert',
     title: 'Low Coverage Alert',
     description: 'Electronics category at 45% coverage',
-    timestamp: '8 hours ago'
+    timestamp: '8 hours ago',
   },
   {
     id: '5',
@@ -49,8 +49,8 @@ const mockActivities: ActivityItem[] = [
     title: 'Landing Page Updated',
     description: 'Summer Sale 2024 campaign page',
     timestamp: '1 day ago',
-    user: 'Emily Davis'
-  }
+    user: 'Emily Davis',
+  },
 ];
 
 export function RecentActivity() {

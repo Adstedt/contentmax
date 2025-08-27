@@ -1,17 +1,20 @@
 # Story 1.3: Authentication Implementation
 
 ## User Story
+
 As a user,
 I want to securely log in with Google or email/password,
 So that I can access my content management workspace.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 1
 - **Dependencies**: Task 1.2
 
 ## Description
+
 Implement Supabase Auth with Google OAuth and email/password authentication, including protected routes and session management.
 
 ## Implementation Steps
@@ -28,6 +31,7 @@ Implement Supabase Auth with Google OAuth and email/password authentication, inc
    - Email confirmation handling
 
 3. **Implement auth middleware**
+
    ```typescript
    // middleware.ts
    import { createServerClient } from '@supabase/ssr'
@@ -36,13 +40,13 @@ Implement Supabase Auth with Google OAuth and email/password authentication, inc
    export async function middleware(request) {
      const response = NextResponse.next()
      const supabase = createServerClient(...)
-     
+
      const { data: { session } } = await supabase.auth.getSession()
-     
+
      if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
        return NextResponse.redirect(new URL('/auth/login', request.url))
      }
-     
+
      return response
    }
    ```
@@ -73,9 +77,10 @@ Implement Supabase Auth with Google OAuth and email/password authentication, inc
 ## UI Components
 
 ### LoginForm Component
+
 ```typescript
 interface LoginFormProps {
-  onSuccess?: () => void
+  onSuccess?: () => void;
 }
 
 // Features:
@@ -88,19 +93,22 @@ interface LoginFormProps {
 ```
 
 ### Protected Route Example
+
 ```typescript
 // app/dashboard/page.tsx
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function Dashboard() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/auth/login')
+    redirect('/auth/login');
   }
-  
+
   // Dashboard content
 }
 ```
@@ -160,6 +168,7 @@ export default async function Dashboard() {
 ## Implementation Notes
 
 ### Completed Files:
+
 - ✅ `app/auth/login/page.tsx` - Login page with email/password
 - ✅ `app/auth/signup/page.tsx` - Signup page with validation
 - ✅ `app/auth/callback/route.ts` - OAuth callback handler (ready for OAuth)
@@ -173,6 +182,7 @@ export default async function Dashboard() {
 - ✅ `scripts/create-test-user.js` - Test user creation utility
 
 ### Pending:
+
 - Google OAuth configuration (requires Google Cloud Console setup)
 - Email verification (requires SMTP configuration in Supabase)
 - Component extraction (LoginForm, SignupForm, GoogleButton components)

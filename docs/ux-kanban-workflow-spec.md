@@ -1,8 +1,11 @@
 # Kanban Workflow Board Specification
+
 ## ContentMax Visual Content Pipeline Management
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Kanban Workflow Board is ContentMax's visual content pipeline management system. It transforms content generation from a chaotic process into a smooth, predictable workflow with clear stages, automated transitions, and intelligent prioritization.
 
 ### Core Purpose
+
 - Visualize entire content pipeline at a glance
 - Track content through generation stages
 - Identify bottlenecks before they impact delivery
@@ -19,6 +23,7 @@ The Kanban Workflow Board is ContentMax's visual content pipeline management sys
 - Monitor content velocity and team performance
 
 ### Design Principles
+
 - **Visual Clarity**: Every card tells its story instantly
 - **Smart Automation**: Move cards based on triggers, not clicks
 - **Flexible Views**: Personal, team, or global perspectives
@@ -61,14 +66,14 @@ The Kanban Workflow Board is ContentMax's visual content pipeline management sys
 
 ### 2.2 Column States & Definitions
 
-| Stage | Description | Automatic Triggers | SLA |
-|-------|-------------|-------------------|-----|
-| **Backlog** | Content identified but not scheduled | Manual prioritization | - |
-| **Queued** | Ready for generation, awaiting resources | Capacity available | 24h |
-| **Generating** | AI actively creating content | Processing started | 30min |
-| **Review** | Content awaiting human review | Generation complete | 4h |
-| **Approved** | Content passed review, ready to publish | Review approved | 1h |
-| **Published** | Live on website | Deployment complete | - |
+| Stage          | Description                              | Automatic Triggers    | SLA   |
+| -------------- | ---------------------------------------- | --------------------- | ----- |
+| **Backlog**    | Content identified but not scheduled     | Manual prioritization | -     |
+| **Queued**     | Ready for generation, awaiting resources | Capacity available    | 24h   |
+| **Generating** | AI actively creating content             | Processing started    | 30min |
+| **Review**     | Content awaiting human review            | Generation complete   | 4h    |
+| **Approved**   | Content passed review, ready to publish  | Review approved       | 1h    |
+| **Published**  | Live on website                          | Deployment complete   | -     |
 
 ---
 
@@ -164,15 +169,18 @@ Success State        Warning State         Processing
 ### 4.1 Drag & Drop
 
 **Valid Movements:**
+
 - Backlog → Queued (prioritize)
 - Review → Approved (after review)
 - Any → Backlog (deprioritize)
 
 **Invalid Movements:** (System prevents)
+
 - Generating → Published (skips review)
 - Published → Generating (can't unpublish)
 
 **Multi-Card Drag:**
+
 ```
 Select multiple cards → Drag together → Drop as batch
 Visual: Ghost cards follow cursor with count badge
@@ -181,6 +189,7 @@ Visual: Ghost cards follow cursor with count badge
 ### 4.2 Quick Actions Menu
 
 Right-click on card:
+
 ```
 ┌─────────────────┐
 │ 👁️ Preview      │
@@ -197,12 +206,14 @@ Right-click on card:
 ### 4.3 Bulk Selection
 
 **Selection Methods:**
+
 1. Ctrl+Click: Add individual cards
 2. Shift+Click: Select range
 3. Drag rectangle: Area select
 4. Column header checkbox: Select all in column
 
 **Bulk Actions Bar:**
+
 ```
 ┌──────────────────────────────────────────────────┐
 │ 12 items selected                               │
@@ -219,24 +230,24 @@ Right-click on card:
 ```javascript
 automationRules = [
   {
-    trigger: "Content generated",
-    condition: "No errors",
-    action: "Move to Review",
-    notification: "New content ready for review"
+    trigger: 'Content generated',
+    condition: 'No errors',
+    action: 'Move to Review',
+    notification: 'New content ready for review',
   },
   {
-    trigger: "Review rejected",
-    condition: "Major issues",
-    action: "Move to Backlog",
-    notification: "Content needs rework"
+    trigger: 'Review rejected',
+    condition: 'Major issues',
+    action: 'Move to Backlog',
+    notification: 'Content needs rework',
   },
   {
-    trigger: "Approved",
-    condition: "Auto-publish enabled",
-    action: "Move to Published",
-    delay: "Next deployment window"
-  }
-]
+    trigger: 'Approved',
+    condition: 'Auto-publish enabled',
+    action: 'Move to Published',
+    delay: 'Next deployment window',
+  },
+];
 ```
 
 ### 5.2 Priority Escalation
@@ -484,13 +495,13 @@ Column at limit:          Column over limit:
 
 ### 10.2 Alert Types
 
-| Type | Example | Action |
-|------|---------|--------|
-| 🟢 Success | "5 pages published" | Dismiss |
-| 🔵 Info | "Generation started" | View |
-| 🟡 Warning | "Review queue full" | Acknowledge |
-| 🔴 Error | "Generation failed" | Resolve |
-| ⏰ Reminder | "5 items overdue" | Review |
+| Type        | Example              | Action      |
+| ----------- | -------------------- | ----------- |
+| 🟢 Success  | "5 pages published"  | Dismiss     |
+| 🔵 Info     | "Generation started" | View        |
+| 🟡 Warning  | "Review queue full"  | Acknowledge |
+| 🔴 Error    | "Generation failed"  | Resolve     |
+| ⏰ Reminder | "5 items overdue"    | Review      |
 
 ### 10.3 Digest Settings
 
@@ -554,18 +565,18 @@ Column at limit:          Column over limit:
 
 ## 12. Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Space` | Preview selected card |
-| `Enter` | Open card detail |
-| `1-6` | Jump to column |
-| `N` | New content item |
-| `F` | Focus filter |
-| `/` | Quick search |
-| `V` | Change view |
-| `R` | Refresh board |
-| `Cmd+Z` | Undo last action |
-| `?` | Show shortcuts |
+| Shortcut | Action                |
+| -------- | --------------------- |
+| `Space`  | Preview selected card |
+| `Enter`  | Open card detail      |
+| `1-6`    | Jump to column        |
+| `N`      | New content item      |
+| `F`      | Focus filter          |
+| `/`      | Quick search          |
+| `V`      | Change view           |
+| `R`      | Refresh board         |
+| `Cmd+Z`  | Undo last action      |
+| `?`      | Show shortcuts        |
 
 ---
 
@@ -588,12 +599,13 @@ Background Load (500ms+):
 ### 13.2 Virtual Scrolling
 
 Only render visible cards + buffer:
+
 ```javascript
 const visibleCards = {
   rendered: viewportCards + 10,
   total: 500,
-  placeholder: "Loading more..."
-}
+  placeholder: 'Loading more...',
+};
 ```
 
 ### 13.3 Update Strategy
@@ -684,10 +696,12 @@ Each card shows quality indicator:
 
 ```html
 <!-- Embed velocity chart -->
-<iframe src="/api/kanban/velocity?
+<iframe
+  src="/api/kanban/velocity?
   team=content&
   range=30d&
-  style=minimal">
+  style=minimal"
+>
 </iframe>
 ```
 
@@ -696,18 +710,21 @@ Each card shows quality indicator:
 ## 16. Success Metrics
 
 ### Target Performance
+
 - Card load time: <100ms
 - Drag response: <16ms
 - Update propagation: <200ms
 - Support 1000+ cards without lag
 
 ### User Efficiency
+
 - 50% reduction in content bottlenecks
 - 30% faster cycle times
 - 90% on-time delivery rate
 - 25% increase in team velocity
 
 ### Adoption Metrics
+
 - 95% daily active usage
 - 4.7+ user satisfaction score
 - 80% prefer over previous system

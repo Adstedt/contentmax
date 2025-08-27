@@ -1,25 +1,29 @@
 # Story 2.2: Sitemap Parser
 
 ## User Story
+
 As a content manager,
 I want to import my website's sitemap,
 So that I can analyze all pages and identify content gaps.
 
 ## Size & Priority
+
 - **Size**: M (6 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 2
 - **Dependencies**: Sprint 1 complete
 
 ## Description
+
 Implement sitemap XML parsing with support for both standard sitemaps and sitemap index files, categorizing URLs by content type.
 
 ## Implementation Steps
 
 1. **Build XML parsing engine**
+
    ```typescript
    import { XMLParser } from 'fast-xml-parser';
-   
+
    interface SitemapEntry {
      url: string;
      lastmod?: string;
@@ -27,7 +31,7 @@ Implement sitemap XML parsing with support for both standard sitemaps and sitema
      priority?: number;
      category?: ContentCategory;
    }
-   
+
    class SitemapParser {
      async parse(xml: string): Promise<SitemapEntry[]> {
        // Parse XML and extract URLs
@@ -37,15 +41,16 @@ Implement sitemap XML parsing with support for both standard sitemaps and sitema
    ```
 
 2. **Implement URL categorization**
+
    ```typescript
    enum ContentCategory {
      PRODUCT = 'product',
      CATEGORY = 'category',
      BRAND = 'brand',
      BLOG = 'blog',
-     OTHER = 'other'
+     OTHER = 'other',
    }
-   
+
    function categorizeUrl(url: string): ContentCategory {
      // Pattern matching for common e-commerce URL structures
      if (url.includes('/product/')) return ContentCategory.PRODUCT;
@@ -69,7 +74,7 @@ Implement sitemap XML parsing with support for both standard sitemaps and sitema
    // app/api/ingestion/sitemap/route.ts
    export async function POST(request: Request) {
      const { sitemapUrl } = await request.json();
-     
+
      // Fetch sitemap
      // Parse XML
      // Categorize URLs
@@ -91,23 +96,9 @@ Implement sitemap XML parsing with support for both standard sitemaps and sitema
 
 ```typescript
 const patterns = {
-  product: [
-    /\/product\//,
-    /\/p\//,
-    /\/item\//,
-    /\/pd\//
-  ],
-  category: [
-    /\/category\//,
-    /\/c\//,
-    /\/collections?\//,
-    /\/shop\//
-  ],
-  brand: [
-    /\/brand\//,
-    /\/manufacturer\//,
-    /\/designer\//
-  ]
+  product: [/\/product\//, /\/p\//, /\/item\//, /\/pd\//],
+  category: [/\/category\//, /\/c\//, /\/collections?\//, /\/shop\//],
+  brand: [/\/brand\//, /\/manufacturer\//, /\/designer\//],
 };
 ```
 

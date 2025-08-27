@@ -15,9 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -35,8 +33,15 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes
-  const protectedPaths = ['/dashboard', '/content', '/generate', '/taxonomy', '/templates', '/settings'];
-  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  const protectedPaths = [
+    '/dashboard',
+    '/content',
+    '/generate',
+    '/taxonomy',
+    '/templates',
+    '/settings',
+  ];
+  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (isProtectedPath && !user) {
     // Redirect to login if accessing protected route without auth
@@ -47,7 +52,7 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect to dashboard if logged in and accessing auth pages
   const authPaths = ['/auth/login', '/auth/signup', '/login', '/signup'];
-  const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  const isAuthPath = authPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (isAuthPath && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url));

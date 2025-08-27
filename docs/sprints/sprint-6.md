@@ -1,12 +1,15 @@
 # Sprint 6: Workflow & Publishing (MVP Complete)
 
 ## Sprint Goal
+
 Complete the content pipeline with workflow management, publishing system, and integration capabilities to achieve MVP status.
 
 ## Duration
+
 2 weeks
 
 ## Sprint Overview
+
 This sprint completes the MVP by implementing the final workflow management system and publishing capabilities. Users will be able to manage content through a complete pipeline from generation to publication, making ContentMax a fully functional content management platform.
 
 ---
@@ -14,9 +17,11 @@ This sprint completes the MVP by implementing the final workflow management syst
 ## Tasks
 
 ### Task 6.1: Kanban Board Implementation
+
 **Size**: L (8 hours) | **Priority**: P0 - Critical | **Dependencies**: Sprint 1 complete
 
 **Implementation Steps**:
+
 1. Build drag-and-drop Kanban workflow board
 2. Implement customizable workflow stages
 3. Add card filtering and search capabilities
@@ -58,6 +63,7 @@ interface ContentCard {
 ```
 
 **Files to Create**:
+
 - `app/workflow/page.tsx` - Main workflow board interface
 - `components/workflow/KanbanBoard.tsx` - Drag-and-drop board component
 - `components/workflow/KanbanCard.tsx` - Individual content card
@@ -65,6 +71,7 @@ interface ContentCard {
 - `hooks/useDragAndDrop.ts` - DnD state management
 
 **Default Workflow Stages**:
+
 1. **Ideas** - Content opportunities identified
 2. **Ready** - Approved for generation with requirements
 3. **Generating** - AI content generation in progress
@@ -75,6 +82,7 @@ interface ContentCard {
 8. **Monitoring** - Published content being tracked for performance
 
 **Advanced Features**:
+
 - **Custom Workflows**: Create domain-specific workflows
 - **Automation Rules**: Auto-move cards based on criteria
 - **Batch Operations**: Move multiple cards simultaneously
@@ -82,6 +90,7 @@ interface ContentCard {
 - **Notifications**: Alert on stage changes and due dates
 
 **Acceptance Criteria**:
+
 - [ ] Smooth drag-and-drop between workflow columns
 - [ ] Cards display relevant information at a glance
 - [ ] Filtering and search work across all cards
@@ -92,9 +101,11 @@ interface ContentCard {
 ---
 
 ### Task 6.2: Publishing System Integration
+
 **Size**: M (6 hours) | **Priority**: P0 - Critical | **Dependencies**: Sprint 4 complete
 
 **Implementation Steps**:
+
 1. Build content publishing engine with validation
 2. Create publishing templates and formatters
 3. Implement multi-platform publishing (web, API, file export)
@@ -104,7 +115,7 @@ interface ContentCard {
 // Publishing interfaces
 interface PublishingEngine {
   platforms: PublishingPlatform[];
-  
+
   publish(content: Content, platform: string, options: PublishOptions): Promise<PublishResult>;
   validate(content: Content, platform: string): ValidationResult;
   rollback(publishId: string): Promise<RollbackResult>;
@@ -130,12 +141,14 @@ interface PublishResult {
 ```
 
 **Files to Create**:
+
 - `lib/publishing/publisher.ts` - Core publishing engine
 - `lib/publishing/validator.ts` - Content validation system
 - `api/publish/route.ts` - Publishing API endpoints
 - `components/publishing/PublishDialog.tsx` - Publishing interface
 
 **Publishing Targets**:
+
 - **Web Export**: Static HTML files with assets
 - **API Integration**: Push to headless CMS via REST/GraphQL
 - **File Export**: Markdown, CSV, JSON formats
@@ -143,13 +156,15 @@ interface PublishResult {
 - **Preview Generation**: Staging URLs for review
 
 **Validation Checks**:
+
 - **Content Quality**: Completeness, readability, SEO optimization
-- **Technical Validation**: HTML validity, broken links, image optimization  
+- **Technical Validation**: HTML validity, broken links, image optimization
 - **Brand Compliance**: Tone, messaging, visual guidelines
 - **Legal Review**: Compliance with regulations and policies
 - **SEO Validation**: Meta tags, schema markup, keyword optimization
 
 **Acceptance Criteria**:
+
 - [ ] Content publishes successfully to multiple platforms
 - [ ] Validation catches common issues before publication
 - [ ] Publishing history tracks all publication attempts
@@ -160,9 +175,11 @@ interface PublishResult {
 ---
 
 ### Task 6.3: Schema Markup & SEO Generation
+
 **Size**: M (4 hours) | **Priority**: P1 - High | **Dependencies**: Sprint 4 complete
 
 **Implementation Steps**:
+
 1. Build JSON-LD schema markup generator
 2. Create schema validators for different content types
 3. Implement automated SEO optimization
@@ -188,17 +205,19 @@ enum SchemaType {
   FAQ = 'FAQPage',
   BREADCRUMB = 'BreadcrumbList',
   ORGANIZATION = 'Organization',
-  WEBSITE = 'WebSite'
+  WEBSITE = 'WebSite',
 }
 ```
 
 **Files to Create**:
+
 - `lib/schema/schema-generator.ts` - Schema markup generation
 - `lib/schema/validators/faq.ts` - FAQ schema validation
 - `lib/schema/validators/product.ts` - Product schema validation
 - `components/schema/SchemaPreview.tsx` - Schema preview component
 
 **Schema Types to Support**:
+
 - **Product Schema**: For product pages with pricing, reviews, availability
 - **Article Schema**: For blog posts and informational content
 - **FAQ Schema**: For FAQ sections and help content
@@ -207,6 +226,7 @@ enum SchemaType {
 - **LocalBusiness**: For location-based businesses
 
 **SEO Optimizations**:
+
 - **Title Optimization**: Length, keywords, CTR optimization
 - **Meta Description**: Compelling descriptions with target keywords
 - **Header Structure**: Proper H1-H6 hierarchy
@@ -215,6 +235,7 @@ enum SchemaType {
 - **Page Speed**: Optimization recommendations
 
 **Acceptance Criteria**:
+
 - [ ] Generated schema markup passes Google's Rich Results Test
 - [ ] Schema types accurately represent content structure
 - [ ] SEO optimizations improve search visibility metrics
@@ -224,9 +245,11 @@ enum SchemaType {
 ---
 
 ### Task 6.4: Export & Integration APIs
+
 **Size**: M (6 hours) | **Priority**: P1 - High | **Dependencies**: Task 6.2
 
 **Implementation Steps**:
+
 1. Build RESTful API for content export and management
 2. Create webhook system for real-time integrations
 3. Implement authentication and rate limiting for API
@@ -240,11 +263,11 @@ interface ContentAPI {
   createContent(data: CreateContentRequest): Promise<Content>;
   updateContent(id: string, data: UpdateContentRequest): Promise<Content>;
   deleteContent(id: string): Promise<void>;
-  
+
   // Bulk operations
   bulkExport(filter: ContentFilter): Promise<ExportResult>;
   bulkUpdate(ids: string[], updates: BulkUpdate): Promise<BulkResult>;
-  
+
   // Workflow operations
   moveToStage(id: string, stage: string): Promise<WorkflowResult>;
   bulkMoveToStage(ids: string[], stage: string): Promise<BulkWorkflowResult>;
@@ -258,12 +281,14 @@ interface WebhookManager {
 ```
 
 **Files to Create**:
+
 - `app/api/v1/content/route.ts` - Content management API
 - `app/api/v1/webhook/route.ts` - Webhook management API
 - `lib/export/exporters.ts` - Content export utilities
 - `docs/api-documentation.md` - Comprehensive API docs
 
 **API Endpoints**:
+
 ```
 GET    /api/v1/content              # List content with filtering
 POST   /api/v1/content              # Create new content
@@ -280,6 +305,7 @@ DELETE /api/v1/webhooks/:id         # Unregister webhook
 ```
 
 **Export Formats**:
+
 - **JSON**: Structured data with metadata
 - **CSV**: Spreadsheet-compatible format
 - **Markdown**: Clean text format for documentation
@@ -287,6 +313,7 @@ DELETE /api/v1/webhooks/:id         # Unregister webhook
 - **XML**: Structured markup for CMS import
 
 **Webhook Events**:
+
 - `content.created` - New content generated
 - `content.updated` - Content modified
 - `content.published` - Content published to platform
@@ -294,6 +321,7 @@ DELETE /api/v1/webhooks/:id         # Unregister webhook
 - `review.completed` - Content review finished
 
 **Acceptance Criteria**:
+
 - [ ] API provides full CRUD functionality for content
 - [ ] Webhook system delivers events reliably
 - [ ] API authentication and rate limiting work correctly
@@ -304,9 +332,11 @@ DELETE /api/v1/webhooks/:id         # Unregister webhook
 ---
 
 ### Task 6.5: Performance Tracking & Analytics
+
 **Size**: M (4 hours) | **Priority**: P2 - Medium | **Dependencies**: Task 6.2
 
 **Implementation Steps**:
+
 1. Integrate analytics tracking for published content
 2. Create performance monitoring dashboard
 3. Implement A/B testing framework for content variants
@@ -339,11 +369,13 @@ interface EngagementMetrics {
 ```
 
 **Files to Create**:
+
 - `lib/tracking/analytics-client.ts` - Analytics integration
 - `lib/tracking/performance-monitor.ts` - Performance monitoring
 - `components/analytics/PerformanceDashboard.tsx` - Analytics dashboard
 
 **Tracking Features**:
+
 - **Traffic Metrics**: Page views, unique visitors, traffic sources
 - **Engagement Metrics**: Time on page, scroll depth, interaction rates
 - **Conversion Tracking**: Goal completions, revenue attribution
@@ -351,6 +383,7 @@ interface EngagementMetrics {
 - **Content Performance**: Compare generated vs existing content
 
 **Dashboard Components**:
+
 - **Overview Metrics**: Key performance indicators
 - **Content Comparison**: Generated content vs existing benchmarks
 - **ROI Calculator**: Content investment vs returns
@@ -358,6 +391,7 @@ interface EngagementMetrics {
 - **Optimization Suggestions**: Data-driven improvement recommendations
 
 **Acceptance Criteria**:
+
 - [ ] Analytics accurately track content performance
 - [ ] Dashboard provides actionable insights
 - [ ] ROI calculations help justify content investment
@@ -369,12 +403,14 @@ interface EngagementMetrics {
 ## Dependencies & Prerequisites
 
 **External Dependencies**:
+
 - Publishing platform APIs and credentials (CMS, web hosting, etc.)
 - Analytics tracking code and configuration
 - Schema validation services
 - SSL certificates for secure API endpoints
 
 **Technical Prerequisites**:
+
 - All previous sprints (1-5) completed successfully
 - Database schema supports workflow and publishing states
 - Server infrastructure can handle API traffic
@@ -385,6 +421,7 @@ interface EngagementMetrics {
 ## Definition of Done
 
 **Sprint 6 MVP is complete when**:
+
 - [ ] Complete content workflow from idea to publication works end-to-end
 - [ ] Kanban board manages content pipeline efficiently
 - [ ] Publishing system delivers content to target platforms reliably
@@ -393,6 +430,7 @@ interface EngagementMetrics {
 - [ ] Performance tracking provides insights on content effectiveness
 
 **MVP Demo Criteria**:
+
 - **Full Workflow**: Import sitemap → identify gaps → generate content → review → publish
 - **Publishing**: Publish generated content to live website
 - **Integration**: Use API to export content and trigger external workflows
@@ -405,18 +443,21 @@ interface EngagementMetrics {
 ## Technical Warnings
 
 ⚠️ **Critical Production Considerations**:
+
 - **Publishing Safety**: Test publishing thoroughly to avoid content corruption
 - **API Security**: Ensure proper authentication and input validation
 - **Performance Impact**: Monitor resource usage during peak operations
 - **Data Integrity**: Validate all content transformations maintain quality
 
 ⚠️ **Integration Risks**:
+
 - **Platform Compatibility**: Test publishing with all target platforms
 - **API Rate Limits**: Respect external platform rate limits
 - **Schema Validation**: Ensure schema markup doesn't break site functionality
 - **Webhook Reliability**: Implement retry logic for failed webhook deliveries
 
 ⚠️ **User Experience Considerations**:
+
 - **Workflow Complexity**: Don't overwhelm users with too many options
 - **Publishing Feedback**: Provide clear status on publishing operations
 - **Error Recovery**: Enable users to recover from failed operations
@@ -437,18 +478,21 @@ interface EngagementMetrics {
 ## Risk Mitigation
 
 **High-Risk Items**:
+
 1. **Publishing Platform Changes**: Monitor for API changes and deprecations
 2. **Content Quality in Production**: Implement safeguards against publishing poor content
 3. **System Performance**: Monitor and optimize for production load
 4. **User Training**: Ensure team understands complete workflow
 
 **Testing Strategy**:
+
 - **Integration Testing**: Test all external platform integrations
 - **Load Testing**: Verify system handles production traffic
 - **Content Quality Assurance**: Validate published content meets standards
 - **User Acceptance Testing**: Verify workflow meets user needs
 
 **Rollback Plans**:
+
 - **Publishing Rollback**: Quick content rollback for published mistakes
 - **Workflow Fallback**: Manual workflow if automation fails
 - **API Versioning**: Maintain backward compatibility for integrations
@@ -459,12 +503,14 @@ interface EngagementMetrics {
 ## Post-MVP Roadmap Preview
 
 **Immediate Enhancements (Sprint 7-8)**:
+
 - Advanced workflow automation
 - Enhanced collaboration features
 - Performance optimization
 - Comprehensive testing and security audit
 
 **Future Considerations**:
+
 - Multi-language workflow support
 - Advanced analytics and reporting
 - Enterprise features (SSO, RBAC, compliance)

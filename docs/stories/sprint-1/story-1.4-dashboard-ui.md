@@ -1,17 +1,20 @@
 # Story 1.4: Basic Dashboard UI
 
 ## User Story
+
 As a marketing manager,
 I want to see a dashboard with placeholder metrics upon login,
 So that I know the system is working and understand the interface layout.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 1
 - **Dependencies**: Task 1.3
 
 ## Description
+
 Create initial dashboard with responsive layout, navigation sidebar, metric cards, and user profile management.
 
 ## Implementation Steps
@@ -24,7 +27,7 @@ Create initial dashboard with responsive layout, navigation sidebar, metric card
 
 2. **Build metric cards**
    - Total Categories card
-   - Coverage % card  
+   - Coverage % card
    - Pending Review card
    - Published Content card
 
@@ -56,14 +59,15 @@ Create initial dashboard with responsive layout, navigation sidebar, metric card
 ## Component Specifications
 
 ### MetricCard Component
+
 ```typescript
 interface MetricCardProps {
-  title: string
-  value: string | number
-  change?: number
-  changeType?: 'increase' | 'decrease'
-  icon?: React.ComponentType
-  loading?: boolean
+  title: string;
+  value: string | number;
+  change?: number;
+  changeType?: 'increase' | 'decrease';
+  icon?: React.ComponentType;
+  loading?: boolean;
 }
 
 // Features:
@@ -75,6 +79,7 @@ interface MetricCardProps {
 ```
 
 ### Sidebar Navigation
+
 ```typescript
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, active: true },
@@ -82,26 +87,29 @@ const navItems = [
   { name: 'Generate', href: '/generate', icon: SparklesIcon, disabled: true },
   { name: 'Review', href: '/review', icon: CheckIcon, disabled: true },
   { name: 'Workflow', href: '/workflow', icon: KanbanIcon, disabled: true },
-  { name: 'Settings', href: '/settings', icon: CogIcon, disabled: true }
-]
+  { name: 'Settings', href: '/settings', icon: CogIcon, disabled: true },
+];
 ```
 
 ## UI/UX Requirements
 
 ### Desktop Layout
+
 - Fixed sidebar (256px width)
 - Collapsible on smaller screens
 - Header height: 64px
 - Content padding: 24px
 - Card grid: 4 columns on XL, 2 on MD, 1 on SM
 
-### Mobile Layout  
+### Mobile Layout
+
 - Bottom navigation bar
 - Hamburger menu for additional options
 - Full-width metric cards
 - Swipeable between sections
 
 ### Design Tokens
+
 ```css
 /* Colors */
 --primary: #3b82f6;
@@ -138,8 +146,8 @@ const placeholderMetrics = {
   totalCategories: 1234,
   coveragePercentage: 67,
   pendingReview: 42,
-  publishedContent: 892
-}
+  publishedContent: 892,
+};
 ```
 
 ## Accessibility Requirements
@@ -183,6 +191,7 @@ const placeholderMetrics = {
 ## Implementation Notes
 
 ### Completed Features:
+
 - ✅ Full dashboard layout with sidebar navigation
 - ✅ Responsive mobile menu with hamburger toggle
 - ✅ Header with user dropdown menu
@@ -195,6 +204,7 @@ const placeholderMetrics = {
 - ✅ Logout functionality
 
 ### Files Created:
+
 - `app/dashboard/layout.tsx` - Dashboard layout wrapper
 - `app/dashboard/page.tsx` - Enhanced dashboard page
 - `components/layout/Sidebar.tsx` - Navigation sidebar

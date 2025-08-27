@@ -1,31 +1,37 @@
 # Story 1.2: Supabase Setup & Database Schema
 
 ## User Story
+
 As a system architect,
 I want Supabase configured with proper database schema,
 So that we can persist user data and content with real-time capabilities.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 1
 - **Dependencies**: Task 1.1
 
 ## Description
+
 Configure Supabase project and create initial database schema for ContentMax, including all core tables, relationships, and Row Level Security policies.
 
 ## Prerequisites
+
 - Supabase account created (see docs/external-services-setup.md)
 - Environment variables ready
 
 ## Implementation Steps
 
 1. **Install Supabase client libraries**
+
    ```bash
    npm install @supabase/supabase-js @supabase/ssr
    ```
 
 2. **Create initial database schema migration**
+
    ```sql
    -- Core tables needed
    CREATE TABLE organizations (
@@ -94,6 +100,7 @@ Configure Supabase project and create initial database schema for ContentMax, in
    ```
 
 3. **Set up Row Level Security (RLS)**
+
    ```sql
    -- Enable RLS on all tables
    ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
@@ -122,20 +129,21 @@ Configure Supabase project and create initial database schema for ContentMax, in
 
 - `supabase/migrations/001_initial_schema.sql` - Complete database schema
 - `lib/supabase/client.ts` - Client-side Supabase instance
-- `lib/supabase/server.ts` - Server-side Supabase instance  
+- `lib/supabase/server.ts` - Server-side Supabase instance
 - `types/database.types.ts` - Generated database types
 - `.env.local` - Environment variables (never commit)
 
 ### Example client.ts:
+
 ```typescript
-import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/types/database.types'
+import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/types/database.types';
 
 export function createClient() {
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  );
 }
 ```
 
@@ -187,12 +195,15 @@ export function createClient() {
 ## Dev Agent Record
 
 ### Status
+
 Ready for Review
 
 ### Agent Model Used
+
 claude-opus-4-1-20250805 (James - Full Stack Developer)
 
 ### Debug Log References
+
 - Installed @supabase/supabase-js and @supabase/ssr packages
 - Created comprehensive database schema with all required tables
 - Implemented Row Level Security policies for all tables
@@ -200,6 +211,7 @@ claude-opus-4-1-20250805 (James - Full Stack Developer)
 - Created seed data for development testing
 
 ### Completion Notes
+
 - Complete database schema implemented with 9 core tables
 - Comprehensive RLS policies for role-based access control
 - Type-safe Supabase client configuration for browser and server
@@ -212,6 +224,7 @@ claude-opus-4-1-20250805 (James - Full Stack Developer)
 - Database triggers for automatic updated_at timestamps
 
 ### File List
+
 - `lib/supabase/client.ts` - Created (Browser client)
 - `lib/supabase/server.ts` - Created (Server client)
 - `lib/supabase/utils.ts` - Created (Utility functions)
@@ -225,6 +238,7 @@ claude-opus-4-1-20250805 (James - Full Stack Developer)
 - `package.json` - Modified (Dependencies added)
 
 ### Change Log
+
 - Set up complete Supabase integration with Next.js
 - Created production-ready database schema
 - Implemented comprehensive security with RLS

@@ -19,11 +19,11 @@ export function MetricCard({
   changeType = 'neutral',
   icon: Icon,
   loading = false,
-  description
+  description,
 }: MetricCardProps) {
   const getTrendIcon = () => {
     if (!change) return null;
-    
+
     switch (changeType) {
       case 'increase':
         return <TrendingUp className="h-3 w-3" />;
@@ -55,9 +55,7 @@ export function MetricCard({
           </div>
           {Icon && <div className="h-10 w-10 bg-[#1a1a1a] rounded-lg"></div>}
         </div>
-        {description && (
-          <div className="mt-3 h-2 bg-[#1a1a1a] rounded w-3/4"></div>
-        )}
+        {description && <div className="mt-3 h-2 bg-[#1a1a1a] rounded w-3/4"></div>}
       </div>
     );
   }
@@ -75,14 +73,13 @@ export function MetricCard({
               <div className={`ml-2 flex items-center text-xs ${getTrendColor()}`}>
                 {getTrendIcon()}
                 <span className="ml-1">
-                  {change > 0 ? '+' : ''}{change}%
+                  {change > 0 ? '+' : ''}
+                  {change}%
                 </span>
               </div>
             )}
           </div>
-          {description && (
-            <p className="mt-2 text-xs text-[#666]">{description}</p>
-          )}
+          {description && <p className="mt-2 text-xs text-[#666]">{description}</p>}
         </div>
         {Icon && (
           <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[#1a1a1a]">

@@ -1,8 +1,11 @@
 # Content Generation Wizard Specification
+
 ## ContentMax AI-Powered Content Creation Interface
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Content Generation Wizard is the interface where users configure, preview, and initiate AI-powered content creation for individual pages or bulk selections. This specification defines how users interact with templates, components, languages, and generation settings to create SEO-optimized content that maintains brand voice while achieving business objectives.
 
 ### Design Philosophy
+
 - **Guided Experience**: Step-by-step wizard for clarity
 - **Smart Defaults**: AI-suggested configurations
 - **Live Preview**: See changes in real-time
@@ -36,6 +40,7 @@ Entry Points:
 ### 2.2 Context Detection
 
 System automatically detects context:
+
 ```javascript
 const context = {
   source: 'taxonomy_visualization',
@@ -43,8 +48,8 @@ const context = {
   count: 2,
   type: 'category',
   existingContent: false,
-  language: 'EN'
-}
+  language: 'EN',
+};
 ```
 
 ---
@@ -54,7 +59,7 @@ const context = {
 ### 3.1 Flow Diagram
 
 ```
-Start → Target Selection → Template Choice → Component Config → 
+Start → Target Selection → Template Choice → Component Config →
 Language & Voice → Preview → Cost Review → Generate → Success
 ```
 
@@ -613,6 +618,7 @@ Language & Voice → Preview → Cost Review → Generate → Success
 ### 14.1 Mobile Wizard Flow
 
 Vertical step progression with swipe navigation:
+
 ```
 ┌─────────────────┐
 │  Step 1 of 6    │

@@ -34,6 +34,7 @@ cp .env.local.example .env.local
 ```
 
 Edit `.env.local` with your configuration:
+
 - **Supabase**: Get your project URL and keys from [Supabase Dashboard](https://supabase.com)
 - **OpenAI**: Get your API key from [OpenAI Platform](https://platform.openai.com)
 - **Stripe** (optional): Get your keys from [Stripe Dashboard](https://stripe.com)
@@ -84,6 +85,7 @@ contentmax/
 ## Development Standards
 
 This project follows strict coding standards:
+
 - TypeScript strict mode enabled
 - ESLint and Prettier for code quality
 - Husky pre-commit hooks for automated checks

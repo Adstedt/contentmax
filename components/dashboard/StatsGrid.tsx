@@ -15,7 +15,7 @@ export function StatsGrid({ loading = false }: StatsGridProps) {
       change: 12,
       changeType: 'increase' as const,
       icon: FolderTree,
-      description: 'Across all taxonomies'
+      description: 'Across all taxonomies',
     },
     {
       title: 'Coverage',
@@ -23,7 +23,7 @@ export function StatsGrid({ loading = false }: StatsGridProps) {
       change: 5,
       changeType: 'increase' as const,
       icon: Target,
-      description: 'Content coverage rate'
+      description: 'Content coverage rate',
     },
     {
       title: 'Pending Review',
@@ -31,7 +31,7 @@ export function StatsGrid({ loading = false }: StatsGridProps) {
       change: -8,
       changeType: 'decrease' as const,
       icon: Clock,
-      description: 'Items awaiting approval'
+      description: 'Items awaiting approval',
     },
     {
       title: 'Published Content',
@@ -39,8 +39,8 @@ export function StatsGrid({ loading = false }: StatsGridProps) {
       change: 23,
       changeType: 'increase' as const,
       icon: FileText,
-      description: 'Live content pieces'
-    }
+      description: 'Live content pieces',
+    },
   ];
 
   return (

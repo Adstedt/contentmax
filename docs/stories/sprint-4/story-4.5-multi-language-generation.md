@@ -1,30 +1,34 @@
 # Story 4.5: Multi-language Content Generation
 
 ## User Story
+
 As a content manager targeting international markets,
 I want to generate content in multiple languages,
 So that I can serve diverse customer bases without translating manually.
 
 ## Size & Priority
+
 - **Size**: M (4 hours)
 - **Priority**: P1 - High
 - **Sprint**: 4
 - **Dependencies**: Task 4.3
 
 ## Description
+
 Add language parameter to content generation API to generate content directly in target languages. The UI remains in English - only the generated content is multilingual.
 
 ## Implementation Steps
 
 1. **Language adapter for content generation**
+
    ```typescript
    class LanguageAdapter {
      private supportedLanguages = new Map<string, LanguageConfig>();
-     
+
      constructor() {
        this.initializeLanguages();
      }
-     
+
      private initializeLanguages() {
        const languages: LanguageConfig[] = [
          {
@@ -36,8 +40,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.5, max: 2.5 }
-           }
+             keywordDensity: { min: 0.5, max: 2.5 },
+           },
          },
          {
            code: 'es',
@@ -48,8 +52,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 70,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.5, max: 2.0 }
-           }
+             keywordDensity: { min: 0.5, max: 2.0 },
+           },
          },
          {
            code: 'fr',
@@ -60,8 +64,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 65,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.5, max: 2.0 }
-           }
+             keywordDensity: { min: 0.5, max: 2.0 },
+           },
          },
          {
            code: 'de',
@@ -72,8 +76,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.4, max: 1.8 }
-           }
+             keywordDensity: { min: 0.4, max: 1.8 },
+           },
          },
          {
            code: 'it',
@@ -84,8 +88,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 65,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.5, max: 2.0 }
-           }
+             keywordDensity: { min: 0.5, max: 2.0 },
+           },
          },
          {
            code: 'pt',
@@ -96,8 +100,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.5, max: 2.2 }
-           }
+             keywordDensity: { min: 0.5, max: 2.2 },
+           },
          },
          {
            code: 'nl',
@@ -108,8 +112,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.4, max: 1.8 }
-           }
+             keywordDensity: { min: 0.4, max: 1.8 },
+           },
          },
          {
            code: 'pl',
@@ -120,8 +124,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.4, max: 1.8 }
-           }
+             keywordDensity: { min: 0.4, max: 1.8 },
+           },
          },
          {
            code: 'sv',
@@ -132,8 +136,8 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.4, max: 1.8 }
-           }
+             keywordDensity: { min: 0.4, max: 1.8 },
+           },
          },
          {
            code: 'no',
@@ -144,20 +148,20 @@ Add language parameter to content generation API to generate content directly in
            seoRules: {
              titleMaxLength: 60,
              descriptionMaxLength: 160,
-             keywordDensity: { min: 0.4, max: 1.8 }
-           }
-         }
+             keywordDensity: { min: 0.4, max: 1.8 },
+           },
+         },
        ];
-       
-       languages.forEach(lang => {
+
+       languages.forEach((lang) => {
          this.supportedLanguages.set(lang.code, lang);
        });
      }
-     
+
      isSupported(languageCode: string): boolean {
        return this.supportedLanguages.has(languageCode.toLowerCase());
      }
-     
+
      getLanguageConfig(languageCode: string): LanguageConfig {
        const config = this.supportedLanguages.get(languageCode.toLowerCase());
        if (!config) {
@@ -165,27 +169,24 @@ Add language parameter to content generation API to generate content directly in
        }
        return config;
      }
-     
+
      getSupportedLanguages(): LanguageInfo[] {
-       return Array.from(this.supportedLanguages.values()).map(config => ({
+       return Array.from(this.supportedLanguages.values()).map((config) => ({
          code: config.code,
          name: config.name,
-         nativeName: config.nativeName
+         nativeName: config.nativeName,
        }));
      }
    }
    ```
 
 2. **Prompt builder with language support**
+
    ```typescript
    class MultilingualPromptBuilder {
-     buildPrompt(
-       template: string,
-       language: string,
-       variables: Record<string, any>
-     ): string {
+     buildPrompt(template: string, language: string, variables: Record<string, any>): string {
        const languageConfig = this.languageAdapter.getLanguageConfig(language);
-       
+
        // Base prompt with language instruction
        let prompt = `Generate the following content in ${languageConfig.name} (${languageConfig.nativeName}).
        
@@ -196,22 +197,19 @@ Add language parameter to content generation API to generate content directly in
        - Maintain cultural relevance for the target market
        
        ${template}`;
-       
+
        // Replace variables
        Object.entries(variables).forEach(([key, value]) => {
          prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
        });
-       
+
        return prompt;
      }
-     
-     buildComponentPrompt(
-       component: string,
-       context: GenerationContext
-     ): string {
+
+     buildComponentPrompt(component: string, context: GenerationContext): string {
        const language = context.language || 'en';
        const languageConfig = this.languageAdapter.getLanguageConfig(language);
-       
+
        switch (component) {
          case 'hero':
            return this.buildHeroPrompt(context, languageConfig);
@@ -223,11 +221,8 @@ Add language parameter to content generation API to generate content directly in
            return this.buildGenericPrompt(component, context, languageConfig);
        }
      }
-     
-     private buildHeroPrompt(
-       context: GenerationContext,
-       languageConfig: LanguageConfig
-     ): string {
+
+     private buildHeroPrompt(context: GenerationContext, languageConfig: LanguageConfig): string {
        return `Create a hero section for a ${context.pageType} page in ${languageConfig.name}.
        
        Product/Category: ${context.targetKeywords[0]}
@@ -253,11 +248,8 @@ Add language parameter to content generation API to generate content directly in
          "cta": { "text": "...", "action": "..." }
        }`;
      }
-     
-     private buildFAQPrompt(
-       context: GenerationContext,
-       languageConfig: LanguageConfig
-     ): string {
+
+     private buildFAQPrompt(context: GenerationContext, languageConfig: LanguageConfig): string {
        return `Generate 5 frequently asked questions and answers about ${context.targetKeywords[0]} in ${languageConfig.name}.
        
        Guidelines:
@@ -281,25 +273,26 @@ Add language parameter to content generation API to generate content directly in
    ```
 
 3. **Language selector component**
+
    ```typescript
    interface LanguageSelectorProps {
      value: string;
      onChange: (language: string) => void;
      disabled?: boolean;
    }
-   
+
    const LanguageSelector: React.FC<LanguageSelectorProps> = ({
      value,
      onChange,
      disabled = false
    }) => {
      const [languages, setLanguages] = useState<LanguageInfo[]>([]);
-     
+
      useEffect(() => {
        const adapter = new LanguageAdapter();
        setLanguages(adapter.getSupportedLanguages());
      }, []);
-     
+
      return (
        <div className="language-selector">
          <label htmlFor="language" className="block text-sm font-medium text-gray-700">
@@ -327,30 +320,23 @@ Add language parameter to content generation API to generate content directly in
    ```
 
 4. **Language-specific SEO optimization**
+
    ```typescript
    class MultilingualSEO {
-     optimizeForLanguage(
-       content: string,
-       language: string,
-       keywords: string[]
-     ): OptimizedContent {
+     optimizeForLanguage(content: string, language: string, keywords: string[]): OptimizedContent {
        const config = this.languageAdapter.getLanguageConfig(language);
-       
+
        return {
          content: this.optimizeContent(content, keywords, config),
          meta: this.generateMetaTags(content, language, config),
-         schema: this.generateSchema(content, language)
+         schema: this.generateSchema(content, language),
        };
      }
-     
-     private optimizeContent(
-       content: string,
-       keywords: string[],
-       config: LanguageConfig
-     ): string {
+
+     private optimizeContent(content: string, keywords: string[], config: LanguageConfig): string {
        // Calculate keyword density
        const density = this.calculateKeywordDensity(content, keywords);
-       
+
        // Adjust if needed
        if (density < config.seoRules.keywordDensity.min) {
          // Suggest adding keywords naturally
@@ -359,53 +345,46 @@ Add language parameter to content generation API to generate content directly in
          // Suggest reducing keywords
          console.warn(`Keyword density too high for ${config.name}`);
        }
-       
+
        return content;
      }
-     
-     private generateMetaTags(
-       content: string,
-       language: string,
-       config: LanguageConfig
-     ): MetaTags {
+
+     private generateMetaTags(content: string, language: string, config: LanguageConfig): MetaTags {
        return {
-         title: this.truncateText(
-           this.extractTitle(content),
-           config.seoRules.titleMaxLength
-         ),
+         title: this.truncateText(this.extractTitle(content), config.seoRules.titleMaxLength),
          description: this.truncateText(
            this.extractDescription(content),
            config.seoRules.descriptionMaxLength
          ),
          lang: language,
-         'og:locale': this.getLocaleString(language)
+         'og:locale': this.getLocaleString(language),
        };
      }
-     
+
      private generateSchema(content: string, language: string): object {
        return {
          '@context': 'https://schema.org',
          '@type': 'WebPage',
-         'inLanguage': language,
-         'headline': this.extractTitle(content),
-         'description': this.extractDescription(content)
+         inLanguage: language,
+         headline: this.extractTitle(content),
+         description: this.extractDescription(content),
        };
      }
-     
+
      private getLocaleString(language: string): string {
        const localeMap: Record<string, string> = {
-         'en': 'en_US',
-         'es': 'es_ES',
-         'fr': 'fr_FR',
-         'de': 'de_DE',
-         'it': 'it_IT',
-         'pt': 'pt_PT',
-         'nl': 'nl_NL',
-         'pl': 'pl_PL',
-         'sv': 'sv_SE',
-         'no': 'no_NO'
+         en: 'en_US',
+         es: 'es_ES',
+         fr: 'fr_FR',
+         de: 'de_DE',
+         it: 'it_IT',
+         pt: 'pt_PT',
+         nl: 'nl_NL',
+         pl: 'pl_PL',
+         sv: 'sv_SE',
+         no: 'no_NO',
        };
-       
+
        return localeMap[language] || 'en_US';
      }
    }
@@ -419,49 +398,46 @@ Add language parameter to content generation API to generate content directly in
        if (!this.languageAdapter.isSupported(request.targetLanguage)) {
          throw new Error(`Language ${request.targetLanguage} not supported`);
        }
-       
+
        // Build language-specific context
        const context: GenerationContext = {
          ...request,
-         language: request.targetLanguage
+         language: request.targetLanguage,
        };
-       
+
        // Generate components in target language
        const components = await Promise.all(
          request.components.map(async (componentConfig) => {
-           const prompt = this.promptBuilder.buildComponentPrompt(
-             componentConfig.type,
-             context
-           );
-           
+           const prompt = this.promptBuilder.buildComponentPrompt(componentConfig.type, context);
+
            const result = await this.openAIClient.generateText(prompt, {
              model: this.languageAdapter.getLanguageConfig(request.targetLanguage).openAIModel,
              temperature: 0.7,
-             maxTokens: 2000
+             maxTokens: 2000,
            });
-           
+
            return {
              type: componentConfig.type,
              content: result.content,
-             language: request.targetLanguage
+             language: request.targetLanguage,
            };
          })
        );
-       
+
        // Optimize for language-specific SEO
        const optimizedContent = this.seo.optimizeForLanguage(
          components,
          request.targetLanguage,
          request.keywords
        );
-       
+
        // Store with language metadata
        await this.storeContent({
          ...optimizedContent,
          language: request.targetLanguage,
-         generatedAt: new Date()
+         generatedAt: new Date(),
        });
-       
+
        return optimizedContent;
      }
    }
@@ -480,11 +456,11 @@ Add language parameter to content generation API to generate content directly in
 
 ```typescript
 interface LanguageConfig {
-  code: string;              // ISO 639-1 code
-  name: string;              // English name
-  nativeName: string;        // Native name
-  direction: 'ltr' | 'rtl';  // Text direction
-  openAIModel: string;       // Best model for this language
+  code: string; // ISO 639-1 code
+  name: string; // English name
+  nativeName: string; // Native name
+  direction: 'ltr' | 'rtl'; // Text direction
+  openAIModel: string; // Best model for this language
   seoRules: {
     titleMaxLength: number;
     descriptionMaxLength: number;
@@ -497,8 +473,8 @@ interface LanguageConfig {
 
 interface ContentGenerationRequest {
   pageType: PageType;
-  targetLanguage: string;    // ISO 639-1 code
-  keywords: string[];        // In target language
+  targetLanguage: string; // ISO 639-1 code
+  keywords: string[]; // In target language
   components: ComponentConfig[];
   brandVoice: BrandVoice;
 }
@@ -506,18 +482,18 @@ interface ContentGenerationRequest {
 
 ## Supported Languages
 
-| Code | Language | Native Name | SEO Title Length | Notes |
-|------|----------|-------------|------------------|--------|
-| en | English | English | 60 | Default |
-| es | Spanish | Español | 70 | Longer titles allowed |
-| fr | French | Français | 65 | Formal tone |
-| de | German | Deutsch | 60 | Compound words |
-| it | Italian | Italiano | 65 | Expressive |
-| pt | Portuguese | Português | 60 | BR variant available |
-| nl | Dutch | Nederlands | 60 | Concise |
-| pl | Polish | Polski | 60 | Complex grammar |
-| sv | Swedish | Svenska | 60 | Nordic market |
-| no | Norwegian | Norsk | 60 | Bokmål variant |
+| Code | Language   | Native Name | SEO Title Length | Notes                 |
+| ---- | ---------- | ----------- | ---------------- | --------------------- |
+| en   | English    | English     | 60               | Default               |
+| es   | Spanish    | Español     | 70               | Longer titles allowed |
+| fr   | French     | Français    | 65               | Formal tone           |
+| de   | German     | Deutsch     | 60               | Compound words        |
+| it   | Italian    | Italiano    | 65               | Expressive            |
+| pt   | Portuguese | Português   | 60               | BR variant available  |
+| nl   | Dutch      | Nederlands  | 60               | Concise               |
+| pl   | Polish     | Polski      | 60               | Complex grammar       |
+| sv   | Swedish    | Svenska     | 60               | Nordic market         |
+| no   | Norwegian  | Norsk       | 60               | Bokmål variant        |
 
 ## Acceptance Criteria
 

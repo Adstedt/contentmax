@@ -1,8 +1,11 @@
 # Speed Review Interface Specification
+
 ## ContentMax Tinder-Style Content Review System
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Speed Review Interface is a revolutionary content review system that transforms the traditionally tedious process of approving bulk-generated content into an engaging, efficient, and even enjoyable experience. Inspired by dating app interactions, this interface enables reviewers to process 100+ pieces of content per hour through intuitive gestures and keyboard shortcuts.
 
 ### Design Philosophy
+
 - **Speed First**: Every interaction optimized for velocity
 - **Cognitive Load Reduction**: Binary decisions (approve/reject) with edit escape hatch
 - **Flow State**: Minimize context switching, maintain momentum
@@ -91,13 +95,16 @@ The Speed Review Interface is a revolutionary content review system that transfo
 ### 3.1 Primary Actions
 
 #### APPROVE (Right)
+
 **Triggers:**
+
 - Keyboard: `A` key
 - Mouse: Click green checkmark
 - Touch: Swipe right
 - Gesture: Two-finger swipe right (trackpad)
 
 **Animation:**
+
 - Card slides right with slight rotation (+15°)
 - Green trail effect follows card
 - Success sound: Soft "ding"
@@ -105,13 +112,16 @@ The Speed Review Interface is a revolutionary content review system that transfo
 - Next card slides in from bottom (200ms)
 
 #### REJECT (Left)
+
 **Triggers:**
-- Keyboard: `R` key  
+
+- Keyboard: `R` key
 - Mouse: Click red X
 - Touch: Swipe left
 - Gesture: Two-finger swipe left (trackpad)
 
 **Animation:**
+
 - Card slides left with slight rotation (-15°)
 - Red trail effect follows card
 - Reject sound: Subtle "whoosh"
@@ -119,13 +129,16 @@ The Speed Review Interface is a revolutionary content review system that transfo
 - Next card slides in from bottom (200ms)
 
 #### EDIT (Down)
+
 **Triggers:**
+
 - Keyboard: `E` key
 - Mouse: Click Edit button
 - Touch: Swipe down
 - Gesture: Two-finger swipe down (trackpad)
 
 **Behavior:**
+
 - Card expands to full editor
 - Transition: 400ms ease-in-out
 - Editor appears with markdown/HTML toggle
@@ -133,13 +146,16 @@ The Speed Review Interface is a revolutionary content review system that transfo
 - Quick approve after edit option
 
 #### SKIP (Space)
+
 **Triggers:**
+
 - Keyboard: `Space` bar
 - Mouse: Click Skip
 - Touch: Long press
 - Gesture: Pinch
 
 **Behavior:**
+
 - Card fades out (200ms)
 - Marked for later review
 - No impact on metrics
@@ -147,18 +163,18 @@ The Speed Review Interface is a revolutionary content review system that transfo
 
 ### 3.2 Keyboard Shortcuts Map
 
-| Key | Action | Context |
-|-----|--------|---------|
-| `A` | Approve | Main review |
-| `R` | Reject | Main review |
-| `E` | Edit | Main review |
-| `Space` | Skip | Main review |
-| `U` | Undo last | After action |
-| `Tab` | Toggle view mode | Any time |
-| `?` | Show help | Any time |
-| `ESC` | Exit review | Any time |
-| `1-5` | Quality rating | After approve |
-| `F` | Flag for human | Any time |
+| Key     | Action           | Context       |
+| ------- | ---------------- | ------------- |
+| `A`     | Approve          | Main review   |
+| `R`     | Reject           | Main review   |
+| `E`     | Edit             | Main review   |
+| `Space` | Skip             | Main review   |
+| `U`     | Undo last        | After action  |
+| `Tab`   | Toggle view mode | Any time      |
+| `?`     | Show help        | Any time      |
+| `ESC`   | Exit review      | Any time      |
+| `1-5`   | Quality rating   | After approve |
+| `F`     | Flag for human   | Any time      |
 
 ---
 
@@ -232,6 +248,7 @@ Each card shows a compact SEO score in the corner:
 ```
 
 **Score Breakdown:**
+
 - **A+ (90-100)**: Massive opportunity, approve immediately
 - **A (80-89)**: Strong improvement, likely approve
 - **B (70-79)**: Good improvement, review carefully
@@ -277,6 +294,7 @@ Each card shows a compact SEO score in the corner:
 ```
 
 **Confidence Levels:**
+
 - 95-100%: Green badge, auto-approve eligible
 - 80-94%: Blue badge, likely good
 - 60-79%: Yellow badge, review carefully
@@ -358,13 +376,13 @@ stateDiagram-v2
     CardDisplay --> Rejecting: Swipe Left
     CardDisplay --> Editing: Press E
     CardDisplay --> Skipping: Press Space
-    
+
     Approving --> NextCard: Animate Out
     Rejecting --> NextCard: Animate Out
     Editing --> EditMode: Expand Card
     EditMode --> CardDisplay: Save/Cancel
     Skipping --> NextCard: Fade Out
-    
+
     NextCard --> CardDisplay: Load Next
     NextCard --> BatchComplete: No More Cards
     BatchComplete --> Summary: Show Results
@@ -516,14 +534,14 @@ elif reviewer.accuracy < 85%:
 
 ### 9.2 Gesture Map
 
-| Gesture | Action |
-|---------|--------|
-| Swipe Right | Approve |
-| Swipe Left | Reject |
-| Swipe Down | Edit |
-| Pinch | Skip |
-| Long Press | Preview full |
-| Double Tap | Toggle view |
+| Gesture     | Action       |
+| ----------- | ------------ |
+| Swipe Right | Approve      |
+| Swipe Left  | Reject       |
+| Swipe Down  | Edit         |
+| Pinch       | Skip         |
+| Long Press  | Preview full |
+| Double Tap  | Toggle view  |
 
 ---
 
@@ -549,6 +567,7 @@ elif reviewer.accuracy < 85%:
 ### 10.2 Alternative Interfaces
 
 **List Mode** (for users who prefer traditional review):
+
 ```
 ┌───────────────────────────────────────┐
 │  □ Winter Jackets (95%)    [A][R][E] │
@@ -570,10 +589,10 @@ elif reviewer.accuracy < 85%:
 // Preload queue management
 const queue = {
   current: cards[0],
-  next: cards.slice(1, 4),     // Preload next 3
-  previous: [],                 // Keep 2 for undo
-  upcoming: cards.slice(4, 10)  // Lazy load next batch
-}
+  next: cards.slice(1, 4), // Preload next 3
+  previous: [], // Keep 2 for undo
+  upcoming: cards.slice(4, 10), // Lazy load next batch
+};
 ```
 
 ### 11.2 Animation Performance

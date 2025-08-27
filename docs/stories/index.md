@@ -1,12 +1,15 @@
 # ContentMax User Stories
 
 ## Overview
+
 This directory contains all user stories organized by sprint. Each sprint has its own folder with individual story files.
 
 ## Sprint Structure
 
 ### [Sprint 1: Foundation & Core Setup](./sprint-1/index.md)
+
 **Goal**: Establish project foundation, authentication, and basic dashboard
+
 - Story 1.1: Project Initialization
 - Story 1.2: Supabase Setup & Database Schema
 - Story 1.3: Authentication Implementation
@@ -14,7 +17,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 1.5: Component Library Setup
 
 ### [Sprint 2: Data Ingestion & Processing](./sprint-2/index.md)
+
 **Goal**: Build data ingestion pipeline with CI/CD setup
+
 - Story 2.1: CI/CD Pipeline Setup
 - Story 2.2: Sitemap Parser
 - Story 2.3: Content Scraper with Rate Limiting
@@ -23,7 +28,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 2.6: Import UI & Progress Tracking
 
 ### [Sprint 3: Taxonomy Visualization](./sprint-3/index.md)
+
 **Goal**: Build interactive taxonomy visualization for 3,000 nodes
+
 - Story 3.1: D3.js Force Simulation Setup
 - Story 3.2: Viewport Controls & Interactions
 - Story 3.3: Node Clustering & LOD
@@ -31,7 +38,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 3.5: Performance Optimization
 
 ### [Sprint 4: Content Generation Engine](./sprint-4/index.md)
+
 **Goal**: Build AI-powered content generation with templates
+
 - Story 4.1: Component Architecture System
 - Story 4.2: Handlebars Template System
 - Story 4.3: OpenAI Integration with Retry Logic
@@ -39,7 +48,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 4.5: Multi-language Content Generation
 
 ### [Sprint 5: Bulk Operations & Speed Review](./sprint-5/index.md)
+
 **Goal**: Enable bulk content generation and speed review interface
+
 - Story 5.1: Bulk Selection Tools
 - Story 5.2: Smart Prioritization Algorithm
 - Story 5.3: Parallel Generation System
@@ -47,7 +58,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 5.5: Review Analytics
 
 ### [Sprint 6: Workflow & Publishing](./sprint-6/index.md)
+
 **Goal**: Complete content pipeline with workflow management (MVP Complete)
+
 - Story 6.1: Kanban Board Implementation
 - Story 6.2: Publishing System
 - Story 6.3: Schema Markup Generation
@@ -55,7 +68,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 6.5: Performance Tracking
 
 ### [Sprint 7: Polish & Optimization](./sprint-7/index.md)
+
 **Goal**: Refine UI, optimize performance, add missing features
+
 - Story 7.1: UI Polish & Accessibility
 - Story 7.2: Performance Optimization
 - Story 7.3: Error Handling & Resilience
@@ -63,7 +78,9 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 7.5: Documentation & Help
 
 ### [Sprint 8: Testing & Deployment](./sprint-8/index.md)
+
 **Goal**: Complete testing, security audit, and production deployment
+
 - Story 8.1: E2E Testing Suite
 - Story 8.2: Unit Test Coverage
 - Story 8.3: Security Audit
@@ -73,6 +90,7 @@ This directory contains all user stories organized by sprint. Each sprint has it
 ## Story Format
 
 Each story follows this structure:
+
 - User Story statement
 - Size and priority
 - Dependencies
@@ -107,6 +125,7 @@ Each story follows this structure:
 ## External Dependencies
 
 Before starting, ensure all external services are configured:
+
 - See [External Services Setup Guide](../external-services-setup.md)
 
 ## Notes for AI Agents

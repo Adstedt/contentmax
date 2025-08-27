@@ -15,16 +15,13 @@ async function testConnection() {
   try {
     console.log('🔄 Testing Supabase connection...');
     console.log(`📍 URL: ${supabaseUrl}`);
-    
+
     // Test if tables exist
-    const { data, error } = await supabase
-      .from('organizations')
-      .select('count')
-      .limit(1);
+    const { data, error } = await supabase.from('organizations').select('count').limit(1);
 
     if (error) {
       console.error('❌ Connection failed:', error.message);
-      
+
       if (error.message.includes('not find the table')) {
         console.log('\n⚠️  Tables do not exist. Please run the migration:');
         console.log('1. Go to your Supabase dashboard');
@@ -36,17 +33,16 @@ async function testConnection() {
 
     console.log('✅ Successfully connected to Supabase!');
     console.log('📊 Organizations table exists');
-    
+
     // List all tables
     const { data: tables } = await supabase
       .from('information_schema.tables')
       .select('table_name')
       .eq('table_schema', 'public');
-    
+
     if (tables && tables.length > 0) {
       console.log(`\n📋 Found ${tables.length} tables in database`);
     }
-    
   } catch (err) {
     console.error('❌ Unexpected error:', err);
   }

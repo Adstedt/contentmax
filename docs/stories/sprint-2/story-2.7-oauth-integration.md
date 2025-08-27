@@ -1,22 +1,26 @@
 # Story 2.7: OAuth Integration (Split from 1.3)
 
 ## User Story
+
 As a user,
 I want to sign in with my Google account,
 So that I can access ContentMax without creating a new password.
 
 ## Size & Priority
+
 - **Size**: M (4 hours) - Split from original Story 1.3
 - **Priority**: P1 - High
 - **Sprint**: 2 (Adjusted - moved from Sprint 1)
 - **Dependencies**: Story 1.3a (Basic Authentication)
 
 ## Description
+
 Add OAuth providers (Google, GitHub) to the existing authentication system. This was split from the original authentication story to reduce Sprint 1 complexity.
 
 ## Implementation Steps
 
 1. **Update Supabase OAuth configuration**
+
    ```typescript
    // Instructions for Supabase Dashboard
    /*
@@ -34,17 +38,18 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
    ```
 
 2. **Extend auth context for OAuth**
+
    ```typescript
    // contexts/AuthContext.tsx (additions)
    import { Provider } from '@supabase/supabase-js';
-   
+
    interface AuthContextType {
      // ... existing properties
      signInWithOAuth: (provider: Provider) => Promise<void>;
      linkOAuthAccount: (provider: Provider) => Promise<void>;
      unlinkOAuthAccount: (provider: Provider) => Promise<void>;
    }
-   
+
    // Inside AuthProvider component
    const signInWithOAuth = async (provider: Provider) => {
      const { error } = await supabase.auth.signInWithOAuth({
@@ -55,44 +60,47 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
          queryParams: {
            access_type: 'offline',
            prompt: 'consent',
-         }
-       }
+         },
+       },
      });
-     
+
      if (error) throw error;
    };
-   
+
    const linkOAuthAccount = async (provider: Provider) => {
      const { error } = await supabase.auth.linkIdentity({
        provider,
        options: {
-         redirectTo: `${window.location.origin}/settings/linked-accounts`
-       }
+         redirectTo: `${window.location.origin}/settings/linked-accounts`,
+       },
      });
-     
+
      if (error) throw error;
    };
-   
+
    const unlinkOAuthAccount = async (provider: Provider) => {
-     const { data: { identities } } = await supabase.auth.getUserIdentities();
-     
-     const identity = identities?.find(i => i.provider === provider);
+     const {
+       data: { identities },
+     } = await supabase.auth.getUserIdentities();
+
+     const identity = identities?.find((i) => i.provider === provider);
      if (!identity) {
        throw new Error(`No ${provider} account linked`);
      }
-     
+
      const { error } = await supabase.auth.unlinkIdentity(identity);
      if (error) throw error;
    };
    ```
 
 3. **OAuth button components**
+
    ```typescript
    // components/auth/OAuthButtons.tsx
    import { useState } from 'react';
    import { useAuth } from '@/contexts/AuthContext';
    import { Provider } from '@supabase/supabase-js';
-   
+
    interface OAuthProvider {
      name: string;
      provider: Provider;
@@ -100,7 +108,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
      bgColor: string;
      hoverColor: string;
    }
-   
+
    const providers: OAuthProvider[] = [
      {
        name: 'Google',
@@ -117,16 +125,16 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
        hoverColor: 'hover:bg-gray-800'
      }
    ];
-   
+
    export function OAuthButtons() {
      const { signInWithOAuth } = useAuth();
      const [loading, setLoading] = useState<Provider | null>(null);
      const [error, setError] = useState<string | null>(null);
-     
+
      const handleOAuthSignIn = async (provider: Provider) => {
        setError(null);
        setLoading(provider);
-       
+
        try {
          await signInWithOAuth(provider);
        } catch (error: any) {
@@ -134,7 +142,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
          setLoading(null);
        }
      };
-     
+
      return (
        <div className="space-y-3">
          <div className="relative">
@@ -145,7 +153,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
              <span className="px-2 bg-white text-gray-500">Or continue with</span>
            </div>
          </div>
-         
+
          <div className="grid grid-cols-2 gap-3">
            {providers.map((p) => (
              <button
@@ -153,10 +161,10 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
                onClick={() => handleOAuthSignIn(p.provider)}
                disabled={loading !== null}
                className={`
-                 relative flex justify-center items-center px-4 py-2 
-                 border border-gray-300 rounded-md shadow-sm 
-                 text-sm font-medium text-gray-700 
-                 ${p.bgColor} ${p.hoverColor} 
+                 relative flex justify-center items-center px-4 py-2
+                 border border-gray-300 rounded-md shadow-sm
+                 text-sm font-medium text-gray-700
+                 ${p.bgColor} ${p.hoverColor}
                  disabled:opacity-50 disabled:cursor-not-allowed
                `}
              >
@@ -167,7 +175,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
              </button>
            ))}
          </div>
-         
+
          {error && (
            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
              {error}
@@ -176,7 +184,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
        </div>
      );
    }
-   
+
    // Icon components
    function GoogleIcon({ className }: { className?: string }) {
      return (
@@ -200,7 +208,7 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
        </svg>
      );
    }
-   
+
    function GitHubIcon({ className }: { className?: string }) {
      return (
        <svg className={className} fill="currentColor" viewBox="0 0 20 20">
@@ -215,12 +223,13 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
    ```
 
 4. **Update auth pages with OAuth**
+
    ```typescript
    // app/auth/login/page.tsx (updated)
    import { SignInForm } from '@/components/auth/SignInForm';
    import { OAuthButtons } from '@/components/auth/OAuthButtons';
    import Link from 'next/link';
-   
+
    export default function LoginPage() {
      return (
        <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -230,11 +239,11 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
                Sign in to ContentMax
              </h2>
            </div>
-           
+
            <OAuthButtons />
-           
+
            <SignInForm />
-           
+
            <p className="text-center text-sm text-gray-600">
              Don't have an account?{' '}
              <Link href="/auth/signup" className="text-blue-600 hover:underline">
@@ -248,21 +257,22 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
    ```
 
 5. **OAuth callback handler**
+
    ```typescript
    // app/auth/callback/route.ts
    import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
    import { cookies } from 'next/headers';
    import { NextResponse } from 'next/server';
-   
+
    export async function GET(request: Request) {
      const requestUrl = new URL(request.url);
      const code = requestUrl.searchParams.get('code');
      const next = requestUrl.searchParams.get('next') ?? '/dashboard';
-     
+
      if (code) {
        const cookieStore = cookies();
        const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-       
+
        try {
          await supabase.auth.exchangeCodeForSession(code);
        } catch (error) {
@@ -272,32 +282,33 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
          );
        }
      }
-     
+
      return NextResponse.redirect(new URL(next, request.url));
    }
    ```
 
 6. **Account linking in settings**
+
    ```typescript
    // components/settings/LinkedAccounts.tsx
    import { useEffect, useState } from 'react';
    import { useAuth } from '@/contexts/AuthContext';
    import { Identity } from '@supabase/supabase-js';
-   
+
    export function LinkedAccounts() {
      const { user, linkOAuthAccount, unlinkOAuthAccount } = useAuth();
      const [identities, setIdentities] = useState<Identity[]>([]);
      const [loading, setLoading] = useState(false);
-     
+
      useEffect(() => {
        loadIdentities();
      }, [user]);
-     
+
      const loadIdentities = async () => {
        const { data } = await supabase.auth.getUserIdentities();
        setIdentities(data?.identities || []);
      };
-     
+
      const handleLink = async (provider: Provider) => {
        setLoading(true);
        try {
@@ -309,13 +320,13 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
          setLoading(false);
        }
      };
-     
+
      const handleUnlink = async (provider: Provider) => {
        if (identities.length <= 1) {
          alert('You must have at least one authentication method');
          return;
        }
-       
+
        if (confirm(`Unlink ${provider} account?`)) {
          setLoading(true);
          try {
@@ -328,16 +339,16 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
          }
        }
      };
-     
+
      const providers = ['google', 'github'];
-     
+
      return (
        <div className="space-y-4">
          <h3 className="text-lg font-medium">Linked Accounts</h3>
-         
+
          {providers.map(provider => {
            const linked = identities.some(i => i.provider === provider);
-           
+
            return (
              <div key={provider} className="flex items-center justify-between p-4 border rounded-lg">
                <div className="flex items-center space-x-3">
@@ -346,13 +357,13 @@ Add OAuth providers (Google, GitHub) to the existing authentication system. This
                    <span className="text-sm text-green-600">✓ Connected</span>
                  )}
                </div>
-               
+
                <button
                  onClick={() => linked ? handleUnlink(provider) : handleLink(provider)}
                  disabled={loading}
                  className={`px-4 py-2 rounded-md text-sm ${
-                   linked 
-                     ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                   linked
+                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                  } disabled:opacity-50`}
                >

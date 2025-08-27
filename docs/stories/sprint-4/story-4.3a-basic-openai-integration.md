@@ -1,27 +1,31 @@
 # Story 4.3a: Basic OpenAI Integration
 
 ## User Story
+
 As a user,
 I want to generate content using OpenAI's API,
 So that I can create high-quality content automatically.
 
 ## Size & Priority
+
 - **Size**: M (4 hours) - Reduced from L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 4 (Adjusted)
 - **Dependencies**: Story 0.2 (OpenAI Spike), Story 4.2 (Templates)
 
 ## Description
+
 Implement basic OpenAI integration with simple generation capabilities. Advanced features like retry logic, circuit breakers, and streaming will be handled in Story 5.6 (Sprint 5).
 
 ## Implementation Steps
 
 1. **Basic OpenAI service**
+
    ```typescript
    // lib/openai/openai-service.ts
    import OpenAI from 'openai';
    import { z } from 'zod';
-   
+
    // Configuration schema
    const OpenAIConfigSchema = z.object({
      apiKey: z.string(),
@@ -29,9 +33,9 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
      temperature: z.number().min(0).max(2).default(0.7),
      maxTokens: z.number().min(1).max(4096).default(1000),
    });
-   
+
    export type OpenAIConfig = z.infer<typeof OpenAIConfigSchema>;
-   
+
    export interface GenerationRequest {
      prompt: string;
      systemPrompt?: string;
@@ -39,7 +43,7 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
      maxTokens?: number;
      model?: string;
    }
-   
+
    export interface GenerationResponse {
      content: string;
      usage: {
@@ -51,26 +55,26 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
      model: string;
      finishReason: string;
    }
-   
+
    export class OpenAIService {
      private client: OpenAI;
      private config: OpenAIConfig;
-     
+
      constructor(config: Partial<OpenAIConfig> = {}) {
        this.config = OpenAIConfigSchema.parse({
          apiKey: process.env.OPENAI_API_KEY,
          ...config,
        });
-       
+
        this.client = new OpenAI({
          apiKey: this.config.apiKey,
        });
      }
-     
+
      async generateContent(request: GenerationRequest): Promise<GenerationResponse> {
        try {
          const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
-         
+
          // Add system prompt if provided
          if (request.systemPrompt) {
            messages.push({
@@ -78,13 +82,13 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
              content: request.systemPrompt,
            });
          }
-         
+
          // Add user prompt
          messages.push({
            role: 'user',
            content: request.prompt,
          });
-         
+
          // Make API call
          const completion = await this.client.chat.completions.create({
            model: request.model || this.config.model,
@@ -92,14 +96,14 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            temperature: request.temperature ?? this.config.temperature,
            max_tokens: request.maxTokens ?? this.config.maxTokens,
          });
-         
+
          const response = completion.choices[0];
          const usage = completion.usage;
-         
+
          if (!response || !usage) {
            throw new Error('Invalid response from OpenAI');
          }
-         
+
          return {
            content: response.message?.content || '',
            usage: {
@@ -111,27 +115,23 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            model: completion.model,
            finishReason: response.finish_reason || 'unknown',
          };
-         
        } catch (error) {
          console.error('OpenAI generation error:', error);
          throw this.handleError(error);
        }
      }
-     
-     async generateBatch(
-       requests: GenerationRequest[]
-     ): Promise<GenerationResponse[]> {
+
+     async generateBatch(requests: GenerationRequest[]): Promise<GenerationResponse[]> {
        // Simple sequential processing for now
        const results: GenerationResponse[] = [];
-       
+
        for (const request of requests) {
          try {
            const response = await this.generateContent(request);
            results.push(response);
-           
+
            // Basic rate limiting - 1 second between requests
            await this.sleep(1000);
-           
          } catch (error) {
            console.error('Batch generation error:', error);
            // Continue with next request even if one fails
@@ -144,14 +144,11 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            });
          }
        }
-       
+
        return results;
      }
-     
-     private calculateCost(
-       usage: OpenAI.CompletionUsage,
-       model: string
-     ): number {
+
+     private calculateCost(usage: OpenAI.CompletionUsage, model: string): number {
        const pricing = {
          'gpt-4o-mini': {
            input: 0.00015 / 1000,
@@ -166,20 +163,19 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            output: 0.0015 / 1000,
          },
        };
-       
+
        const modelPricing = pricing[model] || pricing['gpt-4o-mini'];
-       
+
        return (
-         usage.prompt_tokens * modelPricing.input +
-         usage.completion_tokens * modelPricing.output
+         usage.prompt_tokens * modelPricing.input + usage.completion_tokens * modelPricing.output
        );
      }
-     
+
      private handleError(error: any): Error {
        if (error.response) {
          const status = error.response.status;
          const message = error.response.data?.error?.message || error.message;
-         
+
          switch (status) {
            case 401:
              return new Error('Invalid API key');
@@ -193,14 +189,14 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
              return new Error(`OpenAI API error: ${message}`);
          }
        }
-       
+
        return new Error(`OpenAI service error: ${error.message}`);
      }
-     
+
      private sleep(ms: number): Promise<void> {
-       return new Promise(resolve => setTimeout(resolve, ms));
+       return new Promise((resolve) => setTimeout(resolve, ms));
      }
-     
+
      async validateAPIKey(): Promise<boolean> {
        try {
          const response = await this.client.models.list();
@@ -209,13 +205,13 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
          return false;
        }
      }
-     
+
      async getAvailableModels(): Promise<string[]> {
        try {
          const response = await this.client.models.list();
          return response.data
-           .filter(model => model.id.startsWith('gpt'))
-           .map(model => model.id);
+           .filter((model) => model.id.startsWith('gpt'))
+           .map((model) => model.id);
        } catch (error) {
          console.error('Failed to fetch models:', error);
          return ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'];
@@ -225,11 +221,12 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
    ```
 
 2. **Content generation pipeline**
+
    ```typescript
    // lib/generation/basic-pipeline.ts
    import { OpenAIService, GenerationRequest } from '@/lib/openai/openai-service';
    import { Template } from '@/lib/templates/template-engine';
-   
+
    export interface ContentGenerationJob {
      id: string;
      templateId: string;
@@ -244,21 +241,21 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
      createdAt: Date;
      completedAt?: Date;
    }
-   
+
    export class BasicGenerationPipeline {
      private openai: OpenAIService;
      private jobs: Map<string, ContentGenerationJob> = new Map();
-     
+
      constructor() {
        this.openai = new OpenAIService();
      }
-     
+
      async generateFromTemplate(
        template: Template,
        context: Record<string, any>
      ): Promise<ContentGenerationJob> {
        const jobId = crypto.randomUUID();
-       
+
        const job: ContentGenerationJob = {
          id: jobId,
          templateId: template.id,
@@ -266,27 +263,27 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
          status: 'pending',
          createdAt: new Date(),
        };
-       
+
        this.jobs.set(jobId, job);
-       
+
        // Process asynchronously
        this.processJob(job, template);
-       
+
        return job;
      }
-     
+
      private async processJob(job: ContentGenerationJob, template: Template) {
        try {
          // Update status
          job.status = 'processing';
          this.jobs.set(job.id, job);
-         
+
          // Compile template with context
          const compiledPrompt = this.compileTemplate(template.prompt, job.context);
-         const systemPrompt = template.systemPrompt 
+         const systemPrompt = template.systemPrompt
            ? this.compileTemplate(template.systemPrompt, job.context)
            : undefined;
-         
+
          // Generate content
          const response = await this.openai.generateContent({
            prompt: compiledPrompt,
@@ -295,7 +292,7 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            maxTokens: template.maxTokens,
            model: template.model,
          });
-         
+
          // Update job with results
          job.status = 'completed';
          job.result = {
@@ -304,64 +301,60 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
            tokens: response.usage.totalTokens,
          };
          job.completedAt = new Date();
-         
        } catch (error) {
          job.status = 'failed';
          job.error = error.message;
          job.completedAt = new Date();
          console.error(`Job ${job.id} failed:`, error);
        }
-       
+
        this.jobs.set(job.id, job);
      }
-     
-     private compileTemplate(
-       template: string,
-       context: Record<string, any>
-     ): string {
+
+     private compileTemplate(template: string, context: Record<string, any>): string {
        // Simple template variable replacement
        let compiled = template;
-       
+
        for (const [key, value] of Object.entries(context)) {
          const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
          compiled = compiled.replace(regex, String(value));
        }
-       
+
        return compiled;
      }
-     
+
      getJob(jobId: string): ContentGenerationJob | undefined {
        return this.jobs.get(jobId);
      }
-     
+
      getAllJobs(): ContentGenerationJob[] {
        return Array.from(this.jobs.values());
      }
-     
+
      async waitForJob(jobId: string, timeoutMs = 30000): Promise<ContentGenerationJob> {
        const startTime = Date.now();
-       
+
        while (Date.now() - startTime < timeoutMs) {
          const job = this.jobs.get(jobId);
-         
+
          if (!job) {
            throw new Error(`Job ${jobId} not found`);
          }
-         
+
          if (job.status === 'completed' || job.status === 'failed') {
            return job;
          }
-         
+
          await this.sleep(100);
        }
-       
+
        throw new Error(`Job ${jobId} timed out`);
      }
-     
+
      private sleep(ms: number): Promise<void> {
-       return new Promise(resolve => setTimeout(resolve, ms));
+       return new Promise((resolve) => setTimeout(resolve, ms));
      }
-     
+
      getCostSummary(): {
        totalJobs: number;
        completedJobs: number;
@@ -369,8 +362,8 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
        totalTokens: number;
      } {
        const jobs = Array.from(this.jobs.values());
-       const completed = jobs.filter(j => j.status === 'completed');
-       
+       const completed = jobs.filter((j) => j.status === 'completed');
+
        return {
          totalJobs: jobs.length,
          completedJobs: completed.length,
@@ -382,59 +375,51 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
    ```
 
 3. **API endpoint for generation**
+
    ```typescript
    // app/api/generate/route.ts
    import { NextRequest, NextResponse } from 'next/server';
    import { getServerSession } from 'next-auth';
    import { BasicGenerationPipeline } from '@/lib/generation/basic-pipeline';
    import { supabase } from '@/lib/supabase/server';
-   
+
    const pipeline = new BasicGenerationPipeline();
-   
+
    export async function POST(request: NextRequest) {
      const session = await getServerSession();
-     
+
      if (!session) {
        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
      }
-     
+
      try {
        const { templateId, context } = await request.json();
-       
+
        if (!templateId || !context) {
-         return NextResponse.json(
-           { error: 'Template ID and context required' },
-           { status: 400 }
-         );
+         return NextResponse.json({ error: 'Template ID and context required' }, { status: 400 });
        }
-       
+
        // Fetch template from database
        const { data: template, error } = await supabase
          .from('templates')
          .select('*')
          .eq('id', templateId)
          .single();
-       
+
        if (error || !template) {
-         return NextResponse.json(
-           { error: 'Template not found' },
-           { status: 404 }
-         );
+         return NextResponse.json({ error: 'Template not found' }, { status: 404 });
        }
-       
+
        // Generate content
        const job = await pipeline.generateFromTemplate(template, context);
-       
+
        // Wait for completion (with timeout)
        const completedJob = await pipeline.waitForJob(job.id, 30000);
-       
+
        if (completedJob.status === 'failed') {
-         return NextResponse.json(
-           { error: completedJob.error },
-           { status: 500 }
-         );
+         return NextResponse.json({ error: completedJob.error }, { status: 500 });
        }
-       
+
        // Save to database
        const { data: savedContent } = await supabase
          .from('generated_content')
@@ -449,7 +434,7 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
          })
          .select()
          .single();
-       
+
        return NextResponse.json({
          success: true,
          content: completedJob.result?.content,
@@ -457,7 +442,6 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
          tokens: completedJob.result?.tokens,
          id: savedContent?.id,
        });
-       
      } catch (error) {
        console.error('Generation error:', error);
        return NextResponse.json(
@@ -466,17 +450,17 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
        );
      }
    }
-   
+
    export async function GET(request: NextRequest) {
      const session = await getServerSession();
-     
+
      if (!session) {
        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
      }
-     
+
      // Return cost summary
      const summary = pipeline.getCostSummary();
-     
+
      return NextResponse.json({
        summary,
        jobs: pipeline.getAllJobs(),
@@ -485,25 +469,26 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
    ```
 
 4. **Simple generation UI**
+
    ```typescript
    // components/generation/SimpleGenerator.tsx
    import { useState } from 'react';
-   
+
    export function SimpleGenerator() {
      const [templateId, setTemplateId] = useState('');
      const [context, setContext] = useState('{}');
      const [generating, setGenerating] = useState(false);
      const [result, setResult] = useState(null);
      const [error, setError] = useState('');
-     
+
      const handleGenerate = async () => {
        setGenerating(true);
        setError('');
        setResult(null);
-       
+
        try {
          const contextObj = JSON.parse(context);
-         
+
          const response = await fetch('/api/generate', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
@@ -512,22 +497,22 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
              context: contextObj,
            }),
          });
-         
+
          const data = await response.json();
-         
+
          if (!response.ok) {
            throw new Error(data.error || 'Generation failed');
          }
-         
+
          setResult(data);
-         
+
        } catch (err) {
          setError(err.message);
        } finally {
          setGenerating(false);
        }
      };
-     
+
      return (
        <div className="space-y-4">
          <div>
@@ -542,7 +527,7 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
              placeholder="Enter template ID"
            />
          </div>
-         
+
          <div>
            <label className="block text-sm font-medium mb-1">
              Context (JSON)
@@ -555,7 +540,7 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
              placeholder='{"productName": "Example Product"}'
            />
          </div>
-         
+
          <button
            onClick={handleGenerate}
            disabled={generating || !templateId}
@@ -563,20 +548,20 @@ Implement basic OpenAI integration with simple generation capabilities. Advanced
          >
            {generating ? 'Generating...' : 'Generate Content'}
          </button>
-         
+
          {error && (
            <div className="p-4 bg-red-50 text-red-600 rounded-md">
              {error}
            </div>
          )}
-         
+
          {result && (
            <div className="space-y-4">
              <div className="p-4 bg-gray-50 rounded-md">
                <h3 className="font-semibold mb-2">Generated Content</h3>
                <div className="whitespace-pre-wrap">{result.content}</div>
              </div>
-             
+
              <div className="flex space-x-4 text-sm text-gray-600">
                <span>Tokens: {result.tokens}</span>
                <span>Cost: ${result.cost.toFixed(4)}</span>

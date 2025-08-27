@@ -1,9 +1,11 @@
 # Sprint 1: Foundation & Core Setup
 
 ## Sprint Goal
+
 Establish project foundation, authentication system, and basic dashboard interface.
 
 ## Duration
+
 2 weeks
 
 ## Stories
@@ -31,6 +33,7 @@ Establish project foundation, authentication system, and basic dashboard interfa
 ## Definition of Done
 
 Sprint 1 is complete when:
+
 - [ ] Users can sign up and log in
 - [ ] Dashboard displays after authentication
 - [ ] Base component library established

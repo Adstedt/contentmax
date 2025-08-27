@@ -1,9 +1,11 @@
 # ContentMax Source Tree Structure
 
 ## Overview
+
 This document defines the project structure and organization for ContentMax, following Next.js 15 App Router conventions and best practices.
 
 ## Root Directory Structure
+
 ```
 contentmax/
 ├── .github/                  # GitHub specific files
@@ -37,6 +39,7 @@ contentmax/
 ## Detailed Structure
 
 ### `/app` - Next.js App Router
+
 ```
 app/
 ├── (auth)/                    # Auth group layout
@@ -93,6 +96,7 @@ app/
 ```
 
 ### `/components` - React Components
+
 ```
 components/
 ├── ui/                       # Shadcn/ui components
@@ -151,6 +155,7 @@ components/
 ```
 
 ### `/lib` - Core Logic & Utilities
+
 ```
 lib/
 ├── api/                     # API client utilities
@@ -205,6 +210,7 @@ lib/
 ```
 
 ### `/hooks` - Custom React Hooks
+
 ```
 hooks/
 ├── use-auth.ts            # Authentication hook
@@ -220,6 +226,7 @@ hooks/
 ```
 
 ### `/types` - TypeScript Definitions
+
 ```
 types/
 ├── api.ts                # API types
@@ -234,6 +241,7 @@ types/
 ```
 
 ### `/supabase` - Supabase Configuration
+
 ```
 supabase/
 ├── migrations/           # Database migrations
@@ -250,6 +258,7 @@ supabase/
 ```
 
 ### `/tests` - Test Files
+
 ```
 tests/
 ├── unit/               # Unit tests
@@ -267,6 +276,7 @@ tests/
 ```
 
 ### `/public` - Static Assets
+
 ```
 public/
 ├── images/
@@ -280,15 +290,18 @@ public/
 ## File Naming Conventions
 
 ### Components
+
 - React components: `PascalCase.tsx` (e.g., `UserProfile.tsx`)
 - Component folders: `kebab-case/` (e.g., `user-profile/`)
 
 ### Files
+
 - TypeScript files: `kebab-case.ts` (e.g., `api-client.ts`)
 - Test files: `*.test.ts` or `*.spec.ts`
 - Config files: `kebab-case.config.ts`
 
 ### API Routes
+
 - Route handlers: `route.ts`
 - Dynamic routes: `[param]/route.ts`
 - Catch-all routes: `[...param]/route.ts`
@@ -296,6 +309,7 @@ public/
 ## Import Path Aliases
 
 Configure in `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -315,7 +329,9 @@ Configure in `tsconfig.json`:
 ## Module Organization Rules
 
 ### 1. Barrel Exports
+
 Create `index.ts` files for clean imports:
+
 ```typescript
 // components/content/index.ts
 export * from './content-card';
@@ -324,7 +340,9 @@ export * from './content-editor';
 ```
 
 ### 2. Feature Grouping
+
 Group related functionality together:
+
 ```
 lib/content/
 ├── service.ts         # Main service
@@ -335,12 +353,14 @@ lib/content/
 ```
 
 ### 3. Separation of Concerns
+
 - **Components**: UI only, no business logic
 - **Hooks**: Reusable React logic
 - **Lib**: Business logic, API calls, utilities
 - **Types**: TypeScript definitions
 
 ### 4. Server vs Client Code
+
 ```
 lib/
 ├── client/          # Client-only code
@@ -351,7 +371,9 @@ lib/
 ## Best Practices
 
 ### 1. Component Structure
+
 Each component folder should contain:
+
 ```
 ComponentName/
 ├── ComponentName.tsx      # Main component
@@ -361,7 +383,9 @@ ComponentName/
 ```
 
 ### 2. API Route Structure
+
 Each API endpoint should have:
+
 ```
 api/resource/
 ├── route.ts              # Handler
@@ -370,12 +394,15 @@ api/resource/
 ```
 
 ### 3. Keep Related Code Together
+
 Feature-based organization over technical organization when it makes sense.
 
 ### 4. Avoid Deep Nesting
+
 Maximum 3-4 levels of folder nesting to maintain simplicity.
 
 ### 5. Clear Dependencies
+
 - No circular dependencies
 - Clear import paths
 - Explicit exports
@@ -383,6 +410,7 @@ Maximum 3-4 levels of folder nesting to maintain simplicity.
 ## Migration Notes
 
 When adding new features:
+
 1. Determine if it's a component, hook, or lib
 2. Create in appropriate directory
 3. Add barrel exports if needed
@@ -391,6 +419,7 @@ When adding new features:
 ## CI/CD Considerations
 
 Critical paths for CI/CD:
+
 - `/app` - Pages and API routes
 - `/components` - UI components
 - `/lib` - Business logic
@@ -398,18 +427,21 @@ Critical paths for CI/CD:
 - `/public` - Static assets
 
 Build output:
+
 - `.next/` - Build artifacts
 - `out/` - Static export (if used)
 
 ## Security Considerations
 
 Sensitive file locations:
+
 - `.env.local` - Never commit
 - `/lib/server/` - Server-only code
 - `/api/` - Secure API endpoints
 - `/middleware.ts` - Auth checks
 
 Public exposure:
+
 - `/public/` - Publicly accessible
 - `/app/` - Some code sent to client
 - Client components marked with 'use client'

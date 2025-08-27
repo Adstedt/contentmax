@@ -1,84 +1,92 @@
 # Story 2.4: Google Search Console Integration
 
 ## User Story
+
 As an SEO manager,
 I want to integrate Google Search Console data,
 So that I can see search performance metrics alongside content status.
 
 ## Size & Priority
+
 - **Size**: M (6 hours)
 - **Priority**: P1 - High
 - **Sprint**: 2
 - **Dependencies**: Sprint 1 complete
 
 ## Prerequisites
+
 - Google Cloud project created (see docs/external-services-setup.md)
 - OAuth credentials configured
 - Search Console API enabled
 
 ## Description
+
 Implement Google Search Console API integration to fetch search performance data, indexing status, and Core Web Vitals for content optimization decisions.
 
 ## Implementation Steps
 
 1. **Set up Google OAuth 2.0 flow**
+
    ```typescript
    import { google } from 'googleapis';
-   
+
    const oauth2Client = new google.auth.OAuth2(
      process.env.GOOGLE_CLIENT_ID,
      process.env.GOOGLE_CLIENT_SECRET,
      process.env.GOOGLE_REDIRECT_URI
    );
-   
+
    // Generate auth URL
    const authUrl = oauth2Client.generateAuthUrl({
      access_type: 'offline',
      scope: ['https://www.googleapis.com/auth/webmasters.readonly'],
-     prompt: 'consent'
+     prompt: 'consent',
    });
    ```
 
 2. **Handle OAuth callback**
+
    ```typescript
    // app/api/integrations/google/callback/route.ts
    export async function GET(request: Request) {
      const { searchParams } = new URL(request.url);
      const code = searchParams.get('code');
-     
+
      // Exchange code for tokens
      const { tokens } = await oauth2Client.getToken(code);
-     
+
      // Store refresh token encrypted
      await storeTokens(userId, tokens);
-     
+
      // Redirect to settings page
    }
    ```
 
 3. **Create Search Console API client**
+
    ```typescript
    class SearchConsoleClient {
      private webmasters: any;
-     
+
      constructor(tokens: OAuth2Tokens) {
        oauth2Client.setCredentials(tokens);
-       this.webmasters = google.webmasters({ 
-         version: 'v3', 
-         auth: oauth2Client 
+       this.webmasters = google.webmasters({
+         version: 'v3',
+         auth: oauth2Client,
        });
      }
-     
+
      async getSearchAnalytics(siteUrl: string, options: QueryOptions) {
        return this.webmasters.searchanalytics.query({
          siteUrl,
-         requestBody: options
+         requestBody: options,
        });
      }
    }
    ```
 
 4. **Fetch performance data**
+
    ```typescript
    interface PerformanceData {
      clicks: number;
@@ -88,10 +96,10 @@ Implement Google Search Console API integration to fetch search performance data
      queries: QueryData[];
      pages: PageData[];
    }
-   
+
    async function fetchPerformanceData(
-     siteUrl: string, 
-     startDate: string, 
+     siteUrl: string,
+     startDate: string,
      endDate: string
    ): Promise<PerformanceData> {
      // Fetch clicks, impressions, CTR, position
@@ -108,7 +116,7 @@ Implement Google Search Console API integration to fetch search performance data
        // Check cache validity (24 hours)
        // Return cached data if fresh
      }
-     
+
      async set(key: string, data: any): Promise<void> {
        // Store with timestamp
        // Invalidate old entries
@@ -134,18 +142,18 @@ interface GSCMetrics {
   // Performance metrics
   clicks: number;
   impressions: number;
-  ctr: number;          // Click-through rate
-  position: number;      // Average position
-  
+  ctr: number; // Click-through rate
+  position: number; // Average position
+
   // Dimensions
-  queries: string[];     // Search queries
-  pages: string[];       // Page URLs
-  countries: string[];   // Country codes
-  devices: string[];     // desktop/mobile/tablet
-  
+  queries: string[]; // Search queries
+  pages: string[]; // Page URLs
+  countries: string[]; // Country codes
+  devices: string[]; // desktop/mobile/tablet
+
   // Time series
   dailyData: DailyMetric[];
-  
+
   // Issues
   coverageIssues: CoverageIssue[];
   mobileUsability: MobileIssue[];
@@ -174,18 +182,18 @@ interface IntegrationSettingsProps {
 
 ```typescript
 const GSC_LIMITS = {
-  requestsPerDay: 1200,      // Per project
-  requestsPerMinute: 20,      // Per project
-  rowsPerRequest: 25000,      // Max rows returned
-  dimensionsPerRequest: 5,    // Max dimensions
-  dateRange: 16,              // Months of data available
+  requestsPerDay: 1200, // Per project
+  requestsPerMinute: 20, // Per project
+  rowsPerRequest: 25000, // Max rows returned
+  dimensionsPerRequest: 5, // Max dimensions
+  dateRange: 16, // Months of data available
 };
 
 // Implement rate limiting
 class RateLimitedGSC {
   private requestCount = 0;
   private resetTime: Date;
-  
+
   async makeRequest(fn: () => Promise<any>): Promise<any> {
     await this.checkRateLimit();
     return fn();

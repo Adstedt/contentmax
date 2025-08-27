@@ -1,8 +1,11 @@
 # Frontend Architecture Specification
+
 ## ContentMax Technical Implementation Guide
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Frontend Architecture Team
 
 ---
@@ -12,6 +15,7 @@
 This document provides the complete frontend architecture specification for ContentMax, an AI-powered content generation and management platform for e-commerce. It defines the technical stack, component architecture, state management, API contracts, and implementation guidelines for building a scalable, performant application capable of handling 10,000+ taxonomy nodes and generating content at scale.
 
 ### Key Technical Decisions
+
 - **Framework**: Next.js 15 with App Router and React Server Components
 - **Language**: TypeScript 5.3+ with strict mode
 - **Styling**: Tailwind CSS 3.4 with custom design system
@@ -126,31 +130,31 @@ contentmax/
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    
+
     // Supabase
     "@supabase/supabase-js": "^2.45.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.5.0",
-    
+
     // State Management
     "zustand": "^5.0.0",
     "@tanstack/react-query": "^5.0.0",
-    
+
     // Visualization
     "d3": "^7.9.0",
     "pixi.js": "^8.0.0",
     "react-force-graph": "^1.44.0",
-    
+
     // UI Components
     "@headlessui/react": "^2.0.0",
     "@radix-ui/react-*": "latest",
     "framer-motion": "^11.0.0",
     "@dnd-kit/sortable": "^8.0.0",
-    
+
     // Forms & Validation
     "react-hook-form": "^7.52.0",
     "zod": "^3.23.0",
-    
+
     // Utilities
     "date-fns": "^3.0.0",
     "lodash": "^4.17.21",
@@ -162,18 +166,18 @@ contentmax/
     "typescript": "^5.3.0",
     "@types/react": "^18.3.0",
     "@types/node": "^20.0.0",
-    
+
     // Testing
     "vitest": "^2.0.0",
     "@playwright/test": "^1.40.0",
     "msw": "^2.0.0",
     "@testing-library/react": "^15.0.0",
-    
+
     // Linting & Formatting
     "eslint": "^8.56.0",
     "prettier": "^3.2.0",
     "husky": "^9.0.0",
-    
+
     // Styling
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.0",
@@ -186,29 +190,29 @@ contentmax/
 
 ```typescript
 // next.config.ts
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: true,
     ppr: true, // Partial Prerendering
-    dynamicIO: true
+    dynamicIO: true,
   },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co'
-      }
-    ]
+        hostname: '*.supabase.co',
+      },
+    ],
   },
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  }
-}
+  },
+};
 
-export default nextConfig
+export default nextConfig;
 ```
 
 ---
@@ -245,29 +249,29 @@ App
 ```typescript
 // components/taxonomy/ForceGraph/ForceGraph.tsx
 interface ForceGraphProps {
-  nodes: TaxonomyNode[]
-  edges: Edge[]
-  onNodeClick: (node: TaxonomyNode) => void
-  onLinkCreate?: (source: string, target: string) => void
-  mode: 'default' | 'link' | 'heatmap' | 'coverage'
-  filters: FilterState
+  nodes: TaxonomyNode[];
+  edges: Edge[];
+  onNodeClick: (node: TaxonomyNode) => void;
+  onLinkCreate?: (source: string, target: string) => void;
+  mode: 'default' | 'link' | 'heatmap' | 'coverage';
+  filters: FilterState;
 }
 
 interface TaxonomyNode {
-  id: string
-  label: string
-  url: string
-  type: 'category' | 'brand' | 'product'
-  status: 'optimized' | 'outdated' | 'missing' | 'no_products'
+  id: string;
+  label: string;
+  url: string;
+  type: 'category' | 'brand' | 'product';
+  status: 'optimized' | 'outdated' | 'missing' | 'no_products';
   metrics: {
-    skuCount: number
-    traffic: number
-    revenue: number
-    searchVolume: number
-  }
-  position: { x: number; y: number }
-  parentId?: string
-  depth: number
+    skuCount: number;
+    traffic: number;
+    revenue: number;
+    searchVolume: number;
+  };
+  position: { x: number; y: number };
+  parentId?: string;
+  depth: number;
 }
 
 // Performance targets
@@ -277,14 +281,14 @@ const PERFORMANCE_CONFIG = {
     low: { zoom: 0.25, nodes: 50 },
     medium: { zoom: 0.5, nodes: 200 },
     high: { zoom: 0.75, nodes: 1000 },
-    full: { zoom: 1, nodes: 2500 }
+    full: { zoom: 1, nodes: 2500 },
   },
   physics: {
     chargeStrength: -300,
     linkDistance: 100,
-    alphaDecay: 0.02
-  }
-}
+    alphaDecay: 0.02,
+  },
+};
 ```
 
 #### SpeedReview Component
@@ -292,41 +296,41 @@ const PERFORMANCE_CONFIG = {
 ```typescript
 // components/review/SpeedReview/SpeedReview.tsx
 interface SpeedReviewProps {
-  queue: ReviewItem[]
-  onDecision: (id: string, decision: Decision) => void
-  stats: ReviewStats
+  queue: ReviewItem[];
+  onDecision: (id: string, decision: Decision) => void;
+  stats: ReviewStats;
 }
 
 interface ReviewItem {
-  id: string
-  type: 'category' | 'brand' | 'inspire' | 'engage'
-  title: string
-  url: string
+  id: string;
+  type: 'category' | 'brand' | 'inspire' | 'engage';
+  title: string;
+  url: string;
   content: {
-    excerpt: string
-    fullHtml: string
-    components: ContentComponent[]
-  }
+    excerpt: string;
+    fullHtml: string;
+    components: ContentComponent[];
+  };
   seo: {
-    score: number
-    issues: SEOIssue[]
-    targetKeyword: string
-    searchVolume: number
-    difficulty: number
-    potentialRevenue: number
-  }
-  status: 'draft' | 'pending_review' | 'approved'
+    score: number;
+    issues: SEOIssue[];
+    targetKeyword: string;
+    searchVolume: number;
+    difficulty: number;
+    potentialRevenue: number;
+  };
+  status: 'draft' | 'pending_review' | 'approved';
 }
 
-type Decision = 'approve' | 'reject' | 'edit' | 'skip'
+type Decision = 'approve' | 'reject' | 'edit' | 'skip';
 
 // Swipe thresholds
 const SWIPE_CONFIG = {
   threshold: 50, // pixels
   velocity: 0.5,
   rotation: 15, // degrees
-  animationDuration: 300 // ms
-}
+  animationDuration: 300, // ms
+};
 ```
 
 ---
@@ -339,43 +343,43 @@ const SWIPE_CONFIG = {
 // stores/taxonomy.store.ts
 interface TaxonomyStore {
   // State
-  nodes: Map<string, TaxonomyNode>
-  edges: Edge[]
-  selectedNodes: Set<string>
-  viewMode: ViewMode
-  filters: FilterState
-  viewport: Viewport
-  
+  nodes: Map<string, TaxonomyNode>;
+  edges: Edge[];
+  selectedNodes: Set<string>;
+  viewMode: ViewMode;
+  filters: FilterState;
+  viewport: Viewport;
+
   // Actions
-  loadTaxonomy: () => Promise<void>
-  selectNode: (id: string, multi?: boolean) => void
-  createLink: (source: string, target: string, context: LinkContext) => Promise<void>
-  updateNodeStatus: (id: string, status: NodeStatus) => void
-  setViewMode: (mode: ViewMode) => void
-  applyFilters: (filters: Partial<FilterState>) => void
-  
+  loadTaxonomy: () => Promise<void>;
+  selectNode: (id: string, multi?: boolean) => void;
+  createLink: (source: string, target: string, context: LinkContext) => Promise<void>;
+  updateNodeStatus: (id: string, status: NodeStatus) => void;
+  setViewMode: (mode: ViewMode) => void;
+  applyFilters: (filters: Partial<FilterState>) => void;
+
   // Computed
-  visibleNodes: () => TaxonomyNode[]
-  getNodesByStatus: (status: NodeStatus) => TaxonomyNode[]
-  getCoverageMetrics: () => CoverageMetrics
+  visibleNodes: () => TaxonomyNode[];
+  getNodesByStatus: (status: NodeStatus) => TaxonomyNode[];
+  getCoverageMetrics: () => CoverageMetrics;
 }
 
 // stores/generation.store.ts
 interface GenerationStore {
   // State
-  queue: GenerationItem[]
-  activeGeneration: GenerationItem | null
-  templates: Template[]
-  settings: GenerationSettings
-  
+  queue: GenerationItem[];
+  activeGeneration: GenerationItem | null;
+  templates: Template[];
+  settings: GenerationSettings;
+
   // Actions
-  queueGeneration: (items: GenerationRequest[]) => void
-  startGeneration: () => Promise<void>
-  cancelGeneration: (id: string) => void
-  updateSettings: (settings: Partial<GenerationSettings>) => void
-  
+  queueGeneration: (items: GenerationRequest[]) => void;
+  startGeneration: () => Promise<void>;
+  cancelGeneration: (id: string) => void;
+  updateSettings: (settings: Partial<GenerationSettings>) => void;
+
   // Real-time
-  subscribeToUpdates: () => () => void
+  subscribeToUpdates: () => () => void;
 }
 ```
 
@@ -384,8 +388,8 @@ interface GenerationStore {
 ```typescript
 // hooks/useRealtime.ts
 export function useRealtime() {
-  const supabase = useSupabase()
-  
+  const supabase = useSupabase();
+
   useEffect(() => {
     const channel = supabase
       .channel('content-updates')
@@ -394,24 +398,24 @@ export function useRealtime() {
         {
           event: '*',
           schema: 'public',
-          table: 'content'
+          table: 'content',
         },
         (payload) => {
           // Update local state
-          handleRealtimeUpdate(payload)
+          handleRealtimeUpdate(payload);
         }
       )
       .on('presence', { event: 'sync' }, () => {
         // Handle collaborative features
-        const state = channel.presenceState()
-        updateCollaborators(state)
+        const state = channel.presenceState();
+        updateCollaborators(state);
       })
-      .subscribe()
-    
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+      supabase.removeChannel(channel);
+    };
+  }, []);
 }
 ```
 
@@ -532,7 +536,7 @@ ALTER TABLE content ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their org's content"
   ON content FOR SELECT
   USING (org_id IN (
-    SELECT org_id FROM organization_users 
+    SELECT org_id FROM organization_users
     WHERE user_id = auth.uid()
   ));
 ```
@@ -550,7 +554,7 @@ export const routes = {
     login: '/login',
     register: '/register',
     forgot: '/forgot-password',
-    onboarding: '/onboarding'
+    onboarding: '/onboarding',
   },
   dashboard: {
     home: '/',
@@ -563,14 +567,14 @@ export const routes = {
     workflow: '/workflow',
     contentInspire: '/content/inspire',
     contentEngage: '/content/engage',
-    settings: '/settings'
+    settings: '/settings',
   },
   api: {
     content: '/api/content',
     generation: '/api/generation',
-    taxonomy: '/api/taxonomy'
-  }
-} as const
+    taxonomy: '/api/taxonomy',
+  },
+} as const;
 ```
 
 ### 7.2 Navigation Component
@@ -580,44 +584,44 @@ export const routes = {
 export function Navigation() {
   const pathname = usePathname()
   const { user } = useUser()
-  
+
   const navItems = [
-    { 
-      label: 'Dashboard', 
-      href: routes.dashboard.home, 
+    {
+      label: 'Dashboard',
+      href: routes.dashboard.home,
       icon: HomeIcon,
       badge: null
     },
-    { 
-      label: 'Taxonomy', 
-      href: routes.dashboard.taxonomy, 
+    {
+      label: 'Taxonomy',
+      href: routes.dashboard.taxonomy,
       icon: NetworkIcon,
       badge: null
     },
-    { 
-      label: 'Generate', 
-      href: routes.dashboard.generate, 
+    {
+      label: 'Generate',
+      href: routes.dashboard.generate,
       icon: SparklesIcon,
       badge: { count: 5, type: 'info' }
     },
-    { 
-      label: 'Review', 
-      href: routes.dashboard.review, 
+    {
+      label: 'Review',
+      href: routes.dashboard.review,
       icon: ClipboardIcon,
       badge: { count: 23, type: 'warning' }
     },
-    { 
-      label: 'Workflow', 
-      href: routes.dashboard.workflow, 
+    {
+      label: 'Workflow',
+      href: routes.dashboard.workflow,
       icon: KanbanIcon,
       badge: null
     }
   ]
-  
+
   return (
     <nav className="flex items-center space-x-6">
       {navItems.map(item => (
-        <NavLink 
+        <NavLink
           key={item.href}
           {...item}
           isActive={pathname === item.href}
@@ -638,16 +642,16 @@ export function Navigation() {
 // Lazy load heavy components
 const ForceGraph = dynamic(
   () => import('@/components/taxonomy/ForceGraph'),
-  { 
+  {
     loading: () => <ForceGraphSkeleton />,
-    ssr: false 
+    ssr: false
   }
 )
 
 const ContentEditor = dynamic(
   () => import('@/components/editor/ContentEditor'),
-  { 
-    loading: () => <EditorSkeleton /> 
+  {
+    loading: () => <EditorSkeleton />
   }
 )
 
@@ -660,7 +664,7 @@ const ContentEditor = dynamic(
 // Server Components for initial data
 export default async function TaxonomyPage() {
   const taxonomy = await getTaxonomy() // Server-side fetch
-  
+
   return (
     <TaxonomyProvider initialData={taxonomy}>
       <TaxonomyVisualization />
@@ -701,7 +705,7 @@ export function ContentList({ items }: { items: Content[] }) {
       <ContentCard content={items[index]} />
     </div>
   ))
-  
+
   return (
     <FixedSizeList
       height={600}
@@ -717,12 +721,12 @@ export function ContentList({ items }: { items: Content[] }) {
 // Debounced search
 export function useDebounce<T>(value: T, delay = 300): T {
   const [debouncedValue, setDebouncedValue] = useState(value)
-  
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedValue(value), delay)
     return () => clearTimeout(timer)
   }, [value, delay])
-  
+
   return debouncedValue
 }
 ```
@@ -743,43 +747,43 @@ export default {
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
-          900: '#1e3a8a'
+          900: '#1e3a8a',
         },
         success: {
           50: '#f0fdf4',
           500: '#22c55e',
-          900: '#14532d'
+          900: '#14532d',
         },
         warning: {
           50: '#fefce8',
           500: '#eab308',
-          900: '#713f12'
+          900: '#713f12',
         },
         danger: {
           50: '#fef2f2',
           500: '#ef4444',
-          900: '#7f1d1d'
-        }
+          900: '#7f1d1d',
+        },
       },
       animation: {
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
-        'pulse-soft': 'pulseSoft 2s infinite'
+        'pulse-soft': 'pulseSoft 2s infinite',
       },
       fontFamily: {
         sans: ['Inter var', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
-      }
-    }
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
-    require('tailwindcss-animate')
-  ]
-}
+    require('tailwindcss-animate'),
+  ],
+};
 ```
 
 ### 9.2 Component Library
@@ -833,7 +837,7 @@ describe('Button', () => {
     render(<Button>Click me</Button>)
     expect(screen.getByRole('button')).toHaveTextContent('Click me')
   })
-  
+
   it('handles click events', async () => {
     const handleClick = vi.fn()
     render(<Button onClick={handleClick}>Click</Button>)
@@ -847,31 +851,31 @@ describe('Button', () => {
 
 ```typescript
 // tests/e2e/content-generation.spec.ts
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
 test.describe('Content Generation Flow', () => {
   test('should generate content through wizard', async ({ page }) => {
-    await page.goto('/generate/wizard')
-    
+    await page.goto('/generate/wizard');
+
     // Step 1: Select pages
-    await page.click('[data-testid="category-winter-boots"]')
-    await page.click('[data-testid="next-step"]')
-    
+    await page.click('[data-testid="category-winter-boots"]');
+    await page.click('[data-testid="next-step"]');
+
     // Step 2: Choose template
-    await page.click('[data-testid="template-hero-features"]')
-    await page.click('[data-testid="next-step"]')
-    
+    await page.click('[data-testid="template-hero-features"]');
+    await page.click('[data-testid="next-step"]');
+
     // Step 3: Configure
-    await page.selectOption('[data-testid="language-select"]', 'en')
-    await page.selectOption('[data-testid="tone-select"]', 'professional')
-    
+    await page.selectOption('[data-testid="language-select"]', 'en');
+    await page.selectOption('[data-testid="tone-select"]', 'professional');
+
     // Step 4: Generate
-    await page.click('[data-testid="generate-button"]')
-    
+    await page.click('[data-testid="generate-button"]');
+
     // Verify success
-    await expect(page.locator('[data-testid="success-message"]')).toBeVisible()
-  })
-})
+    await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
+  });
+});
 ```
 
 ---
@@ -890,26 +894,28 @@ export const authConfig = {
     minLength: 8,
     requireUppercase: true,
     requireNumbers: true,
-    requireSpecialChars: true
-  }
-}
+    requireSpecialChars: true,
+  },
+};
 
 // middleware.ts
 export async function middleware(request: NextRequest) {
-  const supabase = createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const isAuthRoute = authRoutes.includes(request.nextUrl.pathname)
-  
+  const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isAuthRoute = authRoutes.includes(request.nextUrl.pathname);
+
   if (!user && !isAuthRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/login', request.url));
   }
-  
+
   if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
-  
-  return NextResponse.next()
+
+  return NextResponse.next();
 }
 ```
 
@@ -920,21 +926,21 @@ export async function middleware(request: NextRequest) {
 const securityHeaders = [
   {
     key: 'X-Frame-Options',
-    value: 'SAMEORIGIN'
+    value: 'SAMEORIGIN',
   },
   {
     key: 'X-Content-Type-Options',
-    value: 'nosniff'
+    value: 'nosniff',
   },
   {
     key: 'X-XSS-Protection',
-    value: '1; mode=block'
+    value: '1; mode=block',
   },
   {
     key: 'Content-Security-Policy',
-    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' *.supabase.co"
-  }
-]
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' *.supabase.co",
+  },
+];
 ```
 
 ---
@@ -1007,39 +1013,39 @@ export const performanceMetrics = {
   trackWebVitals: () => {
     if (typeof window !== 'undefined') {
       import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(sendToAnalytics)
-        getFID(sendToAnalytics)
-        getFCP(sendToAnalytics)
-        getLCP(sendToAnalytics)
-        getTTFB(sendToAnalytics)
-      })
+        getCLS(sendToAnalytics);
+        getFID(sendToAnalytics);
+        getFCP(sendToAnalytics);
+        getLCP(sendToAnalytics);
+        getTTFB(sendToAnalytics);
+      });
     }
   },
-  
+
   // Custom metrics
   trackTaxonomyLoad: (nodeCount: number, loadTime: number) => {
     analytics.track('taxonomy_load', {
       node_count: nodeCount,
       load_time_ms: loadTime,
-      performance_score: calculatePerformanceScore(nodeCount, loadTime)
-    })
+      performance_score: calculatePerformanceScore(nodeCount, loadTime),
+    });
   },
-  
+
   trackGenerationTime: (contentType: string, duration: number) => {
     analytics.track('content_generation', {
       content_type: contentType,
       duration_ms: duration,
-      success: true
-    })
-  }
-}
+      success: true,
+    });
+  },
+};
 ```
 
 ### 13.2 Error Tracking
 
 ```typescript
 // lib/monitoring/sentry.ts
-import * as Sentry from '@sentry/nextjs'
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -1048,11 +1054,11 @@ Sentry.init({
   beforeSend(event) {
     // Filter out sensitive data
     if (event.request?.cookies) {
-      delete event.request.cookies
+      delete event.request.cookies;
     }
-    return event
-  }
-})
+    return event;
+  },
+});
 ```
 
 ---
@@ -1064,11 +1070,15 @@ Sentry.init({
 ```scss
 // Tailwind breakpoints
 $breakpoints: (
-  'sm': 640px,   // Mobile landscape
-  'md': 768px,   // Tablet
-  'lg': 1024px,  // Desktop
-  'xl': 1280px,  // Large desktop
-  '2xl': 1536px  // Extra large
+  'sm': 640px,
+  // Mobile landscape
+  'md': 768px,
+  // Tablet
+  'lg': 1024px,
+  // Desktop
+  'xl': 1280px,
+  // Large desktop
+  '2xl': 1536px, // Extra large
 );
 ```
 
@@ -1078,21 +1088,21 @@ $breakpoints: (
 // Responsive navigation
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  
+
   return (
     <>
       {/* Desktop Navigation */}
       <nav className="hidden lg:flex items-center space-x-6">
         {/* ... */}
       </nav>
-      
+
       {/* Mobile Navigation */}
       <div className="lg:hidden">
         <button onClick={() => setMobileMenuOpen(true)}>
           <MenuIcon />
         </button>
-        
-        <MobileMenu 
+
+        <MobileMenu
           open={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
         />
@@ -1113,17 +1123,17 @@ export function Navigation() {
 export const a11y = {
   // Skip to main content
   skipLink: (
-    <a 
+    <a
       href="#main-content"
       className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
     >
       Skip to main content
     </a>
   ),
-  
+
   // Screen reader only text
   srOnly: 'absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0',
-  
+
   // Focus trap for modals
   trapFocus: (element: HTMLElement) => {
     const focusableElements = element.querySelectorAll(
@@ -1131,7 +1141,7 @@ export const a11y = {
     )
     const firstElement = focusableElements[0] as HTMLElement
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
-    
+
     element.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') {
         if (e.shiftKey && document.activeElement === firstElement) {
@@ -1151,13 +1161,13 @@ export const a11y = {
 
 ```typescript
 // Proper ARIA labels
-<div 
+<div
   role="application"
   aria-label="Content taxonomy visualization"
   aria-describedby="taxonomy-help"
 >
   <div role="tree" aria-multiselectable="true">
-    <div 
+    <div
       role="treeitem"
       aria-expanded={expanded}
       aria-selected={selected}
@@ -1175,6 +1185,7 @@ export const a11y = {
 ## 16. Browser Support
 
 ### Minimum Requirements
+
 - Chrome 90+
 - Firefox 88+
 - Safari 14+
@@ -1189,24 +1200,24 @@ export const a11y = {
 export const features = {
   webgl: () => {
     try {
-      const canvas = document.createElement('canvas')
+      const canvas = document.createElement('canvas');
       return !!(
-        window.WebGLRenderingContext && 
+        window.WebGLRenderingContext &&
         (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-      )
-    } catch(e) {
-      return false
+      );
+    } catch (e) {
+      return false;
     }
   },
-  
+
   serviceWorker: 'serviceWorker' in navigator,
-  
-  intersectionObserver: 'IntersectionObserver' in window
-}
+
+  intersectionObserver: 'IntersectionObserver' in window,
+};
 
 // Polyfills loaded conditionally
 if (!features.intersectionObserver) {
-  import('intersection-observer')
+  import('intersection-observer');
 }
 ```
 

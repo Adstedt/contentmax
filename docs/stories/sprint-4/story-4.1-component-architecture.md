@@ -1,55 +1,59 @@
 # Story 4.1: Component Architecture System
 
 ## User Story
+
 As a content strategist,
 I want a flexible component-based content system,
 So that I can generate consistent, high-quality content across different page types.
 
 ## Size & Priority
+
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 4
 - **Dependencies**: Sprint 1 complete
 
 ## Description
+
 Design and implement a flexible component-based content architecture that allows for reusable, composable content blocks across different page types.
 
 ## Implementation Steps
 
 1. **Base component architecture**
+
    ```typescript
    // Base component interface
    abstract class ContentComponent {
      abstract readonly type: string;
      abstract readonly version: string;
      protected config: ComponentConfig;
-     
+
      constructor(config: ComponentConfig) {
        this.config = config;
        this.validate();
      }
-     
+
      // Core methods every component must implement
      abstract async generate(context: GenerationContext): Promise<ComponentData>;
      abstract renderHTML(data: ComponentData): string;
      abstract renderText(data: ComponentData): string;
      abstract validate(): void;
      abstract getSchema(): JSONSchema;
-     
+
      // Common functionality
      protected async callOpenAI(prompt: string): Promise<string> {
        // Shared OpenAI integration
      }
-     
+
      protected sanitizeHTML(html: string): string {
        // HTML sanitization logic
      }
-     
+
      protected truncateText(text: string, maxLength: number): string {
        // Text truncation with word boundaries
      }
    }
-   
+
    interface ComponentConfig {
      id: string;
      name: string;
@@ -57,14 +61,14 @@ Design and implement a flexible component-based content architecture that allows
      settings: Record<string, any>;
      constraints?: ComponentConstraints;
    }
-   
+
    interface ComponentConstraints {
      minLength?: number;
      maxLength?: number;
      requiredFields?: string[];
      allowedTags?: string[];
    }
-   
+
    interface GenerationContext {
      pageType: 'product' | 'category' | 'brand' | 'inspire' | 'engage';
      targetKeywords: string[];
@@ -77,15 +81,16 @@ Design and implement a flexible component-based content architecture that allows
    ```
 
 2. **Hero component implementation**
+
    ```typescript
    class HeroComponent extends ContentComponent {
      readonly type = 'hero';
      readonly version = '1.0.0';
-     
+
      async generate(context: GenerationContext): Promise<HeroComponentData> {
        const prompt = this.buildPrompt(context);
        const response = await this.callOpenAI(prompt);
-       
+
        return {
          headline: this.extractHeadline(response),
          subheadline: this.extractSubheadline(response),
@@ -94,11 +99,11 @@ Design and implement a flexible component-based content architecture that allows
          metadata: {
            generatedAt: new Date(),
            keywords: context.targetKeywords,
-           confidence: this.calculateConfidence(response)
-         }
+           confidence: this.calculateConfidence(response),
+         },
        };
      }
-     
+
      renderHTML(data: HeroComponentData): string {
        return `
          <section class="hero-section">
@@ -109,7 +114,7 @@ Design and implement a flexible component-based content architecture that allows
          </section>
        `;
      }
-     
+
      renderText(data: HeroComponentData): string {
        return `
          ${data.headline}
@@ -119,7 +124,7 @@ Design and implement a flexible component-based content architecture that allows
          ${data.cta ? `\n${data.cta.text}` : ''}
        `.trim();
      }
-     
+
      private buildPrompt(context: GenerationContext): string {
        return `
          Generate a hero section for a ${context.pageType} page.
@@ -134,7 +139,7 @@ Design and implement a flexible component-based content architecture that allows
          - CTA: Action-oriented, 2-4 words
        `;
      }
-     
+
      getSchema(): JSONSchema {
        return {
          type: 'object',
@@ -146,118 +151,124 @@ Design and implement a flexible component-based content architecture that allows
              type: 'object',
              properties: {
                text: { type: 'string' },
-               url: { type: 'string' }
-             }
-           }
+               url: { type: 'string' },
+             },
+           },
          },
-         required: ['headline', 'description']
+         required: ['headline', 'description'],
        };
      }
    }
    ```
 
 3. **FAQ component implementation**
+
    ```typescript
    class FAQComponent extends ContentComponent {
      readonly type = 'faq';
      readonly version = '1.0.0';
-     
+
      async generate(context: GenerationContext): Promise<FAQComponentData> {
        const questions = await this.generateQuestions(context);
        const answers = await this.generateAnswers(questions, context);
-       
+
        return {
          items: questions.map((q, i) => ({
            question: q,
            answer: answers[i],
-           schema: this.generateFAQSchema(q, answers[i])
+           schema: this.generateFAQSchema(q, answers[i]),
          })),
          metadata: {
            count: questions.length,
-           generatedAt: new Date()
-         }
+           generatedAt: new Date(),
+         },
        };
      }
-     
+
      private async generateQuestions(context: GenerationContext): Promise<string[]> {
        const prompt = `
          Generate ${this.config.settings.count || 5} frequently asked questions
          for a ${context.pageType} page about ${context.targetKeywords[0]}.
          Language: ${context.language}
        `;
-       
+
        const response = await this.callOpenAI(prompt);
        return this.parseQuestions(response);
      }
-     
+
      renderHTML(data: FAQComponentData): string {
        const schemaScript = this.generateSchemaScript(data);
-       
+
        return `
          <section class="faq-section">
            <h2>Frequently Asked Questions</h2>
            <div class="faq-list">
-             ${data.items.map(item => `
-               <div class="faq-item">
-                 <h3>${this.sanitizeHTML(item.question)}</h3>
-                 <p>${this.sanitizeHTML(item.answer)}</p>
-               </div>
-             `).join('')}
+             ${data.items
+               .map(
+                 (item) => `
+            <div class="faq-item">
+              <h3>${this.sanitizeHTML(item.question)}</h3>
+              <p>${this.sanitizeHTML(item.answer)}</p>
+            </div>
+          `
+               )
+               .join('')}
            </div>
            ${schemaScript}
          </section>
        `;
      }
-     
+
      private generateFAQSchema(question: string, answer: string): object {
        return {
-         "@type": "Question",
-         "name": question,
-         "acceptedAnswer": {
-           "@type": "Answer",
-           "text": answer
-         }
+         '@type': 'Question',
+         name: question,
+         acceptedAnswer: {
+           '@type': 'Answer',
+           text: answer,
+         },
        };
      }
    }
    ```
 
 4. **Component registry**
+
    ```typescript
    class ComponentRegistry {
      private components = new Map<string, typeof ContentComponent>();
      private instances = new Map<string, ContentComponent>();
-     
+
      register(componentClass: typeof ContentComponent) {
        const temp = new componentClass({ id: 'temp', name: 'temp', enabled: true, settings: {} });
        this.components.set(temp.type, componentClass);
      }
-     
+
      create(type: string, config: ComponentConfig): ContentComponent {
        const ComponentClass = this.components.get(type);
        if (!ComponentClass) {
          throw new Error(`Component type "${type}" not registered`);
        }
-       
+
        const instance = new ComponentClass(config);
        this.instances.set(config.id, instance);
        return instance;
      }
-     
+
      get(id: string): ContentComponent | undefined {
        return this.instances.get(id);
      }
-     
+
      getAvailableTypes(): string[] {
        return Array.from(this.components.keys());
      }
-     
+
      validateConfiguration(type: string, config: any): ValidationResult {
        const ComponentClass = this.components.get(type);
        if (!ComponentClass) {
          return { valid: false, errors: [`Unknown component type: ${type}`] };
        }
-       
+
        try {
          const temp = new ComponentClass(config);
          const schema = temp.getSchema();
@@ -268,7 +279,7 @@ Design and implement a flexible component-based content architecture that allows
        }
      }
    }
-   
+
    // Initialize registry with all components
    const registry = new ComponentRegistry();
    registry.register(HeroComponent);
@@ -282,24 +293,21 @@ Design and implement a flexible component-based content architecture that allows
    ```typescript
    class ContentComposer {
      constructor(private registry: ComponentRegistry) {}
-     
+
      async composePage(
        template: PageTemplate,
        context: GenerationContext
      ): Promise<ComposedContent> {
        const componentResults = new Map<string, ComponentData>();
-       
+
        // Generate content for each component in template
        for (const componentConfig of template.components) {
-         const component = this.registry.create(
-           componentConfig.type,
-           componentConfig
-         );
-         
+         const component = this.registry.create(componentConfig.type, componentConfig);
+
          const data = await component.generate(context);
          componentResults.set(componentConfig.id, data);
        }
-       
+
        // Combine into final content
        return {
          html: this.renderHTML(template, componentResults),
@@ -308,17 +316,14 @@ Design and implement a flexible component-based content architecture that allows
          metadata: {
            template: template.id,
            generatedAt: new Date(),
-           language: context.language
-         }
+           language: context.language,
+         },
        };
      }
-     
-     private renderHTML(
-       template: PageTemplate,
-       components: Map<string, ComponentData>
-     ): string {
+
+     private renderHTML(template: PageTemplate, components: Map<string, ComponentData>): string {
        let html = template.layout;
-       
+
        // Replace component placeholders
        components.forEach((data, id) => {
          const component = this.registry.get(id);
@@ -327,7 +332,7 @@ Design and implement a flexible component-based content architecture that allows
            html = html.replace(`{{${id}}}`, componentHTML);
          }
        });
-       
+
        return html;
      }
    }
@@ -349,6 +354,7 @@ Design and implement a flexible component-based content architecture that allows
 ## Component Types
 
 ### Core Components
+
 1. **HeroComponent** - Headlines, descriptions, CTAs
 2. **FAQComponent** - Question/answer pairs with schema
 3. **ProductGridComponent** - Product listings with filters
@@ -359,6 +365,7 @@ Design and implement a flexible component-based content architecture that allows
 8. **BreadcrumbComponent** - Navigation breadcrumbs
 
 ### Component Features
+
 - Language-aware generation
 - SEO optimization built-in
 - Schema markup generation

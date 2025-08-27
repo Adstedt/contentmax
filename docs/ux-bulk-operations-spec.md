@@ -1,8 +1,11 @@
 # Bulk Selection & Operations Specification
+
 ## ContentMax Multi-Select and Batch Processing Interface
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Bulk Selection & Operations system enables users to efficiently manage content at scale by selecting multiple nodes in the taxonomy visualization and performing batch actions. This specification defines how users select, manage, and process groups of content items, transforming hours of individual work into minutes of bulk operations.
 
 ### Design Philosophy
+
 - **Intuitive Selection**: Multiple methods matching user mental models
 - **Visual Feedback**: Always know what's selected and why
 - **Smart Defaults**: Intelligent suggestions for bulk actions
@@ -28,7 +32,7 @@ The Bulk Selection & Operations system enables users to efficiently manage conte
 Activation: Hold Alt + Drag (or click Lasso tool icon)
 
     Start Drag              During Selection           Release
-    
+
          X                  ╔═══════════╗            ┌─────────┐
                            ║     ○ ○     ║           │  ● ● 5  │
     (Alt + Click)         ║   ○ ○ ○ ○   ║           │ ● ● ●   │
@@ -38,6 +42,7 @@ Activation: Hold Alt + Drag (or click Lasso tool icon)
 ```
 
 **Visual Feedback:**
+
 - Dotted line follows cursor (2px, animated dashes)
 - Semi-transparent blue fill (20% opacity)
 - Nodes highlight as lasso encompasses them
@@ -58,13 +63,13 @@ Activation: Shift + Drag
 
 ### 2.3 Click Selection Patterns
 
-| Method | Action | Result |
-|--------|--------|--------|
-| Click | Select single | Clear others, select one |
-| Ctrl+Click | Toggle single | Add/remove from selection |
-| Shift+Click | Range select | Select path between nodes |
-| Double Click | Select branch | Node + all children |
-| Triple Click | Select tree | Entire connected tree |
+| Method       | Action        | Result                    |
+| ------------ | ------------- | ------------------------- |
+| Click        | Select single | Clear others, select one  |
+| Ctrl+Click   | Toggle single | Add/remove from selection |
+| Shift+Click  | Range select  | Select path between nodes |
+| Double Click | Select branch | Node + all children       |
+| Triple Click | Select tree   | Entire connected tree     |
 
 ### 2.4 Smart Selection Commands
 
@@ -392,26 +397,26 @@ Selection Process:
 
 ### 7.1 Selection Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+A` | Select all visible |
+| Shortcut       | Action                        |
+| -------------- | ----------------------------- |
+| `Ctrl+A`       | Select all visible            |
 | `Ctrl+Shift+A` | Select all (including hidden) |
-| `Ctrl+I` | Invert selection |
-| `Ctrl+D` | Deselect all |
-| `Ctrl+G` | Group selection |
-| `Ctrl+Shift+G` | Ungroup |
-| `Alt+Drag` | Lasso select |
-| `Shift+Drag` | Rectangle select |
+| `Ctrl+I`       | Invert selection              |
+| `Ctrl+D`       | Deselect all                  |
+| `Ctrl+G`       | Group selection               |
+| `Ctrl+Shift+G` | Ungroup                       |
+| `Alt+Drag`     | Lasso select                  |
+| `Shift+Drag`   | Rectangle select              |
 
 ### 7.2 Action Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Enter` | Quick generate |
-| `Delete` | Remove content |
-| `Ctrl+E` | Bulk edit |
-| `Ctrl+P` | Open priority panel |
-| `Ctrl+Q` | Add to queue |
+| Shortcut     | Action              |
+| ------------ | ------------------- |
+| `Ctrl+Enter` | Quick generate      |
+| `Delete`     | Remove content      |
+| `Ctrl+E`     | Bulk edit           |
+| `Ctrl+P`     | Open priority panel |
+| `Ctrl+Q`     | Add to queue        |
 
 ---
 
@@ -491,7 +496,7 @@ Touch Gestures:
 class SelectionManager {
   // Virtual selection for large sets
   virtualSelection = new Set();
-  
+
   // Chunked processing
   async processBulkAction(items, action) {
     const CHUNK_SIZE = 50;
@@ -501,7 +506,7 @@ class SelectionManager {
       this.updateProgress(i / items.length);
     }
   }
-  
+
   // Debounced updates
   updateVisualization = debounce(() => {
     this.renderSelection();
@@ -511,12 +516,12 @@ class SelectionManager {
 
 ### 10.2 Performance Targets
 
-| Operation | Items | Target Time |
-|-----------|-------|-------------|
-| Select All | 10,000 | <100ms |
-| Lasso Select | 500 | <50ms |
-| Bulk Generate | 100 | <30s setup |
-| Apply Filter | 10,000 | <200ms |
+| Operation     | Items  | Target Time |
+| ------------- | ------ | ----------- |
+| Select All    | 10,000 | <100ms      |
+| Lasso Select  | 500    | <50ms       |
+| Bulk Generate | 100    | <30s setup  |
+| Apply Filter  | 10,000 | <200ms      |
 
 ---
 
@@ -525,6 +530,7 @@ class SelectionManager {
 ### 11.1 Speed Review Queue
 
 Selected items can be sent directly to Speed Review:
+
 ```
 [Send 47 items to Speed Review →]
 ```
@@ -532,6 +538,7 @@ Selected items can be sent directly to Speed Review:
 ### 11.2 Link Mode Integration
 
 In Link Mode, bulk selection creates multiple links:
+
 ```
 Select sources → Switch to Link Mode → Draw to target
 Creates links from all selected to target

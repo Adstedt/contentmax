@@ -1,8 +1,11 @@
 # Inspire & Engage Content Module Specification
+
 ## ContentMax Editorial Content Creation System
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Inspire & Engage content modules enable creation of editorial content that guides customers through their purchase journey beyond basic category/brand pages. Inspire content captures top-of-funnel attention with aspirational content, while Engage content provides mid-funnel value through guides and comparisons. Both content types are strategically linked to categories and brands in the taxonomy.
 
 ### Content Journey Mapping
+
 ```
 INSPIRE (Top)          →    ENGAGE (Mid)         →    CONVERT (Bottom)
 "Winter Adventures"    →    "How to Choose"      →    "Winter Jackets"
@@ -19,6 +23,7 @@ Blog/Editorial         →    Guides/Comparisons   →    Category/Product
 ```
 
 ### Design Philosophy
+
 - **Journey-Aware**: Content serves specific funnel stages
 - **Taxonomy-Connected**: Always linked to products/categories
 - **SEO-Strategic**: Targets informational/educational keywords

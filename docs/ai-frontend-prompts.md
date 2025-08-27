@@ -1,8 +1,11 @@
 # AI Frontend Prototyping Prompts
+
 ## Ready-to-Use Prompts for Building ContentMax Interfaces
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Purpose: Copy-paste prompts for AI-assisted frontend development
 
 ---
@@ -172,7 +175,7 @@ Animation: Slide up on first selection
 
 SMART SELECTION:
 Buttons for quick filters:
-- "Select all outdated" 
+- "Select all outdated"
 - "Select by traffic (>1000)"
 - "Select missing content"
 - "Select by language"
@@ -469,15 +472,15 @@ interface ContentStore {
   edges: Edge[]
   selectedNodes: string[]
   viewMode: 'default' | 'link' | 'heatmap'
-  
+
   // Generation
   generationQueue: QueueItem[]
   generationStatus: 'idle' | 'generating' | 'error'
-  
+
   // Review
   reviewQueue: ReviewItem[]
   reviewStats: { total: number, completed: number }
-  
+
   // Actions
   selectNode: (id: string) => void
   createLink: (source: string, target: string) => void

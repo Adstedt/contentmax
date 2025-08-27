@@ -34,18 +34,17 @@ export type UpdateGenerationQueue = Tables['generation_queue']['Update'];
  */
 export async function getCurrentUser() {
   const supabase = createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
   if (error || !user) {
     return null;
   }
 
   // Get extended user profile
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
 
   return profile;
 }
@@ -128,10 +127,7 @@ export async function createAuditLog({
 /**
  * Soft delete a record by setting deleted_at
  */
-export async function softDelete(
-  table: keyof Tables,
-  id: string
-): Promise<boolean> {
+export async function softDelete(table: keyof Tables, id: string): Promise<boolean> {
   const supabase = createClient();
   const { error } = await supabase
     .from(table)

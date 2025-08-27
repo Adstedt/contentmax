@@ -1,22 +1,26 @@
 # Story 5.4: Speed Review Interface
 
 ## User Story
+
 As a content reviewer,
 I want a streamlined interface for quickly reviewing and approving generated content,
 So that I can process large volumes of content efficiently.
 
 ## Size & Priority
+
 - **Size**: M (6 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 5
 - **Dependencies**: Task 4.4
 
 ## Description
+
 Create an optimized review interface with keyboard shortcuts, quick actions, bulk operations, and side-by-side comparison views to enable rapid content review and approval workflows.
 
 ## Implementation Steps
 
 1. **Speed review layout**
+
    ```tsx
    interface SpeedReviewProps {
      items: GeneratedContent[];
@@ -24,62 +28,60 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
      onReject: (id: string, reason: string) => void;
      onRequestRevision: (id: string, feedback: string) => void;
    }
-   
+
    const SpeedReviewInterface: React.FC<SpeedReviewProps> = ({
      items,
      onApprove,
      onReject,
-     onRequestRevision
+     onRequestRevision,
    }) => {
      const [currentIndex, setCurrentIndex] = useState(0);
      const [viewMode, setViewMode] = useState<'single' | 'split' | 'grid'>('single');
      const [editMode, setEditMode] = useState(false);
      const [edits, setEdits] = useState<Map<string, ContentEdits>>(new Map());
      const [filters, setFilters] = useState<ReviewFilters>({});
-     
-     const filteredItems = useMemo(() => 
-       applyFilters(items, filters), [items, filters]
-     );
-     
+
+     const filteredItems = useMemo(() => applyFilters(items, filters), [items, filters]);
+
      const currentItem = filteredItems[currentIndex];
-     
+
      // Keyboard navigation
      useKeyboardShortcuts({
-       'ArrowRight': () => navigateNext(),
-       'ArrowLeft': () => navigatePrevious(),
-       'a': () => approveCurrentItem(),
-       'r': () => showRejectDialog(),
-       'e': () => toggleEditMode(),
-       'f': () => toggleFullscreen(),
+       ArrowRight: () => navigateNext(),
+       ArrowLeft: () => navigatePrevious(),
+       a: () => approveCurrentItem(),
+       r: () => showRejectDialog(),
+       e: () => toggleEditMode(),
+       f: () => toggleFullscreen(),
        '1': () => setViewMode('single'),
        '2': () => setViewMode('split'),
        '3': () => setViewMode('grid'),
        'cmd+a': () => selectAll(),
-       'cmd+Enter': () => bulkApprove()
+       'cmd+Enter': () => bulkApprove(),
      });
-     
+
      const navigateNext = () => {
        if (currentIndex < filteredItems.length - 1) {
          setCurrentIndex(currentIndex + 1);
        }
      };
-     
+
      const navigatePrevious = () => {
        if (currentIndex > 0) {
          setCurrentIndex(currentIndex - 1);
        }
      };
-     
+
      const approveCurrentItem = () => {
        const itemEdits = edits.get(currentItem.id);
        onApprove(currentItem.id, itemEdits);
-       
+
        // Auto-advance to next item
        if (currentIndex < filteredItems.length - 1) {
          setCurrentIndex(currentIndex + 1);
        }
      };
-     
+
      return (
        <div className="speed-review-interface">
          <ReviewToolbar
@@ -89,18 +91,18 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
            onViewModeChange={setViewMode}
            onFilterChange={setFilters}
          />
-         
+
          <div className="review-content">
            {viewMode === 'single' && (
              <SingleItemView
                item={currentItem}
                editMode={editMode}
                onEdit={(changes) => {
-                 setEdits(prev => new Map(prev).set(currentItem.id, changes));
+                 setEdits((prev) => new Map(prev).set(currentItem.id, changes));
                }}
              />
            )}
-           
+
            {viewMode === 'split' && (
              <SplitView
                leftItem={currentItem}
@@ -108,7 +110,7 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
                editMode={editMode}
              />
            )}
-           
+
            {viewMode === 'grid' && (
              <GridView
                items={filteredItems.slice(currentIndex, currentIndex + 6)}
@@ -117,14 +119,14 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              />
            )}
          </div>
-         
+
          <ReviewActionBar
            onApprove={approveCurrentItem}
            onReject={() => showRejectDialog()}
            onRequestRevision={() => showRevisionDialog()}
            onSkip={navigateNext}
          />
-         
+
          <ReviewProgress
            reviewed={currentIndex}
            total={filteredItems.length}
@@ -137,6 +139,7 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
    ```
 
 2. **Content preview component**
+
    ```tsx
    interface ContentPreviewProps {
      content: GeneratedContent;
@@ -144,36 +147,33 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
      onEdit: (changes: ContentEdits) => void;
      highlightKeywords?: string[];
    }
-   
+
    const ContentPreview: React.FC<ContentPreviewProps> = ({
      content,
      editMode,
      onEdit,
-     highlightKeywords = []
+     highlightKeywords = [],
    }) => {
      const [activeTab, setActiveTab] = useState<'preview' | 'html' | 'json'>('preview');
      const [localEdits, setLocalEdits] = useState<ContentEdits>({});
-     
+
      const handleInlineEdit = (field: string, value: string) => {
        const newEdits = { ...localEdits, [field]: value };
        setLocalEdits(newEdits);
        onEdit(newEdits);
      };
-     
+
      const highlightText = (text: string): string => {
        if (highlightKeywords.length === 0) return text;
-       
+
        let highlighted = text;
-       highlightKeywords.forEach(keyword => {
+       highlightKeywords.forEach((keyword) => {
          const regex = new RegExp(`(${keyword})`, 'gi');
-         highlighted = highlighted.replace(
-           regex,
-           '<mark class="keyword-highlight">$1</mark>'
-         );
+         highlighted = highlighted.replace(regex, '<mark class="keyword-highlight">$1</mark>');
        });
        return highlighted;
      };
-     
+
      return (
        <div className="content-preview">
          <div className="preview-tabs">
@@ -196,7 +196,7 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              JSON
            </button>
          </div>
-         
+
          <div className="preview-content">
            {activeTab === 'preview' && (
              <div className="rendered-preview">
@@ -205,30 +205,29 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
                  <span className="content-language">{content.language}</span>
                  <span className="word-count">{content.wordCount} words</span>
                </div>
-               
+
                {content.components.map((component, index) => (
                  <div key={index} className="component-preview">
                    <h4>{component.type}</h4>
                    {editMode ? (
                      <ContentEditable
                        html={highlightText(component.html)}
-                       onChange={(e) => handleInlineEdit(
-                         `components.${index}.html`,
-                         e.target.value
-                       )}
+                       onChange={(e) =>
+                         handleInlineEdit(`components.${index}.html`, e.target.value)
+                       }
                        className="editable-content"
                      />
                    ) : (
-                     <div 
+                     <div
                        className="static-content"
-                       dangerouslySetInnerHTML={{ 
-                         __html: highlightText(component.html) 
+                       dangerouslySetInnerHTML={{
+                         __html: highlightText(component.html),
                        }}
                      />
                    )}
                  </div>
                ))}
-               
+
                <div className="seo-preview">
                  <h4>SEO Preview</h4>
                  <div className="google-preview">
@@ -260,28 +259,24 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
                </div>
              </div>
            )}
-           
+
            {activeTab === 'html' && (
              <div className="html-view">
                <pre>
-                 <code className="language-html">
-                   {content.html}
-                 </code>
+                 <code className="language-html">{content.html}</code>
                </pre>
              </div>
            )}
-           
+
            {activeTab === 'json' && (
              <div className="json-view">
                <pre>
-                 <code className="language-json">
-                   {JSON.stringify(content, null, 2)}
-                 </code>
+                 <code className="language-json">{JSON.stringify(content, null, 2)}</code>
                </pre>
              </div>
            )}
          </div>
-         
+
          <ContentQualityIndicators content={content} />
        </div>
      );
@@ -289,16 +284,17 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
    ```
 
 3. **Quick action system**
+
    ```typescript
    class QuickActionManager {
      private actions: Map<string, QuickAction> = new Map();
      private history: ActionHistory[] = [];
      private shortcuts: Map<string, string> = new Map();
-     
+
      constructor() {
        this.registerDefaultActions();
      }
-     
+
      private registerDefaultActions() {
        this.registerAction({
          id: 'approve',
@@ -307,9 +303,9 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'a',
          execute: async (item) => {
            await this.approveContent(item);
-         }
+         },
        });
-       
+
        this.registerAction({
          id: 'approve-with-edits',
          name: 'Approve with Edits',
@@ -317,9 +313,9 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'shift+a',
          execute: async (item, edits) => {
            await this.approveWithEdits(item, edits);
-         }
+         },
        });
-       
+
        this.registerAction({
          id: 'reject',
          name: 'Reject',
@@ -327,9 +323,9 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'r',
          execute: async (item, reason) => {
            await this.rejectContent(item, reason);
-         }
+         },
        });
-       
+
        this.registerAction({
          id: 'request-revision',
          name: 'Request Revision',
@@ -337,9 +333,9 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'v',
          execute: async (item, feedback) => {
            await this.requestRevision(item, feedback);
-         }
+         },
        });
-       
+
        this.registerAction({
          id: 'flag-for-review',
          name: 'Flag for Review',
@@ -347,9 +343,9 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'f',
          execute: async (item, notes) => {
            await this.flagForReview(item, notes);
-         }
+         },
        });
-       
+
        this.registerAction({
          id: 'auto-fix',
          name: 'Auto-fix Issues',
@@ -357,17 +353,17 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
          shortcut: 'cmd+f',
          execute: async (item) => {
            await this.autoFixIssues(item);
-         }
+         },
        });
      }
-     
+
      registerAction(action: QuickAction) {
        this.actions.set(action.id, action);
        if (action.shortcut) {
          this.shortcuts.set(action.shortcut, action.id);
        }
      }
-     
+
      async executeAction(
        actionId: string,
        item: GeneratedContent,
@@ -377,21 +373,21 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
        if (!action) {
          throw new Error(`Unknown action: ${actionId}`);
        }
-       
+
        const startTime = Date.now();
-       
+
        try {
          const result = await action.execute(item, params);
-         
+
          this.history.push({
            actionId,
            itemId: item.id,
            timestamp: new Date(),
            duration: Date.now() - startTime,
            success: true,
-           result
+           result,
          });
-         
+
          return { success: true, result };
        } catch (error) {
          this.history.push({
@@ -400,37 +396,37 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
            timestamp: new Date(),
            duration: Date.now() - startTime,
            success: false,
-           error: error.message
+           error: error.message,
          });
-         
+
          return { success: false, error: error.message };
        }
      }
-     
+
      async executeBulkAction(
        actionId: string,
        items: GeneratedContent[],
        params?: any
      ): Promise<BulkActionResult> {
        const results = await Promise.allSettled(
-         items.map(item => this.executeAction(actionId, item, params))
+         items.map((item) => this.executeAction(actionId, item, params))
        );
-       
-       const succeeded = results.filter(r => r.status === 'fulfilled').length;
-       const failed = results.filter(r => r.status === 'rejected').length;
-       
+
+       const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+       const failed = results.filter((r) => r.status === 'rejected').length;
+
        return {
          total: items.length,
          succeeded,
          failed,
-         results
+         results,
        };
      }
-     
+
      private async autoFixIssues(item: GeneratedContent): Promise<GeneratedContent> {
        const issues = this.detectIssues(item);
        let fixed = { ...item };
-       
+
        for (const issue of issues) {
          switch (issue.type) {
            case 'spelling':
@@ -450,41 +446,42 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              break;
          }
        }
-       
+
        return fixed;
      }
-     
+
      private detectIssues(item: GeneratedContent): ContentIssue[] {
        const issues: ContentIssue[] = [];
-       
+
        // Check SEO title length
        if (item.seo.title.length > 60) {
          issues.push({
            type: 'seo-title-length',
            severity: 'warning',
-           message: 'Title exceeds 60 characters'
+           message: 'Title exceeds 60 characters',
          });
        }
-       
+
        // Check keyword presence
        const missingKeywords = item.targetKeywords.filter(
-         keyword => !item.html.toLowerCase().includes(keyword.toLowerCase())
+         (keyword) => !item.html.toLowerCase().includes(keyword.toLowerCase())
        );
-       
+
        if (missingKeywords.length > 0) {
          issues.push({
            type: 'missing-keywords',
            severity: 'warning',
-           message: `Missing keywords: ${missingKeywords.join(', ')}`
+           message: `Missing keywords: ${missingKeywords.join(', ')}`,
          });
        }
-       
+
        return issues;
      }
    }
    ```
 
 4. **Comparison view component**
+
    ```tsx
    const ComparisonView: React.FC<{
      original: GeneratedContent;
@@ -495,23 +492,23 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
      const [highlightDifferences, setHighlightDifferences] = useState(true);
      const leftRef = useRef<HTMLDivElement>(null);
      const rightRef = useRef<HTMLDivElement>(null);
-     
-     const differences = useMemo(() => 
-       calculateDifferences(original, revised),
+
+     const differences = useMemo(
+       () => calculateDifferences(original, revised),
        [original, revised]
      );
-     
+
      const handleScroll = (source: 'left' | 'right') => {
        if (!syncScroll) return;
-       
+
        const sourceEl = source === 'left' ? leftRef.current : rightRef.current;
        const targetEl = source === 'left' ? rightRef.current : leftRef.current;
-       
+
        if (sourceEl && targetEl) {
          targetEl.scrollTop = sourceEl.scrollTop;
        }
      };
-     
+
      return (
        <div className="comparison-view">
          <div className="comparison-header">
@@ -539,23 +536,16 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              <span className="modifications">~{differences.modifications} changes</span>
            </div>
          </div>
-         
+
          <div className="comparison-content">
            <div className="comparison-pane left">
              <div className="pane-header">
                <h3>Original</h3>
-               <button 
-                 className="select-btn"
-                 onClick={() => onSelectVersion('original')}
-               >
+               <button className="select-btn" onClick={() => onSelectVersion('original')}>
                  Use This Version
                </button>
              </div>
-             <div 
-               ref={leftRef}
-               className="pane-content"
-               onScroll={() => handleScroll('left')}
-             >
+             <div ref={leftRef} className="pane-content" onScroll={() => handleScroll('left')}>
                <DiffContent
                  content={original}
                  differences={differences}
@@ -565,22 +555,15 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              </div>
              <ContentStats content={original} />
            </div>
-           
+
            <div className="comparison-pane right">
              <div className="pane-header">
                <h3>Revised</h3>
-               <button 
-                 className="select-btn primary"
-                 onClick={() => onSelectVersion('revised')}
-               >
+               <button className="select-btn primary" onClick={() => onSelectVersion('revised')}>
                  Use This Version
                </button>
              </div>
-             <div 
-               ref={rightRef}
-               className="pane-content"
-               onScroll={() => handleScroll('right')}
-             >
+             <div ref={rightRef} className="pane-content" onScroll={() => handleScroll('right')}>
                <DiffContent
                  content={revised}
                  differences={differences}
@@ -591,7 +574,7 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              <ContentStats content={revised} />
            </div>
          </div>
-         
+
          <DifferenceNavigator
            differences={differences}
            onNavigate={(diff) => {
@@ -610,18 +593,18 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
    const ReviewAnalytics: React.FC = () => {
      const [stats, setStats] = useState<ReviewStats>();
      const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
-     
+
      useEffect(() => {
        loadReviewStats(timeRange).then(setStats);
      }, [timeRange]);
-     
+
      return (
        <div className="review-analytics">
          <div className="analytics-header">
            <h3>Review Performance</h3>
            <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
          </div>
-         
+
          <div className="metrics-grid">
            <MetricCard
              title="Items Reviewed"
@@ -648,29 +631,19 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
              icon="lightning"
            />
          </div>
-         
+
          <div className="charts-row">
            <div className="chart-container">
              <h4>Review Velocity</h4>
-             <LineChart
-               data={stats?.velocityData}
-               xKey="time"
-               yKey="count"
-               height={200}
-             />
+             <LineChart data={stats?.velocityData} xKey="time" yKey="count" height={200} />
            </div>
-           
+
            <div className="chart-container">
              <h4>Decision Distribution</h4>
-             <PieChart
-               data={stats?.decisionData}
-               dataKey="count"
-               nameKey="decision"
-               height={200}
-             />
+             <PieChart data={stats?.decisionData} dataKey="count" nameKey="decision" height={200} />
            </div>
          </div>
-         
+
          <div className="reviewer-leaderboard">
            <h4>Top Reviewers</h4>
            <table>
@@ -683,7 +656,7 @@ Create an optimized review interface with keyboard shortcuts, quick actions, bul
                </tr>
              </thead>
              <tbody>
-               {stats?.topReviewers.map(reviewer => (
+               {stats?.topReviewers.map((reviewer) => (
                  <tr key={reviewer.id}>
                    <td>{reviewer.name}</td>
                    <td>{reviewer.itemsReviewed}</td>

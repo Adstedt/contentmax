@@ -7,7 +7,9 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/auth/login');
@@ -15,11 +17,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#000]">
-      <Header 
-        title="Dashboard" 
+      <Header
+        title="Dashboard"
         subtitle="Welcome back! Here's an overview of your content performance."
       />
-      
+
       <main className="flex-1 p-6 overflow-y-auto">
         {/* Stats Grid */}
         <StatsGrid />
@@ -30,7 +32,7 @@ export default async function DashboardPage() {
           <div className="lg:col-span-2">
             <RecentActivity />
           </div>
-          
+
           {/* Quick Actions - Takes up 1 column on large screens */}
           <div className="lg:col-span-1">
             <QuickActions />

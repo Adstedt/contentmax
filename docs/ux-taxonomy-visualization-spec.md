@@ -1,8 +1,11 @@
 # Taxonomy Visualization Core Specification
+
 ## ContentMax Force-Directed Network Interface
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 The Taxonomy Visualization is ContentMax's signature interface - a force-directed network visualization that transforms how e-commerce teams understand and manage their content ecosystem. This specification defines the core visualization system that displays up to 10,000+ nodes in an intuitive, performant, and interactive manner.
 
 ### Design Principles
+
 - **Scalability First**: Handle 10,000+ nodes without performance degradation
 - **Progressive Disclosure**: Show what matters when it matters
 - **Intuitive Physics**: Natural movements that feel familiar
@@ -125,12 +129,13 @@ The Taxonomy Visualization is ContentMax's signature interface - a force-directe
             (Green)              (Yellow)               (Red)                (Gray)
               ⬤                    ⬤                     ⬤                    ⬤
           [>1000 SKUs]         [500-1000]             [100-500]             [0-100]
-              
+
          Large Node            Medium Node            Small Node            Tiny Node
            (50px)                (35px)                (25px)               (15px)
 ```
 
 **Node Anatomy:**
+
 ```
     ┌─────────────┐
     │     👔      │  <- Category Icon (on hover/zoom)
@@ -144,23 +149,23 @@ The Taxonomy Visualization is ContentMax's signature interface - a force-directe
 ```javascript
 const forceConfig = {
   charge: {
-    strength: -300,        // Repulsion between nodes
-    distanceMin: 20,       // Minimum distance
-    distanceMax: 500       // Maximum influence distance
+    strength: -300, // Repulsion between nodes
+    distanceMin: 20, // Minimum distance
+    distanceMax: 500, // Maximum influence distance
   },
   link: {
-    distance: 100,         // Ideal link length
-    strength: 0.7          // Link spring strength
+    distance: 100, // Ideal link length
+    strength: 0.7, // Link spring strength
   },
   collision: {
-    radius: (node) => node.radius + 5,  // Prevent overlap
-    strength: 0.7
+    radius: (node) => node.radius + 5, // Prevent overlap
+    strength: 0.7,
   },
   center: {
     x: viewport.width / 2,
-    y: viewport.height / 2
-  }
-}
+    y: viewport.height / 2,
+  },
+};
 ```
 
 ### 3.3 Performance Optimization Levels
@@ -169,7 +174,7 @@ const forceConfig = {
 ZOOM LEVEL          RENDER DETAILS           NODE COUNT
 ---------------------------------------------------------
 0-25%              Clusters only             Top 50
-26-50%             Major nodes + edges       Top 200  
+26-50%             Major nodes + edges       Top 200
 51-75%             All nodes, no labels      Top 1000
 76-100%            All nodes + labels        Top 2500
 100%+ (zoomed)     Full detail              Viewport only
@@ -182,6 +187,7 @@ ZOOM LEVEL          RENDER DETAILS           NODE COUNT
 ### 4.1 Mouse Interactions
 
 #### Hover States
+
 ```
 Node Hover:
 ├─ Scale: 1.0 → 1.2 (150ms ease)
@@ -196,15 +202,17 @@ Edge Hover:
 ```
 
 #### Click Behaviors
-| Click Type | Action |
-|------------|--------|
-| Single Click | Select node, show in right panel |
-| Double Click | Zoom to node and its immediate network |
-| Right Click | Context menu |
-| Shift + Click | Add to selection |
-| Ctrl + Click | Toggle selection |
+
+| Click Type    | Action                                 |
+| ------------- | -------------------------------------- |
+| Single Click  | Select node, show in right panel       |
+| Double Click  | Zoom to node and its immediate network |
+| Right Click   | Context menu                           |
+| Shift + Click | Add to selection                       |
+| Ctrl + Click  | Toggle selection                       |
 
 #### Drag Behaviors
+
 - **Node Drag**: Reposition with physics simulation
 - **Canvas Drag**: Pan viewport
 - **Lasso Drag**: Multi-select (with Alt key)
@@ -215,7 +223,7 @@ Edge Hover:
 ┌──────────────┐
 │  ⊕  ═══●═══  ⊖│  <- Zoom slider
 └──────────────┘
-    
+
 ┌──────┐
 │  ⬆   │          <- Pan controls
 │⬅ ⊙ ➡│             (or WASD keys)
@@ -226,6 +234,7 @@ Edge Hover:
 ```
 
 **Zoom Behaviors:**
+
 - **Mouse Wheel**: Zoom in/out at cursor position
 - **Pinch Gesture**: Touch zoom on tablets
 - **Double Click**: Zoom in one level
@@ -233,26 +242,28 @@ Edge Hover:
 
 ### 4.3 Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
+| Key          | Action                           |
+| ------------ | -------------------------------- |
 | `Arrow Keys` | Navigate between connected nodes |
-| `Tab` | Cycle through nodes |
-| `Enter` | Select focused node |
-| `Space` | Toggle node expansion |
-| `/` | Focus search |
-| `L` | Toggle Link Mode |
-| `H` | Toggle Heat Map |
-| `R` | Reset view |
-| `F` | Fit to screen |
+| `Tab`        | Cycle through nodes              |
+| `Enter`      | Select focused node              |
+| `Space`      | Toggle node expansion            |
+| `/`          | Focus search                     |
+| `L`          | Toggle Link Mode                 |
+| `H`          | Toggle Heat Map                  |
+| `R`          | Reset view                       |
+| `F`          | Fit to screen                    |
 
 ---
 
 ## 5. View Modes
 
 ### 5.1 Default View
+
 Standard force-directed layout with status colors
 
 ### 5.2 Heat Map View
+
 ```
 Traffic Heat Map:
 🔴 Hot (>10K/mo) 🟠 Warm (5-10K) 🟡 Medium (1-5K) 🔵 Cold (<1K)
@@ -262,6 +273,7 @@ Coverage Heat Map:
 ```
 
 ### 5.3 Coverage View
+
 ```
 ┌────────────────────────────────┐
 │  Coverage by Depth            │
@@ -274,9 +286,11 @@ Coverage Heat Map:
 ```
 
 ### 5.4 Comparison View
+
 Split screen showing before/after or competitor comparison
 
 ### 5.5 Time-lapse View
+
 Animated progression showing content coverage over time
 
 ---
@@ -300,6 +314,7 @@ Animated progression showing content coverage over time
 ```
 
 **Search Behaviors:**
+
 - Auto-complete after 2 characters
 - Highlight and zoom to result
 - Multiple results show list
@@ -310,6 +325,7 @@ Animated progression showing content coverage over time
 ```
 Home > Clothing > Outerwear > Winter Jackets
 ```
+
 Click any level to zoom to that scope
 
 ### 6.3 Mini-Map
@@ -330,9 +346,10 @@ Click any level to zoom to that scope
 ### 7.1 Automatic Clustering
 
 When nodes exceed density threshold:
+
 ```
     Before Clustering           After Clustering
-    
+
     · · · · · ·                    ┌───┐
     · · · · · ·         →          │ 47│ <- Cluster badge
     · · · · · ·                    └───┘
@@ -342,6 +359,7 @@ When nodes exceed density threshold:
 ### 7.2 Manual Grouping
 
 Users can create custom groups:
+
 ```
 ┌─────────────────────┐
 │  🗂️ Custom Group    │
@@ -373,14 +391,15 @@ Users can create custom groups:
 ```javascript
 class ViewportManager {
   visibleNodes() {
-    return nodes.filter(node => 
-      node.x > viewport.left - buffer &&
-      node.x < viewport.right + buffer &&
-      node.y > viewport.top - buffer &&
-      node.y < viewport.bottom + buffer
+    return nodes.filter(
+      (node) =>
+        node.x > viewport.left - buffer &&
+        node.x < viewport.right + buffer &&
+        node.y > viewport.top - buffer &&
+        node.y < viewport.bottom + buffer
     );
   }
-  
+
   levelOfDetail(node) {
     const zoom = this.currentZoom;
     if (zoom < 0.25) return 'cluster';
@@ -397,14 +416,14 @@ class ViewportManager {
 
 ### 9.1 Animation Timing
 
-| Action | Duration | Easing |
-|--------|----------|--------|
-| Node hover | 150ms | ease-out |
-| Node select | 200ms | ease-in-out |
-| Zoom | 300ms | ease-in-out |
-| Pan | Instant | - |
-| Force simulation | 60fps continuous | - |
-| Mode switch | 400ms | ease-in-out |
+| Action           | Duration         | Easing      |
+| ---------------- | ---------------- | ----------- |
+| Node hover       | 150ms            | ease-out    |
+| Node select      | 200ms            | ease-in-out |
+| Zoom             | 300ms            | ease-in-out |
+| Pan              | Instant          | -           |
+| Force simulation | 60fps continuous | -           |
+| Mode switch      | 400ms            | ease-in-out |
 
 ### 9.2 Physics Animation
 
@@ -424,13 +443,13 @@ Simulation Steps:
 
 ### 10.1 Touch Gestures
 
-| Gesture | Action |
-|---------|--------|
-| Tap | Select node |
-| Double Tap | Zoom in |
-| Long Press | Context menu |
-| Pinch | Zoom |
-| Two-finger drag | Pan |
+| Gesture            | Action       |
+| ------------------ | ------------ |
+| Tap                | Select node  |
+| Double Tap         | Zoom in      |
+| Long Press         | Context menu |
+| Pinch              | Zoom         |
+| Two-finger drag    | Pan          |
 | Three-finger swipe | Switch modes |
 
 ### 10.2 Mobile Layout
@@ -454,14 +473,14 @@ Simulation Steps:
 
 ### 11.1 Target Performance
 
-| Metric | Target | Maximum |
-|--------|--------|---------|
-| Initial Render | <500ms | 1000ms |
-| Interaction Response | <16ms | 33ms |
-| Search Results | <100ms | 200ms |
-| Mode Switch | <300ms | 500ms |
-| 10K Nodes Render | <2s | 3s |
-| Frame Rate | 60fps | 30fps minimum |
+| Metric               | Target | Maximum       |
+| -------------------- | ------ | ------------- |
+| Initial Render       | <500ms | 1000ms        |
+| Interaction Response | <16ms  | 33ms          |
+| Search Results       | <100ms | 200ms         |
+| Mode Switch          | <300ms | 500ms         |
+| 10K Nodes Render     | <2s    | 3s            |
+| Frame Rate           | 60fps  | 30fps minimum |
 
 ### 11.2 Performance Monitoring
 
@@ -470,15 +489,15 @@ const performanceMonitor = {
   nodeRenderTime: [],
   interactionLatency: [],
   frameRate: [],
-  
+
   degradeGracefully() {
     if (this.frameRate < 30) {
       reduceNodeDetail();
       disableAnimations();
       enableGPUAcceleration();
     }
-  }
-}
+  },
+};
 ```
 
 ---
@@ -490,9 +509,11 @@ const performanceMonitor = {
 ```html
 <div role="application" aria-label="Site taxonomy visualization">
   <div role="tree">
-    <div role="treeitem" 
-         aria-expanded="false"
-         aria-label="Winter Jackets, 1245 products, optimized">
+    <div
+      role="treeitem"
+      aria-expanded="false"
+      aria-label="Winter Jackets, 1245 products, optimized"
+    >
       Winter Jackets
     </div>
   </div>
@@ -502,6 +523,7 @@ const performanceMonitor = {
 ### 12.2 Keyboard-Only Navigation
 
 Full functionality available without mouse:
+
 - Tab navigation through nodes
 - Arrow keys for relationships
 - Enter to select/expand
@@ -510,6 +532,7 @@ Full functionality available without mouse:
 ### 12.3 Alternative Views
 
 **Table View** for accessibility:
+
 ```
 ┌────────────────────┬───────┬─────────┬──────┐
 │ Category          │ SKUs  │ Status  │ Rev  │
@@ -557,6 +580,7 @@ Network Error:
 ### 14.1 Mode Transitions
 
 Smooth transitions between:
+
 - Default View → Link Mode
 - Link Mode → Heat Map
 - Any Mode → Search Result
@@ -567,7 +591,7 @@ Smooth transitions between:
 // Real-time updates via Supabase
 supabase
   .from('taxonomy')
-  .on('UPDATE', payload => {
+  .on('UPDATE', (payload) => {
     updateNode(payload.new);
     recalculateForces();
   })

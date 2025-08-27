@@ -1,9 +1,11 @@
 # Sprint 3: Taxonomy Visualization (MVP Core)
 
 ## Sprint Goal
+
 Build the core interactive taxonomy visualization for 3,000 nodes using D3.js and Canvas rendering.
 
 ## Duration
+
 2 weeks
 
 ## Stories
@@ -40,16 +42,19 @@ Build the core interactive taxonomy visualization for 3,000 nodes using D3.js an
    - **Size**: M (4 hours)
 
 ## Key Technical Decisions
+
 - D3.js + Canvas instead of SVG for performance
 - Quadtree for efficient hit detection
 - Force simulation with configurable parameters
 - Target 60fps with 3,000 nodes
 
 ## Dependencies
+
 - Sprint 2 data ingestion complete
 - Taxonomy data available in database
 
 ## Definition of Done
+
 - [ ] Can visualize 3,000 nodes smoothly
 - [ ] Zoom/pan controls responsive
 - [ ] Color coding shows content status
@@ -57,12 +62,14 @@ Build the core interactive taxonomy visualization for 3,000 nodes using D3.js an
 - [ ] Selection tools working
 
 ## Performance Requirements
+
 - Initial render <2 seconds
 - Interaction response <100ms
 - Memory usage <500MB
 - Smooth 60fps animations
 
 ## Risk Mitigation
+
 - Start performance testing early
 - Have WebGL fallback ready if needed
 - Consider progressive data loading

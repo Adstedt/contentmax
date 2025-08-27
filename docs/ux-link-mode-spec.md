@@ -1,8 +1,11 @@
 # Link Mode Interaction Specification
+
 ## ContentMax Taxonomy Visualization
 
 ### Version 1.0
+
 ### Date: January 26, 2024
+
 ### Author: Sally (UX Expert)
 
 ---
@@ -12,6 +15,7 @@
 Link Mode is a dedicated interaction state within the ContentMax Taxonomy Visualization that enables users to create strategic internal links between content pages through direct manipulation. This mode transforms the force-directed network visualization into an interactive link-building canvas.
 
 ### Key Principles
+
 - **Direct Manipulation**: Draw connections visually rather than through forms
 - **Context-Driven**: Every link requires strategic reasoning
 - **Visual Feedback**: Immediate visual representation of link architecture
@@ -30,6 +34,7 @@ Link Mode is a dedicated interaction state within the ContentMax Taxonomy Visual
 ```
 
 **Toggle Behavior:**
+
 - Single click to switch modes
 - Keyboard shortcut: `L` for Link Mode
 - Mode persists until explicitly changed
@@ -38,6 +43,7 @@ Link Mode is a dedicated interaction state within the ContentMax Taxonomy Visual
 ### 2.2 Visual State Changes
 
 #### Entering Link Mode
+
 ```
 BEFORE (Default View)          AFTER (Link Mode)
 ├─ Full color nodes            ├─ Muted color nodes (70% opacity)
@@ -69,14 +75,16 @@ stateDiagram-v2
 ### 3.2 Mouse Interactions
 
 #### Source Selection
+
 - **Trigger**: Left-click on node
-- **Visual Feedback**: 
+- **Visual Feedback**:
   - Node pulses (scale 1.0 → 1.1 → 1.0, 400ms)
   - Blue glow effect (#3B82F6, 20px spread)
   - Cursor changes to hand grabbing
 - **Audio**: Soft "click" sound (optional)
 
 #### Drawing Connection
+
 - **Trigger**: Mouse down + drag
 - **Visual Feedback**:
   - Bezier curve from source to cursor
@@ -93,6 +101,7 @@ stateDiagram-v2
   - Line remains dashed
 
 #### Connection Release
+
 - **Valid Release**:
   - Line animates to solid (200ms)
   - Both nodes briefly pulse
@@ -104,14 +113,14 @@ stateDiagram-v2
 
 ### 3.3 Keyboard Interactions
 
-| Key | Action | Context |
-|-----|--------|---------|
-| `L` | Toggle Link Mode | Global |
-| `ESC` | Cancel current operation | While drawing |
-| `Enter` | Confirm dialog | Dialog open |
-| `Tab` | Navigate dialog fields | Dialog open |
-| `Delete` | Remove selected link | Link selected |
-| `Ctrl+Z` | Undo last link | After creation |
+| Key      | Action                   | Context        |
+| -------- | ------------------------ | -------------- |
+| `L`      | Toggle Link Mode         | Global         |
+| `ESC`    | Cancel current operation | While drawing  |
+| `Enter`  | Confirm dialog           | Dialog open    |
+| `Tab`    | Navigate dialog fields   | Dialog open    |
+| `Delete` | Remove selected link     | Link selected  |
+| `Ctrl+Z` | Undo last link           | After creation |
 
 ---
 
@@ -174,18 +183,21 @@ stateDiagram-v2
 ### 4.2 Dialog Behaviors
 
 #### Appearance
+
 - **Animation**: Slide up + fade in (250ms)
 - **Backdrop**: Semi-transparent black (40% opacity)
 - **Position**: Centered viewport
 - **Size**: 500px wide, auto height
 
 #### Validation
+
 - **Link Strategy**: Required, 20-200 characters
 - **Link Type**: Required, single selection
 - **Anchor Text**: Required, auto-generated but editable
 - **Real-time validation**: Show errors inline
 
 #### Smart Defaults
+
 - **Link Type**: AI suggests based on category relationship
 - **Anchor Text**: Generated from target category name
 - **Placement**: Suggests based on content structure
@@ -213,6 +225,7 @@ HIGH-PERFORMANCE (>5% CTR)
 ### 5.2 Link Density Indicators
 
 #### Node Appearance by Link Count
+
 ```
 0-2 links:   ○ (Normal)
 3-5 links:   ◉ (Optimal - green outline)
@@ -239,12 +252,14 @@ HIGH-PERFORMANCE (>5% CTR)
 ### 6.1 Multi-Select Sources
 
 **Interaction**:
+
 1. Hold `Shift` + click multiple source nodes
 2. Selected nodes show blue outline
 3. Draw from any selected node
 4. All selected nodes connect to target
 
 **Visual Feedback**:
+
 - Multiple preview lines while dragging
 - Lines fan out from sources to target
 - Single dialog for all connections
@@ -252,6 +267,7 @@ HIGH-PERFORMANCE (>5% CTR)
 ### 6.2 Link Templates
 
 **Quick Actions Menu** (Right-click on node):
+
 ```
 ┌─────────────────────────────┐
 │ Quick Link Actions          │
@@ -332,13 +348,13 @@ HIGH-PERFORMANCE (>5% CTR)
 
 ### 9.2 Response Times
 
-| Action | Target Time | Max Time |
-|--------|------------|----------|
-| Mode switch | 100ms | 300ms |
-| Node selection | 50ms | 100ms |
-| Link preview | 16ms | 33ms |
-| Dialog open | 150ms | 300ms |
-| Link creation | 200ms | 500ms |
+| Action         | Target Time | Max Time |
+| -------------- | ----------- | -------- |
+| Mode switch    | 100ms       | 300ms    |
+| Node selection | 50ms        | 100ms    |
+| Link preview   | 16ms        | 33ms     |
+| Dialog open    | 150ms       | 300ms    |
+| Link creation  | 200ms       | 500ms    |
 
 ---
 
@@ -363,12 +379,12 @@ HIGH-PERFORMANCE (>5% CTR)
 
 ### 11.1 Error States
 
-| Error | Message | Recovery |
-|-------|---------|----------|
-| Circular link | "This would create a circular reference" | Prevent creation |
-| Too many links | "Node has maximum links (10)" | Suggest alternatives |
-| Network error | "Failed to save link" | Retry button |
-| Invalid target | "Cannot link to this node type" | Show valid targets |
+| Error          | Message                                  | Recovery             |
+| -------------- | ---------------------------------------- | -------------------- |
+| Circular link  | "This would create a circular reference" | Prevent creation     |
+| Too many links | "Node has maximum links (10)"            | Suggest alternatives |
+| Network error  | "Failed to save link"                    | Retry button         |
+| Invalid target | "Cannot link to this node type"          | Show valid targets   |
 
 ---
 
