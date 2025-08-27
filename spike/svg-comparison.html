@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG vs Canvas Comparison - ContentMax</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .viz-container {
+      flex: 1;
+      background: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    svg, canvas {
+      display: block;
+      width: 100%;
+      height: 400px;
+    }
+    .label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    #results {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #f5f5f5;
+    }
+    .controls {
+      margin-bottom: 20px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG vs Canvas Performance Comparison</h1>
+  
+  <div class="controls">
+    <button onclick="runTest(100)">Test 100 Nodes</button>
+    <button onclick="runTest(500)">Test 500 Nodes</button>
+    <button onclick="runTest(1000)">Test 1000 Nodes</button>
+    <button onclick="runTest(2000)">Test 2000 Nodes</button>
+    <button onclick="runAllTests()">Run All Tests</button>
+  </div>
+  
+  <div class="container">
+    <div class="viz-container">
+      <div class="label">SVG Rendering</div>
+      <svg id="svg-viz"></svg>
+    </div>
+    <div class="viz-container">
+      <div class="label">Canvas Rendering</div>
+      <canvas id="canvas-viz" width="800" height="400"></canvas>
+    </div>
+  </div>
+  
+  <div id="results">
+    <h2>Performance Results</h2>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Node Count</th>
+          <th>SVG FPS</th>
+          <th>Canvas FPS</th>
+          <th>SVG Memory (MB)</th>
+          <th>Canvas Memory (MB)</th>
+          <th>Winner</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  
+  <script>
+    const svgContainer = d3.select('#svg-viz');
+    const canvas = document.getElementById('canvas-viz');
+    const ctx = canvas.getContext('2d');
+    
+    let svgSimulation = null;
+    let canvasSimulation = null;
+    
+    function generateData(nodeCount) {
+      const nodes = d3.range(nodeCount).map(i => ({
+        id: i,
+        group: Math.floor(Math.random() * 10),
+        x: Math.random() * 800,
+        y: Math.random() * 400
+      }));
+      
+      const links = [];
+      for (let i = 0; i < nodeCount * 1.5; i++) {
+        links.push({
+          source: Math.floor(Math.random() * nodeCount),
+          target: Math.floor(Math.random() * nodeCount)
+        });
+      }
+      
+      return { nodes, links };
+    }
+    
+    function testSVG(data) {
+      // Clear previous
+      svgContainer.selectAll('*').remove();
+      
+      const nodes = [...data.nodes];
+      const links = data.links.map(d => ({...d}));
+      
+      let fps = 0;
+      let frameCount = 0;
+      let lastTime = performance.now();
+      
+      // Create SVG elements
+      const linkElements = svgContainer
+        .selectAll('line')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', 1);
+      
+      const nodeElements = svgContainer
+        .selectAll('circle')
+        .data(nodes)
+        .enter()
+        .append('circle')
+        .attr('r', 5)
+        .attr('fill', d => d3.schemeCategory10[d.group % 10]);
+      
+      svgSimulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id))
+        .force('charge', d3.forceManyBody().strength(-30))
+        .force('center', d3.forceCenter(400, 200))
+        .on('tick', () => {
+          linkElements
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+          
+          nodeElements
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+          
+          // Calculate FPS
+          frameCount++;
+          const currentTime = performance.now();
+          if (frameCount % 10 === 0) {
+            fps = Math.round(1000 / (currentTime - lastTime) * 10);
+            lastTime = currentTime;
+          }
+        });
+      
+      return new Promise(resolve => {
+        setTimeout(() => {
+          svgSimulation.stop();
+          const memory = performance.memory ? 
+            Math.round(performance.memory.usedJSHeapSize / 1048576) : 0;
+          resolve({ fps, memory });
+        }, 5000); // Run for 5 seconds
+      });
+    }
+    
+    function testCanvas(data) {
+      const nodes = [...data.nodes];
+      const links = data.links.map(d => ({...d}));
+      
+      let fps = 0;
+      let frameCount = 0;
+      let lastTime = performance.now();
+      
+      canvasSimulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id))
+        .force('charge', d3.forceManyBody().strength(-30))
+        .force('center', d3.forceCenter(400, 200))
+        .on('tick', () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw links
+          ctx.strokeStyle = '#999';
+          ctx.globalAlpha = 0.6;
+          ctx.beginPath();
+          links.forEach(link => {
+            ctx.moveTo(link.source.x, link.source.y);
+            ctx.lineTo(link.target.x, link.target.y);
+          });
+          ctx.stroke();
+          
+          // Draw nodes
+          ctx.globalAlpha = 1;
+          nodes.forEach(node => {
+            ctx.fillStyle = d3.schemeCategory10[node.group % 10];
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+          
+          // Calculate FPS
+          frameCount++;
+          const currentTime = performance.now();
+          if (frameCount % 10 === 0) {
+            fps = Math.round(1000 / (currentTime - lastTime) * 10);
+            lastTime = currentTime;
+          }
+        });
+      
+      return new Promise(resolve => {
+        setTimeout(() => {
+          canvasSimulation.stop();
+          const memory = performance.memory ? 
+            Math.round(performance.memory.usedJSHeapSize / 1048576) : 0;
+          resolve({ fps, memory });
+        }, 5000); // Run for 5 seconds
+      });
+    }
+    
+    async function runTest(nodeCount) {
+      console.log(`Testing with ${nodeCount} nodes...`);
+      
+      const data = generateData(nodeCount);
+      
+      // Test SVG
+      const svgResult = await testSVG(data);
+      
+      // Wait a bit
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Test Canvas
+      const canvasResult = await testCanvas(data);
+      
+      // Add to results table
+      const tbody = document.querySelector('#results-table tbody');
+      const row = tbody.insertRow();
+      row.insertCell(0).textContent = nodeCount;
+      row.insertCell(1).textContent = svgResult.fps;
+      row.insertCell(2).textContent = canvasResult.fps;
+      row.insertCell(3).textContent = svgResult.memory;
+      row.insertCell(4).textContent = canvasResult.memory;
+      
+      const winner = canvasResult.fps > svgResult.fps ? 'Canvas' : 'SVG';
+      const winnerCell = row.insertCell(5);
+      winnerCell.textContent = winner;
+      winnerCell.style.fontWeight = 'bold';
+      winnerCell.style.color = winner === 'Canvas' ? '#28a745' : '#dc3545';
+      
+      return { nodeCount, svgResult, canvasResult };
+    }
+    
+    async function runAllTests() {
+      // Clear results
+      document.querySelector('#results-table tbody').innerHTML = '';
+      
+      const testSizes = [100, 500, 1000, 2000];
+      const results = [];
+      
+      for (const size of testSizes) {
+        const result = await runTest(size);
+        results.push(result);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      console.log('All tests complete!');
+      console.log('Summary:', results);
+    }
+  </script>
+</body>
+</html>
