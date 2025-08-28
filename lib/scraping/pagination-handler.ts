@@ -23,12 +23,12 @@ export class PaginationHandler {
     let currentUrl = firstPageUrl;
     let pageNum = 1;
 
-    console.log(`Starting pagination scraping for ${firstPageUrl}`);
+    // Starting pagination scraping
 
     while (currentUrl && pageNum <= this.maxPages) {
       // Avoid infinite loops
       if (visitedUrls.has(currentUrl)) {
-        console.log(`Already visited ${currentUrl}, stopping pagination`);
+        // Already visited URL, stopping pagination
         break;
       }
       visitedUrls.add(currentUrl);
@@ -44,7 +44,7 @@ export class PaginationHandler {
         }
 
         // Extract content from current page
-        console.log(`Scraping page ${pageNum}: ${currentUrl}`);
+        // Scraping current page
         const content = await this.extractor.extractContent(page, urlCategory);
         
         // Add pagination info
@@ -65,7 +65,7 @@ export class PaginationHandler {
           pageNum++;
         } else {
           // No more pages
-          console.log(`No more pages found after page ${pageNum}`);
+          // No more pages found
           allContent.push(content);
           break;
         }
@@ -92,7 +92,7 @@ export class PaginationHandler {
       }
     });
 
-    console.log(`Pagination complete. Scraped ${allContent.length} pages`);
+    // Pagination complete
     return allContent;
   }
 
@@ -154,13 +154,13 @@ export class PaginationHandler {
           // Validate URL
           try {
             new URL(nextUrl);
-            console.log(`Found next page URL: ${nextUrl}`);
+            // Found next page URL
             return nextUrl;
           } catch {
             console.warn(`Invalid next page URL: ${nextUrl}`);
           }
         }
-      } catch (error) {
+      } catch {
         // Continue to next selector
         continue;
       }

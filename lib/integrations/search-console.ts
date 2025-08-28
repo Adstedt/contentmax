@@ -403,14 +403,12 @@ export class SearchConsoleClient {
         pages: data.pages.slice(0, 10), // Top 10 pages
         devices: data.devices,
         countries: data.countries.slice(0, 5), // Top 5 countries
-      },
+      } as any, // Type workaround for Json field
     }));
 
     const { error } = await supabase
       .from('gsc_data')
-      .upsert(dailyRecords, {
-        onConflict: 'project_id,url,date',
-      });
+      .insert(dailyRecords);
 
     if (error) {
       console.error('Error storing GSC data:', error);

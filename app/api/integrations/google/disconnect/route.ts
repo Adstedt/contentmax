@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         action: 'google_integration_disconnected',
-        details: {
+        entity_type: 'integration',
+        new_values: {
           email,
           timestamp: new Date().toISOString(),
         },

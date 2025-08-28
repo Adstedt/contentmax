@@ -8,9 +8,14 @@ interface RateLimitOptions {
   intervalCap?: number;
 }
 
+interface RobotsParser {
+  isAllowed(url: string, userAgent: string): boolean | undefined;
+  getCrawlDelay(userAgent: string): number | undefined;
+}
+
 export class RateLimiter {
   private queue: PQueue;
-  private robotsCache: Map<string, any> = new Map();
+  private robotsCache: Map<string, RobotsParser> = new Map();
   private crawlDelayCache: Map<string, number> = new Map();
   private userAgent: string;
 
@@ -62,8 +67,8 @@ export class RateLimiter {
       // Check cache first
       if (this.robotsCache.has(urlObj.host)) {
         const robots = this.robotsCache.get(urlObj.host);
-        const allowed = robots.isAllowed(url, this.userAgent) ?? true;
-        const crawlDelay = robots.getCrawlDelay(this.userAgent) ?? 0;
+        const allowed = robots?.isAllowed(url, this.userAgent) ?? true;
+        const crawlDelay = robots?.getCrawlDelay(this.userAgent) ?? 0;
         
         return {
           allowed,
@@ -77,7 +82,7 @@ export class RateLimiter {
       
       if (response.ok) {
         const robotsTxt = await response.text();
-        const robots = robotsParser(robotsUrl, robotsTxt);
+        const robots = robotsParser(robotsUrl, robotsTxt) as RobotsParser;
         
         // Cache the parsed robots
         this.robotsCache.set(urlObj.host, robots);

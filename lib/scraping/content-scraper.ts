@@ -106,7 +106,6 @@ export class ContentScraper {
         { timeout: 5000 }
       ).catch(() => {
         // If no specific content selector found, just continue
-        console.log('No specific content selector found, continuing...');
       });
 
       // Additional wait for dynamic content

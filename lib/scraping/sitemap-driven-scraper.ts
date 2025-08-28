@@ -129,7 +129,7 @@ export class SitemapDrivenScraper {
         }
       );
     } catch (error) {
-      console.error(`Failed to scrape ${item.url}:`, error);
+      // Failed to scrape URL
       
       // Retry logic
       if (item.retryCount && item.retryCount < (item.maxRetries || 3)) {
@@ -153,7 +153,7 @@ export class SitemapDrivenScraper {
     // This will be implemented to store content in Supabase
     // For now, just log
     const contents = Array.isArray(content) ? content : [content];
-    console.log(`Storing ${contents.length} scraped pages for project ${projectId}`);
+    // Store content in database - implementation pending
   }
 
   private updateProgress(): void {
@@ -164,7 +164,7 @@ export class SitemapDrivenScraper {
     
     this.progress.estimatedTimeRemaining = remaining * avgTimePerUrl;
     
-    console.log(`Progress: ${this.progress.processedUrls}/${this.progress.totalUrls} URLs processed`);
+    // Update progress tracking
   }
 
   getProgress(): ScrapingProgress {

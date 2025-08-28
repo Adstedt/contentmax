@@ -101,8 +101,8 @@ export class GoogleOAuthClient {
         email,
         refresh_token: encryptedRefreshToken,
         access_token: encryptedAccessToken,
-        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-        connected_at: new Date(),
+        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
+        connected_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -131,9 +131,14 @@ export class GoogleOAuthClient {
 
     // Decrypt tokens before returning
     return {
-      ...data,
+      id: data.id,
+      userId: data.user_id || '',
+      email: data.email,
       refreshToken: this.decryptToken(data.refresh_token),
       accessToken: data.access_token ? this.decryptToken(data.access_token) : undefined,
+      tokenExpiry: data.token_expiry ? new Date(data.token_expiry) : undefined,
+      connectedAt: new Date(data.connected_at || ''),
+      lastSync: data.last_sync ? new Date(data.last_sync) : undefined,
     };
   }
 
@@ -167,7 +172,7 @@ export class GoogleOAuthClient {
       .from('google_integrations')
       .update({
         access_token: encryptedAccessToken,
-        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
       })
       .eq('user_id', userId);
 

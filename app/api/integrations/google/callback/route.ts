@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       .insert({
         user_id: userId,
         action: 'google_integration_connected',
-        details: {
+        entity_type: 'integration',
+        new_values: {
           email,
           timestamp: new Date().toISOString(),
         },

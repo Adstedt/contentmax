@@ -144,7 +144,7 @@ export interface ScrapingOptions {
 
 export interface ScrapingResult {
   success: boolean;
-  content?: ScrapedContent;
+  content?: ScrapedContent | ScrapedContent[];
   error?: string;
   duration?: number;
 }
