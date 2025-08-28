@@ -22,11 +22,14 @@ Build comprehensive data ingestion pipeline with CI/CD for quality assurance, en
    - **Priority**: P0 - Critical
    - **Size**: M (6 hours)
 
-3. **Story 2.3: Content Scraper with Rate Limiting**
-   - Implement web scraping with robots.txt compliance
-   - Add rate limiting and retry logic
+3. **Story 2.3: Sitemap-Driven Content Scraper & Analyzer**
+   - Consumes categorized URLs from sitemap parser
+   - Extracts comprehensive content (SEO, descriptions, gaps)
+   - Handles full pagination for category/brand pages
+   - Identifies content gaps for AI generation
    - **Priority**: P0 - Critical
    - **Size**: L (8 hours)
+   - **Dependencies**: Story 2.2
 
 4. **Story 2.4: Google Search Console Integration**
    - OAuth flow implementation

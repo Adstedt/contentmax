@@ -1,5 +1,7 @@
 # Story 2.2: Sitemap Parser
 
+## Status: COMPLETED ✅
+
 ## User Story
 
 As a content manager,

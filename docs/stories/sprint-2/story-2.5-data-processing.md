@@ -11,7 +11,7 @@ So that I can visualize the site structure and identify content relationships.
 - **Size**: L (8 hours)
 - **Priority**: P0 - Critical
 - **Sprint**: 2
-- **Dependencies**: Task 2.3
+- **Dependencies**: Story 2.3 (Sitemap-Driven Content Scraper)
 
 ## Description
 

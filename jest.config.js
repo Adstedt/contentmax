@@ -21,6 +21,10 @@ const customJestConfig = {
     '/spike/',
     '/.next/',
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(p-queue|eventemitter3|p-timeout)/)',
+  ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   collectCoverageFrom: [
     'components/**/*.{js,jsx,ts,tsx}',
     'lib/**/*.{js,jsx,ts,tsx}',

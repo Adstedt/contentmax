@@ -45,3 +45,6 @@ export async function createServiceRoleClient() {
     }
   );
 }
+
+// Alias for compatibility
+export const createClient = createServerSupabaseClient;
