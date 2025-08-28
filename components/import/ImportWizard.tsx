@@ -8,7 +8,7 @@ import SitemapInput from './SitemapInput';
 import ImportConfig from './ImportConfig';
 import ProgressTracker from './ProgressTracker';
 import ImportSummary from './ImportSummary';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 export enum ImportStep {
   SITEMAP_INPUT = 'sitemap_input',

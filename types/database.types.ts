@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -12,31 +11,6 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
   public: {
     Tables: {
@@ -93,6 +67,42 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_products: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          position: number | null
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          position?: number | null
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          position?: number | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "taxonomy_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -199,6 +209,117 @@ export type Database = {
           },
         ]
       }
+      feed_config: {
+        Row: {
+          account_id: string | null
+          auth_credentials: Json | null
+          auto_sync_enabled: boolean | null
+          created_at: string | null
+          delta_sync_enabled: boolean | null
+          feed_name: string
+          feed_type: string
+          feed_url: string | null
+          id: string
+          last_sync_at: string | null
+          merchant_id: string | null
+          metadata: Json | null
+          next_sync_at: string | null
+          sync_frequency: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          auth_credentials?: Json | null
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          delta_sync_enabled?: boolean | null
+          feed_name: string
+          feed_type: string
+          feed_url?: string | null
+          id?: string
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          metadata?: Json | null
+          next_sync_at?: string | null
+          sync_frequency?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          auth_credentials?: Json | null
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          delta_sync_enabled?: boolean | null
+          feed_name?: string
+          feed_type?: string
+          feed_url?: string | null
+          id?: string
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          metadata?: Json | null
+          next_sync_at?: string | null
+          sync_frequency?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      feed_sync_history: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          feed_id: string
+          id: string
+          merchant_id: string | null
+          products_added: number | null
+          products_failed: number | null
+          products_processed: number | null
+          products_removed: number | null
+          products_updated: number | null
+          started_at: string | null
+          status: string | null
+          sync_type: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          feed_id: string
+          id?: string
+          merchant_id?: string | null
+          products_added?: number | null
+          products_failed?: number | null
+          products_processed?: number | null
+          products_removed?: number | null
+          products_updated?: number | null
+          started_at?: string | null
+          status?: string | null
+          sync_type?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          feed_id?: string
+          id?: string
+          merchant_id?: string | null
+          products_added?: number | null
+          products_failed?: number | null
+          products_processed?: number | null
+          products_removed?: number | null
+          products_updated?: number | null
+          started_at?: string | null
+          status?: string | null
+          sync_type?: string | null
+        }
+        Relationships: []
+      }
       generation_queue: {
         Row: {
           batch_id: string | null
@@ -262,103 +383,6 @@ export type Database = {
           },
         ]
       }
-      google_integrations: {
-        Row: {
-          id: string
-          user_id: string | null
-          email: string
-          refresh_token: string
-          access_token: string | null
-          token_expiry: string | null
-          connected_at: string | null
-          last_sync: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          email: string
-          refresh_token: string
-          access_token?: string | null
-          token_expiry?: string | null
-          connected_at?: string | null
-          last_sync?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          email?: string
-          refresh_token?: string
-          access_token?: string | null
-          token_expiry?: string | null
-          connected_at?: string | null
-          last_sync?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "google_integrations_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gsc_data: {
-        Row: {
-          id: string
-          project_id: string | null
-          url: string
-          date: string
-          clicks: number | null
-          impressions: number | null
-          ctr: number | null
-          position: number | null
-          data: Json | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          project_id?: string | null
-          url: string
-          date: string
-          clicks?: number | null
-          impressions?: number | null
-          ctr?: number | null
-          position?: number | null
-          data?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          project_id?: string | null
-          url?: string
-          date?: string
-          clicks?: number | null
-          impressions?: number | null
-          ctr?: number | null
-          position?: number | null
-          data?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gsc_data_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       organizations: {
         Row: {
           created_at: string | null
@@ -386,6 +410,122 @@ export type Database = {
           settings?: Json | null
           slug?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_changes: {
+        Row: {
+          change_type: string
+          changed_fields: string[] | null
+          detected_at: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          product_id: string
+          sync_id: string | null
+        }
+        Insert: {
+          change_type: string
+          changed_fields?: string[] | null
+          detected_at?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          product_id: string
+          sync_id?: string | null
+        }
+        Update: {
+          change_type?: string
+          changed_fields?: string[] | null
+          detected_at?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          product_id?: string
+          sync_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_changes_sync_id_fkey"
+            columns: ["sync_id"]
+            isOneToOne: false
+            referencedRelation: "feed_sync_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          additional_images: Json | null
+          availability: string | null
+          brand: string | null
+          channel: string | null
+          condition: string | null
+          content_language: string | null
+          created_at: string | null
+          currency: string | null
+          custom_attributes: Json | null
+          description: string | null
+          google_category: string | null
+          gtin: string | null
+          id: string
+          image_url: string | null
+          last_updated: string | null
+          mpn: string | null
+          price: number | null
+          product_type: string[] | null
+          sale_price: number | null
+          target_country: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          additional_images?: Json | null
+          availability?: string | null
+          brand?: string | null
+          channel?: string | null
+          condition?: string | null
+          content_language?: string | null
+          created_at?: string | null
+          currency?: string | null
+          custom_attributes?: Json | null
+          description?: string | null
+          google_category?: string | null
+          gtin?: string | null
+          id: string
+          image_url?: string | null
+          last_updated?: string | null
+          mpn?: string | null
+          price?: number | null
+          product_type?: string[] | null
+          sale_price?: number | null
+          target_country?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          additional_images?: Json | null
+          availability?: string | null
+          brand?: string | null
+          channel?: string | null
+          condition?: string | null
+          content_language?: string | null
+          created_at?: string | null
+          currency?: string | null
+          custom_attributes?: Json | null
+          description?: string | null
+          google_category?: string | null
+          gtin?: string | null
+          id?: string
+          image_url?: string | null
+          last_updated?: string | null
+          mpn?: string | null
+          price?: number | null
+          product_type?: string[] | null
+          sale_price?: number | null
+          target_country?: string | null
+          title?: string
+          url?: string
         }
         Relationships: []
       }
@@ -667,7 +807,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      mark_stale_products: {
+        Args: { active_product_ids: string[]; stale_threshold?: unknown }
+        Returns: number
+      }
+      recalculate_taxonomy_metrics: {
+        Args: {
+          include_availability?: boolean
+          include_revenue?: boolean
+          include_sku_counts?: boolean
+        }
+        Returns: undefined
+      }
+      update_category_sku_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -796,9 +951,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

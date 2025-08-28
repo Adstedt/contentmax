@@ -23,7 +23,8 @@
       "Bash(npx supabase:*)",
       "Bash(taskkill:*)",
       "Bash(npx next:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

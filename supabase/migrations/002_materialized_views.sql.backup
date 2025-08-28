@@ -16,6 +16,28 @@ CREATE TABLE IF NOT EXISTS taxonomy_nodes (
   UNIQUE(project_id, url)
 );
 
+-- Add missing columns if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'taxonomy_nodes' 
+                 AND column_name = 'has_content') THEN
+    ALTER TABLE taxonomy_nodes ADD COLUMN has_content BOOLEAN DEFAULT false;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'taxonomy_nodes' 
+                 AND column_name = 'sku_count') THEN
+    ALTER TABLE taxonomy_nodes ADD COLUMN sku_count INTEGER DEFAULT 0;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'taxonomy_nodes' 
+                 AND column_name = 'last_modified') THEN
+    ALTER TABLE taxonomy_nodes ADD COLUMN last_modified TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+  END IF;
+END $$;
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_nodes_parent ON taxonomy_nodes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_nodes_project ON taxonomy_nodes(project_id);
@@ -241,13 +263,11 @@ $$ LANGUAGE plpgsql;
 -- Create scheduled job to refresh views (requires pg_cron extension)
 -- Note: This is commented out as pg_cron may not be available in all environments
 -- Uncomment if pg_cron is available
-/*
-SELECT cron.schedule(
-  'refresh-taxonomy-views',
-  '0 */1 * * *', -- Every hour
-  'SELECT refresh_taxonomy_views();'
-);
-*/
+-- SELECT cron.schedule(
+--   'refresh-taxonomy-views',
+--   '0 */1 * * *',
+--   'SELECT refresh_taxonomy_views();'
+-- );
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -258,6 +278,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_taxonomy_nodes_updated_at ON taxonomy_nodes;
 CREATE TRIGGER update_taxonomy_nodes_updated_at
   BEFORE UPDATE ON taxonomy_nodes
   FOR EACH ROW
@@ -280,7 +301,9 @@ CREATE POLICY "Users can view their project taxonomy nodes"
   USING (
     project_id IN (
       SELECT p.id FROM projects p
-      WHERE p.user_id = auth.uid()
+      JOIN organizations o ON p.organization_id = o.id
+      JOIN users u ON u.organization_id = o.id
+      WHERE u.id = auth.uid()
     )
   );
 
@@ -291,7 +314,9 @@ CREATE POLICY "Users can insert taxonomy nodes for their projects"
   WITH CHECK (
     project_id IN (
       SELECT p.id FROM projects p
-      WHERE p.user_id = auth.uid()
+      JOIN organizations o ON p.organization_id = o.id
+      JOIN users u ON u.organization_id = o.id
+      WHERE u.id = auth.uid()
     )
   );
 
@@ -302,7 +327,9 @@ CREATE POLICY "Users can update their project taxonomy nodes"
   USING (
     project_id IN (
       SELECT p.id FROM projects p
-      WHERE p.user_id = auth.uid()
+      JOIN organizations o ON p.organization_id = o.id
+      JOIN users u ON u.organization_id = o.id
+      WHERE u.id = auth.uid()
     )
   );
 
@@ -313,6 +340,8 @@ CREATE POLICY "Users can delete their project taxonomy nodes"
   USING (
     project_id IN (
       SELECT p.id FROM projects p
-      WHERE p.user_id = auth.uid()
+      JOIN organizations o ON p.organization_id = o.id
+      JOIN users u ON u.organization_id = o.id
+      WHERE u.id = auth.uid()
     )
   );
