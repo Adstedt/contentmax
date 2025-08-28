@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, CheckCircle, Info, XCircle, X } from 'lucide-react';
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'info' | 'success' | 'warning' | 'error';
+  variant?: 'info' | 'success' | 'warning' | 'error' | 'destructive';
   title?: string;
   dismissible?: boolean;
   onDismiss?: () => void;
@@ -47,6 +47,11 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         icon: <XCircle className="h-5 w-5 text-red-400" />,
         title: 'text-red-800',
       },
+      destructive: {
+        container: 'bg-red-50 border-red-200 text-red-800',
+        icon: <XCircle className="h-5 w-5 text-red-400" />,
+        title: 'text-red-800',
+      },
     };
 
     const variantStyles = variants[variant];
@@ -80,7 +85,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
                   variant === 'info' && 'focus:ring-blue-500',
                   variant === 'success' && 'focus:ring-green-500',
                   variant === 'warning' && 'focus:ring-yellow-500',
-                  variant === 'error' && 'focus:ring-red-500'
+                  (variant === 'error' || variant === 'destructive') && 'focus:ring-red-500'
                 )}
                 aria-label="Dismiss alert"
               >
@@ -96,4 +101,22 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 
 Alert.displayName = 'Alert';
 
+// Additional exports for better compatibility
+export const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('text-sm [&_p]:leading-relaxed', className)} {...props} />
+));
+AlertDescription.displayName = 'AlertDescription';
+
+export const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5 ref={ref} className={cn('mb-1 font-medium leading-none tracking-tight', className)} {...props} />
+));
+AlertTitle.displayName = 'AlertTitle';
+
+export { Alert };
 export default Alert;

@@ -20,7 +20,10 @@
       "Bash(npm test:*)",
       "Bash(git push:*)",
       "Bash(gh pr:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx next:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

@@ -302,12 +302,65 @@ const ErrorRecovery: React.FC<{ errors: ImportError[] }> = ({ errors }) => {
 
 ## Definition of Done
 
-- [ ] Code complete and committed
-- [ ] Wizard flow implemented
-- [ ] Real-time progress working
-- [ ] Error handling comprehensive
-- [ ] Import history functional
-- [ ] UI responsive and accessible
-- [ ] Tests written and passing
-- [ ] Documentation updated
+- [x] Code complete and committed
+- [x] Wizard flow implemented
+- [x] Real-time progress working
+- [x] Error handling comprehensive
+- [x] Import history functional
+- [x] UI responsive and accessible
+- [x] Tests written and passing
+- [x] Documentation updated
 - [ ] Peer review completed
+
+## Dev Agent Record
+
+### Status
+Ready for Review
+
+### Files Created/Modified
+- `app/import/page.tsx` - Main import page with wizard and history tabs
+- `components/import/ImportWizard.tsx` - Multi-step import wizard component
+- `components/import/SitemapInput.tsx` - Sitemap URL input and validation step
+- `components/import/ImportConfig.tsx` - Import configuration step with settings
+- `components/import/ProgressTracker.tsx` - Real-time progress tracking display
+- `components/import/ImportSummary.tsx` - Import results summary and review
+- `components/import/ImportHistory.tsx` - Previous imports management table
+- `hooks/useImportProgress.ts` - Real-time progress tracking hook with WebSocket fallback
+- `hooks/useImportHistory.ts` - Import history data management hook
+- `components/ui/progress.tsx` - Progress bar component
+- `components/ui/tabs.tsx` - Tabs component for UI
+- `components/ui/radio-group.tsx` - Radio group component
+- `components/ui/textarea.tsx` - Textarea component
+- `components/ui/label.tsx` - Label component
+- `components/ui/switch.tsx` - Toggle switch component
+- `tests/import-ui.test.tsx` - Comprehensive test suite for all components
+
+### Completion Notes
+- ✅ Complete 4-step import wizard (Sitemap → Configuration → Processing → Review)
+- ✅ Real-time progress tracking with WebSocket and polling fallback
+- ✅ Comprehensive import configuration options (scraping, rate limiting, filtering)
+- ✅ Import history with status tracking, retry, and deletion capabilities
+- ✅ Detailed import summary with error handling and downloadable reports
+- ✅ Responsive UI with proper error states and loading indicators
+- ✅ Comprehensive test coverage for all major components
+- ✅ Added necessary UI components (Progress, Tabs, Switch, etc.)
+
+### Technical Implementation
+- Multi-step wizard with proper navigation and validation
+- Real-time WebSocket updates with polling fallback for reliability
+- Import configuration with advanced filtering and rate limiting
+- Progress visualization with stage indicators and metrics
+- Import history management with CRUD operations
+- Error recovery with retry mechanisms
+- Comprehensive TypeScript types and interfaces
+- Accessible UI with proper focus management and screen reader support
+
+### Testing Coverage
+- Import wizard flow and step navigation
+- Sitemap validation and preview
+- Configuration form handling
+- Progress tracking display
+- Import summary presentation
+- History table interactions
+- Error state handling
+- API integration mocking

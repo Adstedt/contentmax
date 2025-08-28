@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary' | 'outline' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   onRemove?: () => void;
   removable?: boolean;
@@ -21,6 +21,9 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       warning: 'bg-yellow-100 text-yellow-800',
       danger: 'bg-red-100 text-red-800',
       info: 'bg-indigo-100 text-indigo-800',
+      secondary: 'bg-gray-100 text-gray-900',
+      outline: 'border border-gray-300 text-gray-700',
+      destructive: 'bg-red-100 text-red-900',
     };
 
     const sizes = {
@@ -70,4 +73,5 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
 
 Badge.displayName = 'Badge';
 
+export { Badge };
 export default Badge;
