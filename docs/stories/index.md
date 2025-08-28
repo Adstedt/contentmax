@@ -26,6 +26,8 @@ This directory contains all user stories organized by sprint. Each sprint has it
 - Story 2.4: Google Search Console Integration
 - Story 2.5: Data Processing Pipeline
 - Story 2.6: Import UI & Progress Tracking
+- Story 2.7: OAuth Integration
+- Story 2.8: Google Product Feed Integration 🆕
 
 ### [Sprint 3: Taxonomy Visualization](./sprint-3/index.md)
 

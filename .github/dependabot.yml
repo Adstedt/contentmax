@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    # Group updates for minor and patch releases
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Separate PRs for major updates
+    ignore:
+      # Don't update Next.js automatically to major versions
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+    labels:
+      - "dependencies"
+      - "automated"
+    reviewers:
+      - "Adstedt"
+    
+  # Enable security updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "ci/cd"
+      - "automated"

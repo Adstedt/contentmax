@@ -1,0 +1,37 @@
+# CODEOWNERS for ContentMax
+# This file defines who should review PRs for different parts of the codebase
+# Reviewers will be automatically requested when PRs touch their areas
+
+# Global owners - review everything by default
+* @Adstedt
+
+# Frontend components
+/components/ @Adstedt
+/app/ @Adstedt
+
+# Backend/API routes
+/app/api/ @Adstedt
+
+# Database and Supabase
+/supabase/ @Adstedt
+/lib/supabase/ @Adstedt
+
+# Configuration files
+/.github/ @Adstedt
+*.config.* @Adstedt
+package.json @Adstedt
+package-lock.json @Adstedt
+
+# Documentation
+/docs/ @Adstedt
+*.md @Adstedt
+
+# Testing
+/tests/ @Adstedt
+*.test.* @Adstedt
+*.spec.* @Adstedt
+
+# Security-sensitive files
+.env* @Adstedt
+/lib/auth/ @Adstedt
+/middleware.ts @Adstedt

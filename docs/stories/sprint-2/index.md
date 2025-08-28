@@ -47,6 +47,19 @@ Build comprehensive data ingestion pipeline with CI/CD for quality assurance, en
    - **Priority**: P1 - High
    - **Size**: M (4 hours)
 
+7. **Story 2.7: OAuth Integration** (Existing)
+   - OAuth implementation for Google services
+   - **Priority**: P1 - High
+   - **Size**: M (4 hours)
+
+8. **Story 2.8: Google Product Feed Integration** 🆕
+   - Google Merchant Center API integration
+   - Product data import and synchronization
+   - SKU count calculation per category
+   - **Priority**: P0 - Critical
+   - **Size**: L (8 hours)
+   - **Note**: Essential for taxonomy visualization and content prioritization
+
 ## Dependencies
 
 - Sprint 1 must be complete
@@ -59,8 +72,9 @@ Build comprehensive data ingestion pipeline with CI/CD for quality assurance, en
 - [ ] Can import and parse sitemaps
 - [ ] Content scraping respects rate limits
 - [ ] Google Search Console data flowing
-- [ ] Taxonomy hierarchy generated
-- [ ] Import UI provides clear feedback
+- [ ] Google Product Feed data importing with SKU counts
+- [ ] Taxonomy hierarchy generated with accurate product counts
+- [ ] Import UI provides clear feedback for all data sources
 
 ## Technical Risks
 
