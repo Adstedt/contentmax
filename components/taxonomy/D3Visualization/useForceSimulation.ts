@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef, useEffect, useCallback } from 'react';
 import * as d3 from 'd3';
 import { ForceSimulation, Node, Link, ForceConfig } from './ForceSimulation';
