@@ -391,6 +391,7 @@ Add language parameter to content generation API to generate content directly in
    ```
 
 5. **Content generation with language**
+
    ```typescript
    class MultilingualContentGenerator {
      async generate(request: ContentGenerationRequest): Promise<GeneratedContent> {

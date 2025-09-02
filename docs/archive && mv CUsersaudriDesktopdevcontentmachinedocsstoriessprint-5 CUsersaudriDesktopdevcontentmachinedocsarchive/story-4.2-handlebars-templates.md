@@ -285,6 +285,7 @@ Integrate Handlebars.js for template management with custom helpers, partials, a
    ```
 
 5. **Template management system**
+
    ```typescript
    class TemplateManager {
      private engine: TemplateEngine;

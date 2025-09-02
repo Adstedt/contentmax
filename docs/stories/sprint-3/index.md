@@ -1,8 +1,8 @@
-# Sprint 3: Taxonomy Visualization (MVP Core)
+# Sprint 3: Taxonomy Visualization (Revenue-Focused)
 
 ## Sprint Goal
 
-Build the core interactive taxonomy visualization for 3,000 nodes using D3.js and Canvas rendering.
+Build the core interactive taxonomy visualization with revenue optimization overlays for 3,000 nodes using D3.js and Canvas rendering.
 
 ## Duration
 
@@ -10,17 +10,19 @@ Build the core interactive taxonomy visualization for 3,000 nodes using D3.js an
 
 ## Stories
 
-1. **Story 3.1: D3.js Force Simulation Setup**
+1. **Story 3.1: D3.js Force Simulation Setup** ✅
    - Implement force-directed graph with Canvas
    - Configure physics simulation
    - **Priority**: P0 - Critical
    - **Size**: L (8 hours)
+   - **Status**: COMPLETE
 
-2. **Story 3.2: Viewport Controls & Interactions**
-   - Add zoom, pan, selection controls
-   - Implement hit detection
+2. **Story 3.2: Performance Data Overlay** 🔄
+   - Add real-time performance metrics to nodes
+   - Show impressions, CTR, position, revenue
    - **Priority**: P0 - Critical
-   - **Size**: M (6 hours)
+   - **Size**: L (8 hours)
+   - **Updated**: Modified for revenue focus
 
 3. **Story 3.3: Node Clustering & LOD**
    - Cluster dense areas for performance
@@ -28,11 +30,13 @@ Build the core interactive taxonomy visualization for 3,000 nodes using D3.js an
    - **Priority**: P1 - High
    - **Size**: M (6 hours)
 
-4. **Story 3.4: Heat Map & Status Indicators**
-   - Color coding for content status
-   - Visual legend component
+4. **Story 3.4: Opportunity Heat Map Colors** 🔄
+   - Color coding by opportunity score
+   - Quick win indicators
+   - Visual legend with revenue potential
    - **Priority**: P0 - Critical
-   - **Size**: S (3 hours)
+   - **Size**: M (6 hours)
+   - **Updated**: Modified for revenue focus
 
 5. **Story 3.5: Performance Optimization**
    - Viewport culling

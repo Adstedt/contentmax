@@ -238,10 +238,12 @@ Example:
 ### Dependencies Installed:
 
 Production:
+
 - clsx@2.1.1
 - tailwind-merge@3.3.1
 
 Testing:
+
 - jest@30.1.1
 - jest-environment-jsdom@30.1.1
 - @testing-library/react@16.3.0

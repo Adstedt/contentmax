@@ -519,6 +519,7 @@ Build content generation pipeline orchestration with queue management, progress 
    ```
 
 5. **Generation UI integration**
+
    ```typescript
    // app/generate/page.tsx
    const GenerationPage: React.FC = () => {

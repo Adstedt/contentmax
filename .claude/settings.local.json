@@ -24,7 +24,11 @@
       "Bash(taskkill:*)",
       "Bash(npx next:*)",
       "Bash(powershell:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(md-tree:*)",
+      "Bash(ls:*)",
+      "Bash(git reset:*)",
+      "Bash(cmd.exe:*)"
     ],
     "deny": [],
     "ask": []

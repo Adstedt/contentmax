@@ -438,6 +438,7 @@ Implement OpenAI API integration with retry policies, circuit breaker pattern, f
    ```
 
 5. **Cost tracking and management**
+
    ```typescript
    class CostTracker {
      private pricing = {

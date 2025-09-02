@@ -206,11 +206,11 @@ Design and implement a flexible component-based content architecture that allows
              ${data.items
                .map(
                  (item) => `
-            <div class="faq-item">
-              <h3>${this.sanitizeHTML(item.question)}</h3>
-              <p>${this.sanitizeHTML(item.answer)}</p>
-            </div>
-          `
+         <div class="faq-item">
+           <h3>${this.sanitizeHTML(item.question)}</h3>
+           <p>${this.sanitizeHTML(item.answer)}</p>
+         </div>
+       `
                )
                .join('')}
            </div>
@@ -290,6 +290,7 @@ Design and implement a flexible component-based content architecture that allows
    ```
 
 5. **Component composition**
+
    ```typescript
    class ContentComposer {
      constructor(private registry: ComponentRegistry) {}
