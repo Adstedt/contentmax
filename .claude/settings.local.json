@@ -28,7 +28,10 @@
       "Bash(md-tree:*)",
       "Bash(ls:*)",
       "Bash(git reset:*)",
-      "Bash(cmd.exe:*)"
+      "Bash(cmd.exe:*)",
+      "Bash(dir:*)",
+      "Bash(test:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
