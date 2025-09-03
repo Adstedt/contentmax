@@ -3,20 +3,54 @@
 ## Overview
 
 **Priority**: P0 - Blocker  
-**Estimate**: 6 hours  
-**Owner**: Backend Developer  
-**Dependencies**: TASK-001 (Database Schema)  
-**Status**: Not Started
+**Estimate**: 8 hours  
+**Owner**: Full-Stack Developer  
+**Dependencies**: TASK-001 (Database Schema) ✅ Complete  
+**Status**: Ready to Start
 
-## Problem Statement
+## Executive Summary
 
-We need to build hierarchical relationships between taxonomy nodes based on their URL structure. The current sitemap parser extracts URLs but doesn't establish parent-child relationships or calculate depth levels needed for the visualization and scoring algorithms.
+The Hierarchy Builder is a critical component that transforms flat URL lists into structured taxonomies. Our codebase already has excellent foundations with `TaxonomyBuilder` and `HierarchyAnalyzer` classes, but we need to create a unified hierarchy management system with UI components and API endpoints for real-time manipulation.
+
+## Context & Current State
+
+### What We Have ✅
+
+- **Database**: `taxonomy_nodes` table with hierarchical fields (`parent_id`, `depth`, `position`)
+- **Processing**: `TaxonomyBuilder` class with `buildHierarchy()` method
+- **Analysis**: `HierarchyAnalyzer` with relationship detection and health metrics
+- **Ingestion**: Complete sitemap fetching and parsing pipeline
+- **Types**: Strong TypeScript definitions for all entities
+
+### What We Need 🎯
+
+- **UI Components**: Interactive hierarchy builder interface
+- **API Layer**: CRUD endpoints for taxonomy node management
+- **Real-time Updates**: Live hierarchy manipulation
+- **Validation**: Business rules for hierarchy constraints
+- **Batch Operations**: Bulk import/export and modifications
+
+## User Story
+
+**As a** content strategist  
+**I want to** build and manage content hierarchies from imported sitemaps  
+**So that I can** identify content gaps, optimize site structure, and improve SEO performance
+
+### Acceptance Criteria
+
+✅ User can view imported URLs in a hierarchical tree structure  
+✅ User can drag-and-drop nodes to reorganize hierarchy  
+✅ User can edit node properties (title, meta, status)  
+✅ User can bulk import/export hierarchies  
+✅ System automatically detects parent-child relationships  
+✅ System validates hierarchy integrity in real-time  
+✅ Performance: Handle 10,000+ nodes smoothly
 
 ## Technical Requirements
 
-### 1. Core Implementation
+### 1. Enhanced Core Implementation
 
-#### File: `lib/ingestion/hierarchy-builder.ts`
+#### Update: `lib/processing/hierarchy-builder.ts` (New unified builder)
 
 ```typescript
 import { z } from 'zod';
@@ -374,57 +408,422 @@ export class HierarchyBuilder {
 }
 ```
 
-### 2. Integration with Existing Code
+### 2. API Layer Implementation
 
-#### File: `app/api/import/sitemap/route.ts` (Update)
+#### New File: `app/api/taxonomy/hierarchy/route.ts`
 
 ```typescript
-import { HierarchyBuilder } from '@/lib/ingestion/hierarchy-builder';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import { HierarchyBuilder } from '@/lib/processing/hierarchy-builder';
+import { HierarchyAnalyzer } from '@/lib/processing/hierarchy-analyzer';
 
+// GET /api/taxonomy/hierarchy?project_id=xxx
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get('project_id');
+
+  if (!projectId) {
+    return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+
+  // Fetch all nodes for project
+  const { data: nodes, error } = await supabase
+    .from('taxonomy_nodes')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('depth', { ascending: true })
+    .order('position', { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Analyze hierarchy health
+  const analyzer = new HierarchyAnalyzer();
+  const analysis = analyzer.analyzeHierarchy(nodes);
+
+  return NextResponse.json({
+    nodes,
+    analysis,
+    stats: {
+      total: nodes.length,
+      maxDepth: Math.max(...nodes.map((n) => n.depth || 0)),
+      orphaned: analysis.orphanNodes.length,
+      duplicates: analysis.duplicateUrls.length,
+    },
+  });
+}
+
+// POST /api/taxonomy/hierarchy/build
 export async function POST(request: NextRequest) {
-  // ... existing code ...
+  const body = await request.json();
 
-  // After fetching sitemap entries
-  const hierarchyBuilder = new HierarchyBuilder();
-  const hierarchy = hierarchyBuilder.buildFromUrls(
-    result.entries.map((entry) => ({
-      url: entry.loc,
-      title: entry.title || undefined,
-      lastmod: entry.lastmod,
-      changefreq: entry.changefreq,
-      priority: entry.priority,
-    }))
-  );
+  const schema = z.object({
+    projectId: z.string().uuid(),
+    urls: z.array(
+      z.object({
+        url: z.string().url(),
+        title: z.string().optional(),
+        metadata: z.record(z.any()).optional(),
+      })
+    ),
+    options: z
+      .object({
+        autoDetectRelationships: z.boolean().default(true),
+        validateIntegrity: z.boolean().default(true),
+        preserveExisting: z.boolean().default(false),
+      })
+      .optional(),
+  });
 
-  // Store nodes with hierarchy
-  const { error: insertError } = await supabase.from('taxonomy_nodes').upsert(
-    hierarchy.nodes.map((node) => ({
-      id: node.id,
-      project_id: validated.projectId,
-      url: node.url,
-      path: node.path,
-      title: node.title,
-      parent_id: node.parent_id,
-      depth: node.depth,
-      position: 0, // Will be updated based on siblings
-      metadata: {
-        slug: node.slug,
-        breadcrumb: node.breadcrumb,
-        children: node.children,
-      },
-    }))
-  );
+  const validated = schema.parse(body);
+  const supabase = await createClient();
 
-  // ... rest of implementation ...
+  // Build hierarchy
+  const builder = new HierarchyBuilder();
+  const hierarchy = await builder.buildFromUrls(validated.urls, {
+    projectId: validated.projectId,
+    ...validated.options,
+  });
+
+  // Validate if requested
+  if (validated.options?.validateIntegrity) {
+    const analyzer = new HierarchyAnalyzer();
+    const validation = analyzer.validateHierarchy(hierarchy.nodes);
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          error: 'Hierarchy validation failed',
+          issues: validation.issues,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Batch upsert nodes
+  const { error: upsertError } = await supabase.from('taxonomy_nodes').upsert(hierarchy.nodes, {
+    onConflict: validated.options?.preserveExisting ? 'url,project_id' : undefined,
+  });
+
+  if (upsertError) {
+    return NextResponse.json({ error: upsertError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    hierarchy,
+    stats: hierarchy.stats,
+  });
+}
+
+// PATCH /api/taxonomy/hierarchy/node/:id
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  const nodeId = request.url.split('/').pop();
+
+  const schema = z.object({
+    parent_id: z.string().uuid().nullable().optional(),
+    title: z.string().optional(),
+    position: z.number().optional(),
+    metadata: z.record(z.any()).optional(),
+  });
+
+  const validated = schema.parse(body);
+  const supabase = await createClient();
+
+  // Update node
+  const { data, error } = await supabase
+    .from('taxonomy_nodes')
+    .update(validated)
+    .eq('id', nodeId)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Recalculate depths if parent changed
+  if (validated.parent_id !== undefined) {
+    const builder = new HierarchyBuilder();
+    await builder.recalculateDepths(data.project_id);
+  }
+
+  return NextResponse.json(data);
+}
+
+// DELETE /api/taxonomy/hierarchy/node/:id
+export async function DELETE(request: NextRequest) {
+  const nodeId = request.url.split('/').pop();
+  const { searchParams } = new URL(request.url);
+  const cascade = searchParams.get('cascade') === 'true';
+
+  const supabase = await createClient();
+
+  if (cascade) {
+    // Delete node and all descendants
+    const { error } = await supabase.rpc('delete_node_cascade', {
+      node_id: nodeId,
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  } else {
+    // Orphan children by setting their parent_id to null
+    const { error: orphanError } = await supabase
+      .from('taxonomy_nodes')
+      .update({ parent_id: null })
+      .eq('parent_id', nodeId);
+
+    if (orphanError) {
+      return NextResponse.json({ error: orphanError.message }, { status: 500 });
+    }
+
+    // Delete the node
+    const { error: deleteError } = await supabase.from('taxonomy_nodes').delete().eq('id', nodeId);
+
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ success: true });
 }
 ```
 
-### 3. Test Suite
+### 3. UI Components
 
-#### File: `lib/ingestion/hierarchy-builder.test.ts`
+#### New File: `components/taxonomy/hierarchy-builder.tsx`
+
+```typescript
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Tree, NodeModel, NodeApi } from '@minoru/react-dnd-treeview';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronRight, ChevronDown, MoreVertical, Plus, Trash2, Edit2 } from 'lucide-react';
+import { useTaxonomyNodes } from '@/hooks/use-taxonomy-nodes';
+import { cn } from '@/lib/utils';
+
+interface HierarchyBuilderProps {
+  projectId: string;
+  onNodeSelect?: (node: TaxonomyNode) => void;
+  onHierarchyChange?: (nodes: TaxonomyNode[]) => void;
+}
+
+export function HierarchyBuilder({
+  projectId,
+  onNodeSelect,
+  onHierarchyChange
+}: HierarchyBuilderProps) {
+  const { nodes, loading, updateNode, deleteNode, refresh } = useTaxonomyNodes(projectId);
+  const [treeData, setTreeData] = useState<NodeModel[]>([]);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [editingNode, setEditingNode] = useState<string | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+
+  // Convert taxonomy nodes to tree data format
+  useEffect(() => {
+    if (nodes) {
+      const treeNodes: NodeModel[] = nodes.map(node => ({
+        id: node.id,
+        parent: node.parent_id || 0,
+        text: node.title,
+        droppable: true,
+        data: node
+      }));
+      setTreeData(treeNodes);
+    }
+  }, [nodes]);
+
+  // Handle drag and drop
+  const handleDrop = useCallback(
+    async (newTree: NodeModel[], options: { dropTargetId: string; dragSourceId: string }) => {
+      setTreeData(newTree);
+
+      // Update parent relationship in database
+      await updateNode(options.dragSourceId, {
+        parent_id: options.dropTargetId === '0' ? null : options.dropTargetId
+      });
+
+      // Notify parent component
+      if (onHierarchyChange) {
+        const updatedNodes = newTree.map(n => n.data as TaxonomyNode);
+        onHierarchyChange(updatedNodes);
+      }
+    },
+    [updateNode, onHierarchyChange]
+  );
+
+  // Node renderer
+  const renderNode = (node: NodeModel, { depth, isOpen, onToggle }: NodeApi) => {
+    const isSelected = selectedNode === node.id;
+    const isEditing = editingNode === node.id;
+    const hasChildren = treeData.some(n => n.parent === node.id);
+
+    return (
+      <div
+        className={cn(
+          'flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer hover:bg-accent',
+          isSelected && 'bg-accent',
+          `ml-${depth * 4}`
+        )}
+        onClick={() => {
+          setSelectedNode(node.id as string);
+          if (onNodeSelect) {
+            onNodeSelect(node.data as TaxonomyNode);
+          }
+        }}
+      >
+        {hasChildren && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            className="p-0.5"
+          >
+            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+        )}
+
+        {isEditing ? (
+          <Input
+            value={node.text}
+            onChange={(e) => {
+              const updated = treeData.map(n =>
+                n.id === node.id ? { ...n, text: e.target.value } : n
+              );
+              setTreeData(updated);
+            }}
+            onBlur={async () => {
+              await updateNode(node.id as string, { title: node.text });
+              setEditingNode(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
+            className="h-6 text-sm"
+            autoFocus
+          />
+        ) : (
+          <span className="flex-1 text-sm">{node.text}</span>
+        )}
+
+        <div className="flex items-center gap-1 ml-auto">
+          {node.data?.depth !== undefined && (
+            <Badge variant="outline" className="text-xs">
+              L{node.data.depth}
+            </Badge>
+          )}
+
+          {node.data?.sku_count > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {node.data.sku_count} SKUs
+            </Badge>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <MoreVertical size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingNode(node.id as string);
+                }}
+              >
+                <Edit2 size={14} className="mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  // Add new child node
+                  // Implementation here
+                }}
+              >
+                <Plus size={14} className="mr-2" />
+                Add Child
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (confirm('Delete this node and all children?')) {
+                    await deleteNode(node.id as string, true);
+                  }
+                }}
+                className="text-destructive"
+              >
+                <Trash2 size={14} className="mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return <div>Loading hierarchy...</div>;
+  }
+
+  return (
+    <Card className="p-4">
+      <div className="mb-4 flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Content Hierarchy</h3>
+        <Button onClick={refresh} size="sm" variant="outline">
+          Refresh
+        </Button>
+      </div>
+
+      <Tree
+        tree={treeData}
+        rootId={0}
+        render={renderNode}
+        onDrop={handleDrop}
+        initialOpen={Array.from(expandedNodes)}
+        classes={{
+          root: 'hierarchy-tree',
+          draggingSource: 'opacity-50',
+          dropTarget: 'bg-primary/10'
+        }}
+      />
+    </Card>
+  );
+}
+```
+
+### 4. Test Suite
+
+#### File: `lib/processing/hierarchy-builder.test.ts`
 
 ```typescript
 import { HierarchyBuilder } from './hierarchy-builder';
+import { HierarchyAnalyzer } from './hierarchy-analyzer';
+import { createClient } from '@/lib/supabase/server';
 
 describe('HierarchyBuilder', () => {
   let builder: HierarchyBuilder;
@@ -573,7 +972,125 @@ describe('HierarchyBuilder', () => {
 });
 ```
 
-### 4. Usage Examples
+### 5. Real-time Updates with WebSockets
+
+#### New File: `lib/realtime/hierarchy-sync.ts`
+
+```typescript
+import { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
+
+export class HierarchyRealtimeSync {
+  private channel: RealtimeChannel | null = null;
+  private listeners: Map<string, Set<(payload: any) => void>> = new Map();
+
+  constructor(private supabase: SupabaseClient) {}
+
+  /**
+   * Subscribe to hierarchy changes for a project
+   */
+  subscribeToProject(
+    projectId: string,
+    callbacks: {
+      onInsert?: (node: TaxonomyNode) => void;
+      onUpdate?: (node: TaxonomyNode) => void;
+      onDelete?: (nodeId: string) => void;
+    }
+  ) {
+    // Clean up existing subscription
+    this.unsubscribe();
+
+    // Create new channel
+    this.channel = this.supabase
+      .channel(`hierarchy:${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'taxonomy_nodes',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          if (callbacks.onInsert) {
+            callbacks.onInsert(payload.new as TaxonomyNode);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'taxonomy_nodes',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          if (callbacks.onUpdate) {
+            callbacks.onUpdate(payload.new as TaxonomyNode);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'taxonomy_nodes',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          if (callbacks.onDelete) {
+            callbacks.onDelete(payload.old.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return this;
+  }
+
+  /**
+   * Broadcast hierarchy operation to other clients
+   */
+  async broadcastOperation(operation: {
+    type: 'move' | 'edit' | 'delete' | 'add';
+    nodeId: string;
+    data?: any;
+  }) {
+    if (!this.channel) return;
+
+    await this.channel.send({
+      type: 'broadcast',
+      event: 'hierarchy_operation',
+      payload: operation,
+    });
+  }
+
+  /**
+   * Listen for operations from other clients
+   */
+  onRemoteOperation(callback: (operation: any) => void) {
+    if (!this.channel) return;
+
+    this.channel.on('broadcast', { event: 'hierarchy_operation' }, (payload) =>
+      callback(payload.payload)
+    );
+  }
+
+  /**
+   * Clean up subscriptions
+   */
+  unsubscribe() {
+    if (this.channel) {
+      this.supabase.removeChannel(this.channel);
+      this.channel = null;
+    }
+    this.listeners.clear();
+  }
+}
+```
+
+### 6. Usage Examples
 
 ```typescript
 // Example 1: Basic usage
@@ -603,42 +1120,146 @@ console.log(hierarchy2.warnings);
 // ["Very deep hierarchy detected: 11 levels"]
 ```
 
-## Acceptance Criteria
+## Development Checklist
 
-- [ ] Correctly identifies parent-child relationships from URLs
-- [ ] Handles multiple root nodes (e.g., /products, /blog, /about)
-- [ ] Calculates accurate depth for all nodes
-- [ ] Detects and reports circular references
-- [ ] Normalizes URLs (lowercase, trailing slash handling)
-- [ ] Generates meaningful titles from URLs when missing
-- [ ] Provides hierarchy statistics
-- [ ] Processes 1000 nodes in <1 second
-- [ ] Unit test coverage >90%
-- [ ] Integration test with real sitemap data
+### Phase 1: Backend (Hours 1-3)
 
-## Implementation Steps
+- [ ] Enhance `HierarchyBuilder` class with batch operations
+- [ ] Create API endpoints for CRUD operations
+- [ ] Implement validation and integrity checks
+- [ ] Add database functions for cascade operations
+- [ ] Write comprehensive test suite
 
-1. **Hour 1-2**: Implement core HierarchyBuilder class
-2. **Hour 3-4**: Write comprehensive test suite
-3. **Hour 5**: Integrate with existing sitemap import
-4. **Hour 6**: Test with real data and optimize
+### Phase 2: Frontend (Hours 4-6)
 
-## Performance Considerations
+- [ ] Build `HierarchyBuilder` React component
+- [ ] Implement drag-and-drop functionality
+- [ ] Add inline editing capabilities
+- [ ] Create context menus for node operations
+- [ ] Style with Tailwind and shadcn/ui
 
-- Use Map for O(1) lookups instead of array searches
-- Process nodes in sorted order (by depth) for efficiency
-- Batch database operations when storing
-- Consider caching for repeated builds
+### Phase 3: Real-time (Hours 7-8)
 
-## Dependencies for Next Tasks
+- [ ] Set up Supabase real-time subscriptions
+- [ ] Implement optimistic UI updates
+- [ ] Add conflict resolution for concurrent edits
+- [ ] Create activity feed for hierarchy changes
+- [ ] Test multi-user scenarios
 
-- **TASK-003**: Batch Import API needs hierarchical structure
-- **Visualization**: Needs parent-child relationships for force-directed graph
-- **Scoring**: Uses depth and hierarchy for opportunity calculations
+## Implementation Strategy
 
-## Notes
+### Day 1: Foundation
 
-- Consider supporting multiple URL formats (with/without www, http/https)
-- May need special handling for parameterized URLs (?page=2, etc.)
-- Could add support for sitemap index files in the future
-- Hierarchy statistics useful for monitoring data quality
+1. **Morning (2-3 hours)**
+   - Enhance existing `TaxonomyBuilder` with new methods
+   - Create unified `HierarchyBuilder` class
+   - Implement batch operations and validation
+
+2. **Afternoon (2-3 hours)**
+   - Build REST API endpoints
+   - Add authentication and authorization
+   - Write integration tests
+
+### Day 2: User Interface
+
+3. **Morning (2-3 hours)**
+   - Create React components for hierarchy visualization
+   - Implement drag-and-drop with react-dnd-treeview
+   - Add inline editing and context menus
+
+4. **Afternoon (2-3 hours)**
+   - Connect frontend to API
+   - Add real-time updates
+   - Implement optimistic UI
+   - End-to-end testing
+
+## Performance & Scalability
+
+### Optimization Strategies
+
+- **Database**: Use CTEs for recursive queries, indexed on `parent_id` and `project_id`
+- **Caching**: Redis for frequently accessed hierarchies
+- **Pagination**: Virtual scrolling for large trees (10,000+ nodes)
+- **Batch Operations**: Process in chunks of 500 nodes
+- **Debouncing**: 300ms delay on drag-drop operations
+
+### Benchmarks
+
+- Load 1,000 nodes: <500ms
+- Load 10,000 nodes: <2s
+- Drag-drop operation: <100ms
+- Search within tree: <50ms
+- Bulk import 5,000 URLs: <5s
+
+## Integration Points
+
+### Downstream Dependencies
+
+- **TASK-003**: Batch Import API will use hierarchy builder
+- **TASK-004**: Visualization renders hierarchical data
+- **TASK-005**: Scoring algorithms traverse hierarchy
+- **TASK-006**: Export includes hierarchy metadata
+
+### Upstream Dependencies
+
+- **Database Schema**: ✅ Complete (taxonomy_nodes table ready)
+- **Authentication**: ✅ Using Supabase Auth
+- **Project Management**: ✅ Projects table exists
+
+## Technical Decisions
+
+### Architecture Choices
+
+- **Pattern**: Repository pattern for data access
+- **State Management**: React Query for server state
+- **UI Library**: shadcn/ui for consistent design
+- **Tree Component**: @minoru/react-dnd-treeview for drag-drop
+- **Validation**: Zod for runtime type checking
+- **Testing**: Vitest for unit tests, Playwright for E2E
+
+### Data Model Decisions
+
+- **ID Generation**: UUID v4 for node IDs
+- **URL Normalization**: Lowercase, remove trailing slashes
+- **Depth Limit**: Max 10 levels (configurable)
+- **Position**: 0-based indexing for siblings
+- **Soft Delete**: Add `deleted_at` for recovery
+
+## Risk Mitigation
+
+### Technical Risks
+
+1. **Large Dataset Performance**
+   - Mitigation: Virtual scrolling, pagination, lazy loading
+
+2. **Concurrent Edit Conflicts**
+   - Mitigation: Optimistic locking, real-time sync
+
+3. **Data Integrity Issues**
+   - Mitigation: Database constraints, validation layer
+
+4. **Browser Memory Limits**
+   - Mitigation: Virtualization, progressive loading
+
+## Success Metrics
+
+- **Performance**: 95% of operations complete in <500ms
+- **Reliability**: 99.9% uptime for hierarchy API
+- **Usability**: Users can build 100-node hierarchy in <5 minutes
+- **Quality**: Zero data corruption incidents
+- **Adoption**: 80% of imported sitemaps use hierarchy builder
+
+## Future Enhancements
+
+### Version 2.0
+
+- AI-powered hierarchy suggestions
+- Bulk operations with preview
+- Version control for hierarchies
+- Template library for common structures
+- Advanced filtering and search
+- Hierarchy comparison tools
+- Performance insights dashboard
+- Export to various formats (JSON, CSV, XML)
+- Import from competitor sitemaps
+- Collaborative editing with presence
