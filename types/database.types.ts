@@ -642,6 +642,12 @@ export type Database = {
           title: string | null
           updated_at: string | null
           url: string
+          // New fields from migration 009
+          opportunity_score: number | null
+          revenue_potential: number | null
+          optimization_status: string | null
+          last_scored_at: string | null
+          metrics_updated_at: string | null
         }
         Insert: {
           content_status?: string | null
@@ -661,6 +667,12 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           url: string
+          // New fields from migration 009
+          opportunity_score?: number | null
+          revenue_potential?: number | null
+          optimization_status?: string | null
+          last_scored_at?: string | null
+          metrics_updated_at?: string | null
         }
         Update: {
           content_status?: string | null
@@ -680,6 +692,12 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           url?: string
+          // New fields from migration 009
+          opportunity_score?: number | null
+          revenue_potential?: number | null
+          optimization_status?: string | null
+          last_scored_at?: string | null
+          metrics_updated_at?: string | null
         }
         Relationships: [
           {
@@ -798,6 +816,124 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      node_metrics: {
+        Row: {
+          id: string
+          node_id: string
+          date: string
+          source: string
+          // GSC Metrics
+          impressions: number | null
+          clicks: number | null
+          ctr: number | null
+          position: number | null
+          // GA4 Metrics
+          sessions: number | null
+          revenue: number | null
+          transactions: number | null
+          conversion_rate: number | null
+          avg_session_duration: number | null
+          bounce_rate: number | null
+          // Shopify Metrics
+          product_views: number | null
+          add_to_carts: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          node_id: string
+          date: string
+          source: string
+          impressions?: number | null
+          clicks?: number | null
+          ctr?: number | null
+          position?: number | null
+          sessions?: number | null
+          revenue?: number | null
+          transactions?: number | null
+          conversion_rate?: number | null
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          product_views?: number | null
+          add_to_carts?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          node_id?: string
+          date?: string
+          source?: string
+          impressions?: number | null
+          clicks?: number | null
+          ctr?: number | null
+          position?: number | null
+          sessions?: number | null
+          revenue?: number | null
+          transactions?: number | null
+          conversion_rate?: number | null
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          product_views?: number | null
+          add_to_carts?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "node_metrics_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "taxonomy_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          id: string
+          node_id: string
+          score: number
+          revenue_potential: number
+          priority: number
+          factors: Json
+          recommendations: Json | null
+          computed_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          id?: string
+          node_id: string
+          score: number
+          revenue_potential: number
+          priority: number
+          factors?: Json
+          recommendations?: Json | null
+          computed_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          id?: string
+          node_id?: string
+          score?: number
+          revenue_potential?: number
+          priority?: number
+          factors?: Json
+          recommendations?: Json | null
+          computed_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "taxonomy_nodes"
             referencedColumns: ["id"]
           },
         ]

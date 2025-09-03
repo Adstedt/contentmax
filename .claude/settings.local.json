@@ -31,7 +31,10 @@
       "Bash(cmd.exe:*)",
       "Bash(dir:*)",
       "Bash(test:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(wsl:*)",
+      "Bash(set SUPABASE_DB_PASSWORD=7zdEAaI7ZIOP3OfG)",
+      "Bash(npm run test:migration:*)"
     ],
     "deny": [],
     "ask": []

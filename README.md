@@ -7,6 +7,7 @@ AI-powered content generation platform for scalable content creation.
 - Node.js 20.0.0 or higher
 - npm or pnpm package manager
 - Git
+- Docker Desktop (for local development with Supabase)
 
 ## Getting Started
 
@@ -25,7 +26,25 @@ npm install
 pnpm install
 ```
 
-### 3. Set up environment variables
+### 3. Start local development environment
+
+Start Docker and Supabase services:
+
+```bash
+npm run local:start
+# or for Mac/Linux:
+npm run local:start:bash
+```
+
+This will automatically:
+- Start Docker Desktop
+- Install Supabase CLI
+- Start all Supabase services
+- Apply database migrations
+
+For detailed setup instructions, see [Local Development Setup](./docs/LOCAL_DEV_SETUP.md).
+
+### 4. Set up environment variables
 
 Copy the example environment file and fill in your configuration:
 
@@ -35,12 +54,12 @@ cp .env.local.example .env.local
 
 Edit `.env.local` with your configuration:
 
-- **Supabase**: Get your project URL and keys from [Supabase Dashboard](https://supabase.com)
+- **Supabase**: Get your project URL and keys from [Supabase Dashboard](https://supabase.com) or use local values from `supabase start` output
 - **OpenAI**: Get your API key from [OpenAI Platform](https://platform.openai.com)
 - **Stripe** (optional): Get your keys from [Stripe Dashboard](https://stripe.com)
 - **Resend** (optional): Get your API key from [Resend](https://resend.com)
 
-### 4. Run the development server
+### 5. Run the development server
 
 ```bash
 npm run dev

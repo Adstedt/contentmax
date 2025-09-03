@@ -1,0 +1,38 @@
+-- Rollback: Node-Centric Model for Phase 1 MVP
+-- Author: Backend Team
+-- Date: 2025-01-03
+-- Description: Rollback script for 009_node_centric_model migration
+
+BEGIN;
+
+-- Drop policies first
+DROP POLICY IF EXISTS "Users can view metrics for their projects" ON node_metrics;
+DROP POLICY IF EXISTS "Users can insert metrics for their projects" ON node_metrics;
+DROP POLICY IF EXISTS "Users can update metrics for their projects" ON node_metrics;
+DROP POLICY IF EXISTS "Users can view opportunities for their projects" ON opportunities;
+DROP POLICY IF EXISTS "Users can manage opportunities for their projects" ON opportunities;
+
+-- Drop triggers
+DROP TRIGGER IF EXISTS update_node_metrics_updated_at ON node_metrics;
+
+-- Drop tables
+DROP TABLE IF EXISTS opportunities CASCADE;
+DROP TABLE IF EXISTS node_metrics CASCADE;
+
+-- Remove columns from taxonomy_nodes
+ALTER TABLE taxonomy_nodes
+DROP COLUMN IF EXISTS opportunity_score,
+DROP COLUMN IF EXISTS revenue_potential,
+DROP COLUMN IF EXISTS optimization_status,
+DROP COLUMN IF EXISTS last_scored_at,
+DROP COLUMN IF EXISTS metrics_updated_at;
+
+-- Drop indexes
+DROP INDEX IF EXISTS idx_taxonomy_nodes_score;
+DROP INDEX IF EXISTS idx_taxonomy_nodes_status;
+DROP INDEX IF EXISTS idx_taxonomy_nodes_revenue;
+
+-- Drop function if no other triggers use it
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+COMMIT;

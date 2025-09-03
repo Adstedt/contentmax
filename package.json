@@ -17,8 +17,17 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "test:sitemap": "tsx scripts/test-sitemap.ts",
+    "test:migration": "jest tests/migrations/009_node_centric_model.test.ts",
     "ci": "npm run lint && npm run type-check && npm run test:ci",
-    "prepare": "husky"
+    "prepare": "husky",
+    "local:start": "powershell -ExecutionPolicy Bypass -File ./scripts/start-local-dev.ps1",
+    "local:start:bash": "bash ./scripts/start-local-dev.sh",
+    "local:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:migration:new": "supabase migration new",
+    "db:migration:up": "supabase migration up",
+    "db:types": "supabase gen types typescript --local > types/database.types.ts"
   },
   "repository": {
     "type": "git",
