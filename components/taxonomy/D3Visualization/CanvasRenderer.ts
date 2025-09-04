@@ -2,6 +2,7 @@ import { Node, Link } from './ForceSimulation';
 import * as d3 from 'd3';
 import { VisualEncoder, EncodingConfig } from '@/lib/visualization/visual-encoder';
 import { ThemeManager } from '@/lib/visualization/visual-theme';
+import { ZoomVisibilityManager } from '@/lib/visualization/zoom-visibility-manager';
 
 export interface RenderConfig {
   backgroundColor: string;
@@ -26,10 +27,11 @@ export class CanvasRenderer {
   private hoveredNode: Node | null = null;
   private selectedNodes: Set<string> = new Set();
   private config: RenderConfig;
-  private dpi: number;
+  private dpi: number = 1;
   private performanceMode: boolean = false;
   private visualEncoder: VisualEncoder | null = null;
   private themeManager: ThemeManager;
+  private visibilityManager: ZoomVisibilityManager;
 
   constructor(canvas: HTMLCanvasElement, config?: Partial<RenderConfig>) {
     this.canvas = canvas;
@@ -59,6 +61,9 @@ export class CanvasRenderer {
       this.visualEncoder = new VisualEncoder(this.config.encodingConfig);
     }
 
+    // Initialize visibility manager
+    this.visibilityManager = new ZoomVisibilityManager();
+
     // Subscribe to theme changes
     this.themeManager.subscribe((theme) => {
       this.updateThemeColors(theme);
@@ -87,7 +92,81 @@ export class CanvasRenderer {
     this.canvas.style.height = `${rect.height}px`;
   }
 
+  setZoom(transform: d3.ZoomTransform) {
+    this.transform = transform;
+    this.visibilityManager.setZoomLevel(transform.k);
+
+    // Update viewport info for visibility calculations
+    const viewport = {
+      x: -transform.x / transform.k,
+      y: -transform.y / transform.k,
+      width: this.canvas.width / (this.dpi * transform.k),
+      height: this.canvas.height / (this.dpi * transform.k),
+      zoom: transform.k,
+    };
+    this.visibilityManager.updateViewport(viewport);
+  }
+
+  toggleProducts(show?: boolean) {
+    this.visibilityManager.toggleProducts(show);
+  }
+
+  isProductsEnabled(): boolean {
+    return this.visibilityManager.isProductsEnabled();
+  }
+
   render(nodes: Node[], links: Link[]) {
+    // Build parent-child relationships from links
+    const relationships = new Map<string, { parent?: string; children: string[] }>();
+
+    // Initialize all nodes
+    nodes.forEach((node) => {
+      relationships.set(node.id, { children: [] });
+    });
+
+    // Build relationships from links (parent -> child)
+    links.forEach((link) => {
+      const sourceId = typeof link.source === 'string' ? link.source : (link.source as Node).id;
+      const targetId = typeof link.target === 'string' ? link.target : (link.target as Node).id;
+
+      const sourceNode = nodes.find((n) => n.id === sourceId);
+      const targetNode = nodes.find((n) => n.id === targetId);
+
+      if (sourceNode && targetNode) {
+        // If source has lower depth, it's the parent
+        if ((sourceNode.depth || 0) < (targetNode.depth || 0)) {
+          const targetRel = relationships.get(targetId);
+          if (targetRel) {
+            targetRel.parent = sourceId;
+          }
+          const sourceRel = relationships.get(sourceId);
+          if (sourceRel) {
+            sourceRel.children.push(targetId);
+          }
+        }
+        // If target has lower depth, it's the parent
+        else if ((targetNode.depth || 0) < (sourceNode.depth || 0)) {
+          const sourceRel = relationships.get(sourceId);
+          if (sourceRel) {
+            sourceRel.parent = targetId;
+          }
+          const targetRel = relationships.get(targetId);
+          if (targetRel) {
+            targetRel.children.push(sourceId);
+          }
+        }
+      }
+    });
+
+    // Update visibility manager with relationships
+    this.visibilityManager.setNodeRelationships(relationships);
+
+    // Update node positions for viewport calculations
+    this.visibilityManager.updateNodePositions(nodes);
+
+    // Filter nodes based on zoom visibility
+    const visibleNodes = nodes.filter((node) => this.visibilityManager.shouldRenderNode(node));
+
     // Update visual encoder scales if enabled
     if (this.visualEncoder) {
       this.visualEncoder.updateScales(nodes, links);
@@ -101,13 +180,13 @@ export class CanvasRenderer {
     this.ctx.translate(this.transform.x, this.transform.y);
     this.ctx.scale(this.transform.k, this.transform.k);
 
-    // Draw in layers for better performance
-    this.drawLinks(links);
-    this.drawNodes(nodes);
+    // Draw in layers for better performance with visibility filtering
+    this.drawLinks(links, visibleNodes);
+    this.drawNodes(visibleNodes);
 
-    // Draw labels only if zoomed in enough and not in performance mode
-    if (this.transform.k > this.config.minZoomForLabels && !this.performanceMode) {
-      this.drawLabels(nodes);
+    // Draw labels based on zoom visibility rules
+    if (!this.performanceMode) {
+      this.drawLabels(visibleNodes);
     }
 
     this.ctx.restore();
@@ -121,52 +200,38 @@ export class CanvasRenderer {
     this.ctx.fillRect(0, 0, this.canvas.width / this.dpi, this.canvas.height / this.dpi);
   }
 
-  private drawLinks(links: Link[]) {
-    if (this.visualEncoder) {
-      // Use visual encoder for edge styling
-      const theme = this.themeManager.getTheme();
-      this.ctx.globalAlpha = theme.edges.opacity;
+  private drawLinks(links: Link[], visibleNodes: Node[]) {
+    // Skip link rendering in performance mode
+    if (this.performanceMode) return;
 
-      links.forEach((link) => {
-        const source = link.source as Node;
-        const target = link.target as Node;
+    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
 
-        if (!source.x || !source.y || !target.x || !target.y) return;
+    // Batch draw all links at once for better performance
+    this.ctx.strokeStyle = this.config.linkColor;
+    this.ctx.lineWidth = this.config.linkWidth / this.transform.k;
+    this.ctx.globalAlpha = 0.4;
+    this.ctx.beginPath();
 
-        const edgeWidth = this.visualEncoder.getEdgeWidth(link);
-        const edgeColor = this.visualEncoder.getEdgeColor(link);
+    links.forEach((link) => {
+      const source = link.source as Node;
+      const target = link.target as Node;
 
-        this.ctx.strokeStyle = edgeColor;
-        this.ctx.lineWidth = edgeWidth / this.transform.k;
+      if (!source.x || !source.y || !target.x || !target.y) return;
 
-        this.ctx.beginPath();
-        this.ctx.moveTo(source.x, source.y);
-        this.ctx.lineTo(target.x, target.y);
-        this.ctx.stroke();
-      });
+      // Only draw links where both nodes are visible
+      if (!visibleNodeIds.has(source.id) || !visibleNodeIds.has(target.id)) return;
 
-      this.ctx.globalAlpha = 1;
-    } else {
-      // Fallback to default rendering
-      this.ctx.strokeStyle = this.config.linkColor;
-      this.ctx.lineWidth = this.config.linkWidth / this.transform.k;
-      this.ctx.globalAlpha = 0.6;
+      // Apply edge visibility based on zoom
+      const edgeOpacity = this.visibilityManager.getEdgeVisibility(source, target);
+      if (edgeOpacity <= 0.01) return;
 
-      this.ctx.beginPath();
+      this.ctx.globalAlpha = edgeOpacity;
+      this.ctx.moveTo(source.x, source.y);
+      this.ctx.lineTo(target.x, target.y);
+    });
 
-      links.forEach((link) => {
-        const source = link.source as Node;
-        const target = link.target as Node;
-
-        if (!source.x || !source.y || !target.x || !target.y) return;
-
-        this.ctx.moveTo(source.x, source.y);
-        this.ctx.lineTo(target.x, target.y);
-      });
-
-      this.ctx.stroke();
-      this.ctx.globalAlpha = 1;
-    }
+    this.ctx.stroke();
+    this.ctx.globalAlpha = 1;
   }
 
   private drawNodes(nodes: Node[]) {
@@ -174,6 +239,10 @@ export class CanvasRenderer {
 
     nodes.forEach((node) => {
       if (!node.x || !node.y) return;
+
+      // Get node visibility opacity
+      const nodeOpacity = this.visibilityManager.getNodeVisibility(node);
+      if (nodeOpacity <= 0.01) return;
 
       // Determine node properties based on visual encoder or defaults
       let fillColor: string;
@@ -224,12 +293,31 @@ export class CanvasRenderer {
         }
       }
 
-      // Draw node shadow for depth
-      if (!this.performanceMode) {
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 0;
-        this.ctx.shadowOffsetY = 2;
+      // Skip shadows entirely - major performance killer
+      // Shadows are expensive and cause significant FPS drops
+
+      // Apply node opacity
+      this.ctx.globalAlpha = nodeOpacity;
+
+      // Add glow effect for main categories when zoomed
+      const depth = node.depth || 0;
+      if (depth <= 1 && this.transform.k >= 1.5 && nodeOpacity > 0.8) {
+        // Subtle glow for focused categories
+        const gradient = this.ctx.createRadialGradient(
+          node.x,
+          node.y,
+          0,
+          node.x,
+          node.y,
+          nodeRadius * 2
+        );
+        gradient.addColorStop(0, fillColor);
+        gradient.addColorStop(0.5, fillColor + '40');
+        gradient.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(node.x, node.y, nodeRadius * 1.5, 0, 2 * Math.PI);
+        this.ctx.fill();
       }
 
       // Draw node circle
@@ -240,16 +328,15 @@ export class CanvasRenderer {
       this.ctx.fillStyle = fillColor;
       this.ctx.fill();
 
-      // Reset shadow
-      this.ctx.shadowColor = 'transparent';
-      this.ctx.shadowBlur = 0;
-      this.ctx.shadowOffsetX = 0;
-      this.ctx.shadowOffsetY = 0;
+      // No shadows to reset
 
       // Stroke
       this.ctx.strokeStyle = strokeColor;
       this.ctx.lineWidth = strokeWidth / this.transform.k;
       this.ctx.stroke();
+
+      // Reset opacity
+      this.ctx.globalAlpha = 1;
 
       // Draw status indicator
       if (node.status && !this.performanceMode) {
@@ -270,7 +357,7 @@ export class CanvasRenderer {
     const indicatorY = node.y + indicatorOffset * Math.sin(-Math.PI / 4);
 
     // Status colors matching dashboard theme
-    const statusColors = {
+    const statusColors: Record<string, string> = {
       optimized: '#10a37f',
       outdated: '#f59e0b',
       missing: '#ef4444',
@@ -279,7 +366,7 @@ export class CanvasRenderer {
 
     this.ctx.beginPath();
     this.ctx.arc(indicatorX, indicatorY, indicatorRadius, 0, 2 * Math.PI);
-    this.ctx.fillStyle = statusColors[node.status] || '#666666';
+    this.ctx.fillStyle = node.status ? statusColors[node.status] || '#666666' : '#666666';
     this.ctx.fill();
     this.ctx.strokeStyle = this.config.backgroundColor;
     this.ctx.lineWidth = 1 / this.transform.k;
@@ -297,14 +384,15 @@ export class CanvasRenderer {
     nodes.forEach((node) => {
       if (!node.x || !node.y) return;
 
+      // Get label visibility based on zoom and node depth
+      const labelOpacity = this.visibilityManager.getLabelVisibility(node);
+      if (labelOpacity <= 0.01) return;
+
       // Get node radius from visual encoder if available
       const nodeRadius = this.visualEncoder ? this.visualEncoder.getNodeSize(node) : node.radius;
 
-      // Only show labels for larger nodes or selected/hovered nodes
-      const showLabel =
-        nodeRadius > 8 || this.selectedNodes.has(node.id) || this.hoveredNode === node;
-
-      if (!showLabel) return;
+      // Apply label opacity
+      this.ctx.globalAlpha = labelOpacity;
 
       const labelX = node.x + nodeRadius + 5 / this.transform.k;
       const labelY = node.y;
@@ -329,6 +417,9 @@ export class CanvasRenderer {
       // Draw text
       this.ctx.fillStyle = this.config.labelColor;
       this.ctx.fillText(label, labelX, labelY);
+
+      // Reset opacity
+      this.ctx.globalAlpha = 1;
     });
   }
 
@@ -351,6 +442,7 @@ export class CanvasRenderer {
 
   setTransform(transform: d3.ZoomTransform) {
     this.transform = transform;
+    this.visibilityManager.setZoomLevel(transform.k);
   }
 
   setHoveredNode(node: Node | null) {
@@ -395,6 +487,10 @@ export class CanvasRenderer {
 
   setVisualEncoder(encoder: VisualEncoder | null) {
     this.visualEncoder = encoder;
+  }
+
+  getVisibilityManager() {
+    return this.visibilityManager;
   }
 
   destroy() {

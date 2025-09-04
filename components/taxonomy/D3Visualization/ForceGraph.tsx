@@ -44,6 +44,7 @@ export interface ForceGraphProps {
   forceConfig?: Partial<ForceConfig>;
   renderConfig?: Partial<RenderConfig>;
   enableProgressiveLoading?: boolean;
+  staticLayout?: boolean; // New option for static rendering
   className?: string;
 }
 
@@ -84,7 +85,8 @@ export function ForceGraph({
   onSelectionChange: _onSelectionChange,
   forceConfig,
   renderConfig,
-  enableProgressiveLoading = true,
+  enableProgressiveLoading = false, // Default to OFF
+  staticLayout = true, // Default to static layout
   className = '',
 }: ForceGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -95,24 +97,79 @@ export function ForceGraph({
   const progressiveLoaderRef = useRef<ProgressiveLoader | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const visibilityManagerRef = useRef<any | null>(null);
 
-  const [isSimulating, setIsSimulating] = useState(true);
+  const [isSimulating, setIsSimulating] = useState(false); // Start with simulation off
   const [fps, setFps] = useState(60);
   const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<LoadingProgress | null>(null);
   const [currentNodes, setCurrentNodes] = useState<Node[]>([]);
   const [currentLinks, setCurrentLinks] = useState<Link[]>([]);
+  const [productsEnabled, setProductsEnabled] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
-  // Convert taxonomy data to D3 format
-  const prepareData = useCallback(() => {
+  // Convert taxonomy data to D3 format with hierarchical positioning
+  const prepareData = () => {
+    // First pass: create nodes
     const nodes: Node[] = data.nodes.map((node) => ({
       ...node,
       radius: calculateNodeRadius(node),
       color: getNodeColor(node.status),
-      x: Math.random() * width,
-      y: Math.random() * height,
+      // Will set positions after
+      x: undefined,
+      y: undefined,
     }));
+
+    // Create a map for quick lookup
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+    // Second pass: position nodes hierarchically
+    nodes.forEach((node) => {
+      const depth = node.depth || 0;
+
+      if (depth === 0) {
+        // Root node at center
+        node.x = width / 2;
+        node.y = height / 2;
+      } else if (depth === 1) {
+        // Main categories in a circle around center
+        const angle =
+          (nodes.filter((n) => n.depth === 1).indexOf(node) /
+            nodes.filter((n) => n.depth === 1).length) *
+          2 *
+          Math.PI;
+        node.x = width / 2 + Math.cos(angle) * 200;
+        node.y = height / 2 + Math.sin(angle) * 200;
+      } else {
+        // Find parent node from links
+        const parentLink = data.links.find((l) => l.target === node.id);
+        if (parentLink) {
+          const parent = nodeMap.get(parentLink.source);
+          if (parent && parent.x !== undefined && parent.y !== undefined) {
+            // Position children in a circle around parent to avoid overlap
+            const siblings = nodes.filter((n) => {
+              const link = data.links.find((l) => l.target === n.id);
+              return link && link.source === parentLink.source && n.depth === depth;
+            });
+            const siblingIndex = siblings.indexOf(node);
+            const angleStep = (2 * Math.PI) / siblings.length;
+            const angle = siblingIndex * angleStep;
+            const distance = depth === 2 ? 80 : 60; // More space for subcategories
+            node.x = parent.x + Math.cos(angle) * distance;
+            node.y = parent.y + Math.sin(angle) * distance;
+          } else {
+            // Fallback positioning
+            node.x = width / 2 + (Math.random() - 0.5) * 100;
+            node.y = height / 2 + (Math.random() - 0.5) * 100;
+          }
+        } else {
+          // Fallback positioning
+          node.x = width / 2 + (Math.random() - 0.5) * 100;
+          node.y = height / 2 + (Math.random() - 0.5) * 100;
+        }
+      }
+    });
 
     const links: Link[] = data.links.map((link) => ({
       source: link.source,
@@ -121,7 +178,7 @@ export function ForceGraph({
     }));
 
     return { nodes, links };
-  }, [data, width, height]);
+  };
 
   // Initialize simulation and renderer
   useEffect(() => {
@@ -134,55 +191,46 @@ export function ForceGraph({
 
     // Initialize renderer
     rendererRef.current = new CanvasRenderer(canvasRef.current, renderConfig);
+    visibilityManagerRef.current = rendererRef.current.getVisibilityManager();
 
     let nodesToRender = nodes;
     let linksToRender = links;
 
-    // Initialize progressive loader if enabled
-    if (enableProgressiveLoading && nodes.length > 100) {
-      progressiveLoaderRef.current = new ProgressiveLoader({
-        coreNodeLimit: Math.min(100, nodes.length),
-        viewportNodeLimit: Math.min(500, nodes.length),
-        connectedNodeLimit: Math.min(1000, nodes.length),
-        batchSize: 20,
-        frameInterval: 16,
-      });
-
-      // Set up callbacks
-      progressiveLoaderRef.current.onProgress(setLoadingProgress);
-      progressiveLoaderRef.current.onNodesUpdate((updatedNodes, updatedLinks) => {
-        setCurrentNodes(updatedNodes);
-        setCurrentLinks(updatedLinks);
-
-        // Update simulation with new nodes
-        if (simulationRef.current) {
-          simulationRef.current.initialize(updatedNodes, updatedLinks);
-          simulationRef.current.restart();
-        }
-      });
-
-      // Initialize with all data
-      progressiveLoaderRef.current.initialize(nodes, links);
-
-      // Get initial visible nodes
-      nodesToRender = progressiveLoaderRef.current.getVisibleNodes();
-      linksToRender = progressiveLoaderRef.current.getVisibleLinks();
-    } else {
-      setCurrentNodes(nodes);
-      setCurrentLinks(links);
-    }
+    // Skip progressive loading - just use all nodes
+    setCurrentNodes(nodes);
+    setCurrentLinks(links);
 
     // Initialize simulation
     simulationRef.current = new ForceSimulation(width, height, forceConfig);
-    simulationRef.current.initialize(nodesToRender, linksToRender);
+    simulationRef.current.initialize(nodesToRender, linksToRender, false);
+
+    // Define render function
+    const render = () => {
+      if (rendererRef.current) {
+        rendererRef.current.render(nodesToRender, linksToRender);
+      }
+    };
+
+    // Set up tick event to render on each simulation tick
+    simulationRef.current.on('tick', render);
+
+    // Run simulation for a fixed number of ticks then stop
+    simulationRef.current.runAndStop(200);
+
+    // Final render after simulation stops
+    setTimeout(() => {
+      render();
+      setIsSimulating(false);
+    }, 1000);
 
     // Set up zoom behavior
     const zoom = d3
       .zoom<HTMLCanvasElement, unknown>()
-      .scaleExtent([0.1, 5])
+      .scaleExtent([0.1, 20]) // Allow much deeper zoom for multi-level hierarchies
       .on('zoom', (event) => {
         if (rendererRef.current) {
-          rendererRef.current.setTransform(event.transform);
+          // Update zoom in renderer (which updates visibility manager)
+          rendererRef.current.setZoom(event.transform);
 
           // Update viewport for progressive loading
           if (progressiveLoaderRef.current && enableProgressiveLoading) {
@@ -198,89 +246,20 @@ export function ForceGraph({
             progressiveLoaderRef.current.updateViewport(viewport);
           }
 
-          render();
+          // Re-render with updated zoom visibility
+          rendererRef.current.render(
+            currentNodes.length > 0 ? currentNodes : nodes,
+            currentLinks.length > 0 ? currentLinks : links
+          );
         }
       });
 
     zoomRef.current = zoom;
     d3.select(canvasRef.current).call(zoom);
 
-    // Animation loop
-    const animate = () => {
-      if (!simulationRef.current || !rendererRef.current || !performanceMonitorRef.current) return;
+    // No continuous animation loop needed
 
-      // Update FPS
-      const currentFps = performanceMonitorRef.current.measureFPS();
-      setFps(Math.round(currentFps));
-
-      // Enable performance mode if FPS is too low
-      if (currentFps < 30) {
-        rendererRef.current.setPerformanceMode(true);
-      } else if (currentFps > 45) {
-        rendererRef.current.setPerformanceMode(false);
-      }
-
-      // Get current visible nodes from progressive loader or use all
-      const renderNodes = progressiveLoaderRef.current
-        ? progressiveLoaderRef.current.getVisibleNodes()
-        : currentNodes.length > 0
-          ? currentNodes
-          : nodesToRender;
-      const renderLinks = progressiveLoaderRef.current
-        ? progressiveLoaderRef.current.getVisibleLinks()
-        : currentLinks.length > 0
-          ? currentLinks
-          : linksToRender;
-
-      // Render
-      rendererRef.current.render(renderNodes, renderLinks);
-
-      if (isSimulating) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    // Set up simulation events
-    simulationRef.current.on('tick', () => {
-      render();
-    });
-
-    // Helper function to render
-    const render = () => {
-      if (rendererRef.current) {
-        const renderNodes = progressiveLoaderRef.current
-          ? progressiveLoaderRef.current.getVisibleNodes()
-          : currentNodes.length > 0
-            ? currentNodes
-            : nodesToRender;
-        const renderLinks = progressiveLoaderRef.current
-          ? progressiveLoaderRef.current.getVisibleLinks()
-          : currentLinks.length > 0
-            ? currentLinks
-            : linksToRender;
-
-        rendererRef.current.render(renderNodes, renderLinks);
-      }
-    };
-
-    // Start animation
-    animate();
-
-    // Trigger initial viewport load after a short delay
-    if (progressiveLoaderRef.current && enableProgressiveLoading) {
-      setTimeout(() => {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        const viewport: ViewportBounds = {
-          x: 0,
-          y: 0,
-          width: rect.width,
-          height: rect.height,
-          zoom: 1,
-        };
-        progressiveLoaderRef.current?.loadViewportNodes(viewport);
-      }, 500);
-    }
+    // Render function is defined above and connected to tick events
 
     // Cleanup
     return () => {
@@ -293,16 +272,11 @@ export function ForceGraph({
       performanceMonitorRef.current = null;
     };
   }, [
-    data,
+    // Only re-run when data structure changes significantly
+    data.nodes.length,
+    data.links.length,
     width,
     height,
-    forceConfig,
-    renderConfig,
-    isSimulating,
-    enableProgressiveLoading,
-    prepareData,
-    currentNodes,
-    currentLinks,
   ]);
 
   // Handle mouse interactions
@@ -432,6 +406,40 @@ export function ForceGraph({
 
       {/* Controls Overlay */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
+        {/* Product Toggle Button */}
+        <button
+          onClick={() => {
+            const newState = !productsEnabled;
+            setProductsEnabled(newState);
+            rendererRef.current?.toggleProducts(newState);
+            if (rendererRef.current) {
+              rendererRef.current.render(currentNodes, currentLinks);
+            }
+          }}
+          className="px-3 py-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded text-xs text-[#999] hover:border-[#2a2a2a] hover:text-white transition-colors"
+          title="Toggle product visibility"
+        >
+          {productsEnabled ? 'Hide Products' : 'Show Products'}
+        </button>
+
+        {/* Focus Mode Toggle */}
+        <button
+          onClick={() => {
+            const newState = !focusMode;
+            setFocusMode(newState);
+            if (visibilityManagerRef.current) {
+              visibilityManagerRef.current.setFocusMode(newState);
+              if (rendererRef.current) {
+                rendererRef.current.render(currentNodes, currentLinks);
+              }
+            }
+          }}
+          className="px-3 py-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded text-xs text-[#999] hover:border-[#2a2a2a] hover:text-white transition-colors"
+          title="Toggle focus mode to isolate branches"
+        >
+          {focusMode ? 'Disable Focus' : 'Enable Focus'}
+        </button>
+
         <button
           onClick={() => setIsSimulating(!isSimulating)}
           className="px-3 py-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded text-xs text-[#999] hover:border-[#2a2a2a] hover:text-white transition-colors"
