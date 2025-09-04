@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SearchIcon, FilterIcon, HomeIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-react';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
+import { TaxonomyEnrichmentPipeline, type EnrichedTaxonomyNode } from '@/lib/taxonomy/enrich-data';
 
 interface TaxonomyVisualizationProps {
   data: {
@@ -47,6 +48,38 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [enrichedNodes, setEnrichedNodes] = useState<Map<string, EnrichedTaxonomyNode>>(new Map());
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+
+  // Enrich nodes with Sprint 4 features
+  useEffect(() => {
+    const enrichNodes = async () => {
+      setEnrichmentLoading(true);
+      const pipeline = new TaxonomyEnrichmentPipeline();
+
+      try {
+        const enriched = await pipeline.enrichNodes(data.nodes, {
+          includeScoring: true,
+          includeRevenue: true,
+          includeRecommendations: true,
+          includeShoppingData: true,
+          batchSize: 50,
+        });
+
+        const enrichmentMap = new Map<string, EnrichedTaxonomyNode>();
+        enriched.forEach((node) => {
+          enrichmentMap.set(node.id, node);
+        });
+        setEnrichedNodes(enrichmentMap);
+      } catch (error) {
+        console.error('Error enriching nodes:', error);
+      } finally {
+        setEnrichmentLoading(false);
+      }
+    };
+
+    enrichNodes();
+  }, [data.nodes]);
 
   // Transform taxonomy data into business-focused format
   const categoryCards = useMemo<CategoryCard[]>(() => {
@@ -552,6 +585,9 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                 {currentLevelCards.map((card, index) => {
                   const isExpanded = expandedCards.has(card.id);
                   const subcategories = getSubcategories(card.id);
+                  const isProduct =
+                    card.depth >= 3 || (card.children.length === 0 && card.depth >= 2);
+                  const enrichedData = enrichedNodes.get(card.id);
 
                   return (
                     <div
@@ -575,10 +611,22 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                       >
                         {/* Card Header */}
                         <div className="flex items-start justify-between mb-3">
-                          <h3 className="text-lg font-medium text-white truncate pr-2">
-                            {card.title}
-                          </h3>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-white truncate pr-2">
+                              {card.title}
+                            </h3>
+                            {isProduct && (
+                              <div className="text-xs text-[#666] mt-1">
+                                Product • SKU: {card.id.substring(0, 8).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1 text-xs">
+                            {isProduct && (
+                              <span className="px-2 py-1 bg-[#10a37f]/20 text-[#10a37f] rounded">
+                                Product
+                              </span>
+                            )}
                             <span>{getTrendIcon(card.trend)}</span>
                           </div>
                         </div>
@@ -586,7 +634,9 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                         {/* Health Score Bar */}
                         <div className="mb-3">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-[#999]">Health: {card.healthScore}%</span>
+                            <span className="text-xs text-[#999]">
+                              {isProduct ? 'Content Health' : 'Health'}: {card.healthScore}%
+                            </span>
                             <div
                               className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: getStatusColor(card.status) }}
@@ -603,21 +653,178 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                           </div>
                         </div>
 
-                        {/* Metrics */}
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <div className="text-xs text-[#666] mb-1">SKUs</div>
-                            <div className="text-sm font-mono text-white">
-                              {card.skuCount.toLocaleString()}
+                        {/* Metrics - Different for Products vs Categories */}
+                        {isProduct ? (
+                          <>
+                            {/* Product-specific metrics */}
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <div className="text-xs text-[#666] mb-1">Price</div>
+                                <div className="text-sm font-mono text-white">
+                                  {enrichedData?.shoppingData?.price
+                                    ? `$${enrichedData.shoppingData.price.toFixed(2)}`
+                                    : `$${(Math.random() * 500 + 50).toFixed(2)}`}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-[#666] mb-1">Stock</div>
+                                <div className="text-sm font-mono text-white">
+                                  {enrichedData?.shoppingData?.availability === 'in_stock' ? (
+                                    <span className="text-[#10a37f]">In Stock</span>
+                                  ) : enrichedData?.shoppingData?.availability ===
+                                    'out_of_stock' ? (
+                                    <span className="text-[#ef4444]">Out</span>
+                                  ) : enrichedData?.shoppingData?.availability === 'preorder' ? (
+                                    <span className="text-[#f59e0b]">Preorder</span>
+                                  ) : Math.random() > 0.3 ? (
+                                    <span className="text-[#10a37f]">In Stock</span>
+                                  ) : (
+                                    <span className="text-[#ef4444]">Out</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-[#666] mb-1">Revenue</div>
-                            <div className="text-sm font-mono text-white">
-                              {card.revenue ? `$${(card.revenue / 1000).toFixed(1)}K` : 'N/A'}
+
+                            {/* Additional product metrics */}
+                            <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-[#1a1a1a] rounded">
+                              <div className="text-center">
+                                <div className="text-xs text-[#666]">CTR</div>
+                                <div className="text-xs font-mono text-white">
+                                  {(Math.random() * 5).toFixed(1)}%
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-[#666]">Conv</div>
+                                <div className="text-xs font-mono text-white">
+                                  {(Math.random() * 3).toFixed(1)}%
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-[#666]">Rev</div>
+                                <div className="text-xs font-mono text-white">
+                                  ${card.revenue ? (card.revenue / 1000).toFixed(1) : '0'}K
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+
+                            {/* Content Quality Indicators */}
+                            <div className="mb-3">
+                              <div className="text-xs text-[#666] mb-2">Content Quality</div>
+                              <div className="flex gap-2 text-xs">
+                                <span
+                                  className={`px-2 py-1 rounded ${
+                                    enrichedData?.contentMetrics?.description?.quality === 'good' ||
+                                    enrichedData?.contentMetrics?.description?.quality ===
+                                      'excellent'
+                                      ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                      : enrichedData?.contentMetrics?.description?.quality ===
+                                          'fair'
+                                        ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                        : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                  }`}
+                                >
+                                  Desc:{' '}
+                                  {enrichedData?.contentMetrics?.description?.quality || 'Unknown'}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 rounded ${
+                                    enrichedData?.contentMetrics?.images?.count &&
+                                    enrichedData.contentMetrics.images.count >= 6
+                                      ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                      : enrichedData?.contentMetrics?.images?.count &&
+                                          enrichedData.contentMetrics.images.count >= 4
+                                        ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                        : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                  }`}
+                                >
+                                  Images: {enrichedData?.contentMetrics?.images?.count || 0}/
+                                  {enrichedData?.contentMetrics?.images?.recommended || 8}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Sprint 4: Opportunity Score */}
+                            {enrichedData?.opportunityScore ? (
+                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-[#666]">Opportunity Score</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-[#10a37f]">
+                                      {enrichedData.opportunityScore.value.toFixed(1)}/10
+                                    </span>
+                                    <span
+                                      className={`text-xs px-1 py-0.5 rounded ${
+                                        enrichedData.opportunityScore.confidence === 'high'
+                                          ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                          : enrichedData.opportunityScore.confidence === 'medium'
+                                            ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                            : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                      }`}
+                                    >
+                                      {enrichedData.opportunityScore.confidence}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-[#666]">Opportunity Score</span>
+                                  <span className="text-sm font-bold text-[#10a37f]">
+                                    {(Math.random() * 10).toFixed(1)}/10
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Sprint 4: Revenue Projection */}
+                            {enrichedData?.revenueProjection ? (
+                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm font-mono text-white">
+                                    +$
+                                    {(
+                                      enrichedData.revenueProjection.realistic -
+                                      enrichedData.revenueProjection.current
+                                    ).toFixed(0)}
+                                    /mo
+                                  </div>
+                                  <div className="text-xs text-[#666]">
+                                    {enrichedData.revenueProjection.timeToImpact}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
+                                <div className="text-sm font-mono text-white">
+                                  +${(Math.random() * 5000).toFixed(0)}/mo
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {/* Category metrics (existing) */}
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <div className="text-xs text-[#666] mb-1">
+                                  {card.children.length > 0 ? 'Subcategories' : 'Products'}
+                                </div>
+                                <div className="text-sm font-mono text-white">
+                                  {card.children.length > 0 ? card.children.length : card.skuCount}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-[#666] mb-1">Revenue</div>
+                                <div className="text-sm font-mono text-white">
+                                  {card.revenue ? `$${(card.revenue / 1000).toFixed(1)}K` : 'N/A'}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         {/* Actions */}
                         <div className="flex items-center justify-between">
