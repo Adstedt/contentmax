@@ -585,8 +585,8 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                 {currentLevelCards.map((card, index) => {
                   const isExpanded = expandedCards.has(card.id);
                   const subcategories = getSubcategories(card.id);
-                  const isProduct =
-                    card.depth >= 3 || (card.children.length === 0 && card.depth >= 2);
+                  // A card is a product ONLY if it has no children (leaf node)
+                  const isProduct = card.children.length === 0 && subcategories.length === 0;
                   const enrichedData = enrichedNodes.get(card.id);
 
                   return (
