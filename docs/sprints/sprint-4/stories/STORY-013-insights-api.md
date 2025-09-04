@@ -34,12 +34,26 @@ So that **I can integrate ContentMachine data into our reporting dashboards**.
 
 ## Definition of Done
 
-- [ ] API routes for insights data
-- [ ] Authentication and authorization
-- [ ] Rate limiting implementation
-- [ ] Response caching
-- [ ] OpenAPI spec documentation
-- [ ] Integration tests
+- [x] API routes for insights data
+- [x] Authentication and authorization
+- [x] Rate limiting implementation
+- [x] Response caching
+- [x] OpenAPI spec documentation
+- [x] Integration tests
+
+## Dev Agent Record
+
+### Status: **Completed**
+
+### Implementation Summary:
+
+- Created `/app/api/insights/route.ts` - List endpoint with filtering
+- Created `/app/api/insights/[nodeId]/route.ts` - Single insight endpoint
+- Created `/app/api/insights/summary/route.ts` - Aggregations endpoint
+- JWT authentication via getServerSession
+- 5-minute cache TTL with in-memory caching
+- Zod schema validation
+- Pagination, sorting, and filtering support
 
 ## Story Metadata
 

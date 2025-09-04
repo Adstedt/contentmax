@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/Progress';
 import SitemapInput from './SitemapInput';
 import ImportConfig from './ImportConfig';
 import ProgressTracker from './ProgressTracker';
-import ImportSummary from './ImportSummary';
+import ImportSummaryComponent from './ImportSummary';
 import { ChevronLeft } from 'lucide-react';
 
 export enum ImportStep {
@@ -65,8 +65,16 @@ interface ImportWizardProps {
 }
 
 const STEPS = [
-  { id: ImportStep.SITEMAP_INPUT, label: 'Sitemap URL', description: 'Enter your sitemap location' },
-  { id: ImportStep.CONFIGURATION, label: 'Configuration', description: 'Configure import settings' },
+  {
+    id: ImportStep.SITEMAP_INPUT,
+    label: 'Sitemap URL',
+    description: 'Enter your sitemap location',
+  },
+  {
+    id: ImportStep.CONFIGURATION,
+    label: 'Configuration',
+    description: 'Configure import settings',
+  },
   { id: ImportStep.PROCESSING, label: 'Processing', description: 'Importing your data' },
   { id: ImportStep.REVIEW, label: 'Review', description: 'Review import results' },
 ];
@@ -81,11 +89,11 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
   const [importId, setImportId] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
-  const currentStepIndex = STEPS.findIndex(step => step.id === currentStep);
+  const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
   const progressPercentage = ((currentStepIndex + 1) / STEPS.length) * 100;
 
   const handleSitemapNext = (sitemapUrl: string, preview: SitemapPreview) => {
-    setImportConfig(prev => ({ ...prev, sitemapUrl, sitemapData: preview }));
+    setImportConfig((prev) => ({ ...prev, sitemapUrl, sitemapData: preview }));
     setCurrentStep(ImportStep.CONFIGURATION);
   };
 
@@ -139,9 +147,7 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
           {STEPS.map((step, index) => (
             <div
               key={step.id}
-              className={`flex-1 text-center ${
-                index < STEPS.length - 1 ? 'relative' : ''
-              }`}
+              className={`flex-1 text-center ${index < STEPS.length - 1 ? 'relative' : ''}`}
             >
               <div
                 className={`inline-flex items-center justify-center w-10 h-10 rounded-full border-2 mb-2 ${
@@ -152,9 +158,11 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
               >
                 {index + 1}
               </div>
-              <p className={`text-sm font-medium ${
-                index <= currentStepIndex ? 'text-gray-900' : 'text-gray-500'
-              }`}>
+              <p
+                className={`text-sm font-medium ${
+                  index <= currentStepIndex ? 'text-gray-900' : 'text-gray-500'
+                }`}
+              >
                 {step.label}
               </p>
               <p className="text-xs text-gray-500">{step.description}</p>
@@ -174,9 +182,7 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
 
       <Card>
         <CardContent className="p-6">
-          {currentStep === ImportStep.SITEMAP_INPUT && (
-            <SitemapInput onNext={handleSitemapNext} />
-          )}
+          {currentStep === ImportStep.SITEMAP_INPUT && <SitemapInput onNext={handleSitemapNext} />}
 
           {currentStep === ImportStep.CONFIGURATION && importConfig.sitemapData && (
             <ImportConfig
@@ -188,14 +194,11 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
           )}
 
           {currentStep === ImportStep.PROCESSING && importId && (
-            <ProgressTracker
-              importId={importId}
-              onComplete={handleProcessingComplete}
-            />
+            <ProgressTracker importId={importId} onComplete={handleProcessingComplete} />
           )}
 
           {currentStep === ImportStep.REVIEW && importSummary && (
-            <ImportSummary
+            <ImportSummaryComponent
               summary={importSummary}
               onComplete={() => onComplete(importId!)}
               onRestart={handleRestart}
@@ -206,11 +209,7 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
 
       {currentStep !== ImportStep.PROCESSING && currentStep !== ImportStep.REVIEW && (
         <div className="flex justify-between mt-6">
-          <Button
-            onClick={handleBack}
-            disabled={currentStepIndex === 0}
-            variant="outline"
-          >
+          <Button onClick={handleBack} disabled={currentStepIndex === 0} variant="outline">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
