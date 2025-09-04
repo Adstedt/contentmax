@@ -6,3 +6,5 @@ export { CanvasRenderer } from './CanvasRenderer';
 export type { RenderConfig } from './CanvasRenderer';
 export { useForceSimulation } from './useForceSimulation';
 export type { UseForceSimulationOptions } from './useForceSimulation';
+export { LoadingIndicator } from './LoadingIndicator';
+export type { LoadingIndicatorProps } from './LoadingIndicator';

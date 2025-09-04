@@ -1,5 +1,7 @@
 import { Node, Link } from './ForceSimulation';
 import * as d3 from 'd3';
+import { VisualEncoder, EncodingConfig } from '@/lib/visualization/visual-encoder';
+import { ThemeManager } from '@/lib/visualization/visual-theme';
 
 export interface RenderConfig {
   backgroundColor: string;
@@ -13,6 +15,8 @@ export interface RenderConfig {
   selectedNodeColor: string;
   hoveredNodeColor: string;
   theme: 'dark' | 'light';
+  useVisualEncoding?: boolean;
+  encodingConfig?: Partial<EncodingConfig>;
 }
 
 export class CanvasRenderer {
@@ -24,12 +28,15 @@ export class CanvasRenderer {
   private config: RenderConfig;
   private dpi: number;
   private performanceMode: boolean = false;
+  private visualEncoder: VisualEncoder | null = null;
+  private themeManager: ThemeManager;
 
   constructor(canvas: HTMLCanvasElement, config?: Partial<RenderConfig>) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { alpha: false })!;
     this.transform = d3.zoomIdentity;
-    
+    this.themeManager = ThemeManager.getInstance();
+
     // Dark theme configuration matching dashboard
     this.config = {
       backgroundColor: '#000000',
@@ -43,9 +50,20 @@ export class CanvasRenderer {
       selectedNodeColor: '#10a37f',
       hoveredNodeColor: '#0e906d',
       theme: 'dark',
+      useVisualEncoding: true,
       ...config,
     };
-    
+
+    // Initialize visual encoder if enabled
+    if (this.config.useVisualEncoding) {
+      this.visualEncoder = new VisualEncoder(this.config.encodingConfig);
+    }
+
+    // Subscribe to theme changes
+    this.themeManager.subscribe((theme) => {
+      this.updateThemeColors(theme);
+    });
+
     this.setupHighDPI();
     this.clear();
   }
@@ -53,42 +71,47 @@ export class CanvasRenderer {
   private setupHighDPI() {
     // Get device pixel ratio
     this.dpi = window.devicePixelRatio || 1;
-    
+
     // Get the size of the canvas in CSS pixels
     const rect = this.canvas.getBoundingClientRect();
-    
+
     // Set the internal size to match the high DPI screen
     this.canvas.width = rect.width * this.dpi;
     this.canvas.height = rect.height * this.dpi;
-    
+
     // Scale the context to ensure correct drawing operations
     this.ctx.scale(this.dpi, this.dpi);
-    
+
     // Set canvas CSS size
     this.canvas.style.width = `${rect.width}px`;
     this.canvas.style.height = `${rect.height}px`;
   }
 
   render(nodes: Node[], links: Link[]) {
+    // Update visual encoder scales if enabled
+    if (this.visualEncoder) {
+      this.visualEncoder.updateScales(nodes, links);
+    }
+
     this.clear();
-    
+
     this.ctx.save();
-    
+
     // Apply zoom transform
     this.ctx.translate(this.transform.x, this.transform.y);
     this.ctx.scale(this.transform.k, this.transform.k);
-    
+
     // Draw in layers for better performance
     this.drawLinks(links);
     this.drawNodes(nodes);
-    
+
     // Draw labels only if zoomed in enough and not in performance mode
     if (this.transform.k > this.config.minZoomForLabels && !this.performanceMode) {
       this.drawLabels(nodes);
     }
-    
+
     this.ctx.restore();
-    
+
     // Draw UI overlay (not affected by transform)
     this.drawOverlay();
   }
@@ -99,43 +122,108 @@ export class CanvasRenderer {
   }
 
   private drawLinks(links: Link[]) {
-    this.ctx.strokeStyle = this.config.linkColor;
-    this.ctx.lineWidth = this.config.linkWidth / this.transform.k;
-    this.ctx.globalAlpha = 0.6;
-    
-    this.ctx.beginPath();
-    
-    links.forEach(link => {
-      const source = link.source as Node;
-      const target = link.target as Node;
-      
-      if (!source.x || !source.y || !target.x || !target.y) return;
-      
-      this.ctx.moveTo(source.x, source.y);
-      this.ctx.lineTo(target.x, target.y);
-    });
-    
-    this.ctx.stroke();
-    this.ctx.globalAlpha = 1;
+    if (this.visualEncoder) {
+      // Use visual encoder for edge styling
+      const theme = this.themeManager.getTheme();
+      this.ctx.globalAlpha = theme.edges.opacity;
+
+      links.forEach((link) => {
+        const source = link.source as Node;
+        const target = link.target as Node;
+
+        if (!source.x || !source.y || !target.x || !target.y) return;
+
+        const edgeWidth = this.visualEncoder.getEdgeWidth(link);
+        const edgeColor = this.visualEncoder.getEdgeColor(link);
+
+        this.ctx.strokeStyle = edgeColor;
+        this.ctx.lineWidth = edgeWidth / this.transform.k;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(source.x, source.y);
+        this.ctx.lineTo(target.x, target.y);
+        this.ctx.stroke();
+      });
+
+      this.ctx.globalAlpha = 1;
+    } else {
+      // Fallback to default rendering
+      this.ctx.strokeStyle = this.config.linkColor;
+      this.ctx.lineWidth = this.config.linkWidth / this.transform.k;
+      this.ctx.globalAlpha = 0.6;
+
+      this.ctx.beginPath();
+
+      links.forEach((link) => {
+        const source = link.source as Node;
+        const target = link.target as Node;
+
+        if (!source.x || !source.y || !target.x || !target.y) return;
+
+        this.ctx.moveTo(source.x, source.y);
+        this.ctx.lineTo(target.x, target.y);
+      });
+
+      this.ctx.stroke();
+      this.ctx.globalAlpha = 1;
+    }
   }
 
   private drawNodes(nodes: Node[]) {
-    nodes.forEach(node => {
+    const currentTime = performance.now();
+
+    nodes.forEach((node) => {
       if (!node.x || !node.y) return;
-      
-      // Determine node color based on state
-      let fillColor = node.color;
+
+      // Determine node properties based on visual encoder or defaults
+      let fillColor: string;
+      let nodeRadius: number;
       let strokeColor = this.config.nodeStrokeColor;
       let strokeWidth = this.config.nodeStrokeWidth;
-      
-      if (this.selectedNodes.has(node.id)) {
-        strokeColor = this.config.selectedNodeColor;
-        strokeWidth = 3;
-      } else if (this.hoveredNode === node) {
-        strokeColor = this.config.hoveredNodeColor;
-        strokeWidth = 3;
+
+      if (this.visualEncoder) {
+        // Determine state for color encoding
+        const state = this.selectedNodes.has(node.id)
+          ? 'selected'
+          : this.hoveredNode === node
+            ? 'hover'
+            : 'default';
+
+        // Get encoded values with transitions
+        const encodedValues = this.visualEncoder.getInterpolatedValues(node, currentTime);
+        fillColor = encodedValues.color;
+        nodeRadius = encodedValues.size;
+
+        // Update stroke for selected/hovered states
+        if (state === 'selected') {
+          const theme = this.themeManager.getTheme();
+          const status = node.status || 'unknown';
+          strokeColor =
+            theme.colors.selected[status as keyof typeof theme.colors.selected] ||
+            this.config.selectedNodeColor;
+          strokeWidth = 3;
+        } else if (state === 'hover') {
+          const theme = this.themeManager.getTheme();
+          const status = node.status || 'unknown';
+          strokeColor =
+            theme.colors.hover[status as keyof typeof theme.colors.hover] ||
+            this.config.hoveredNodeColor;
+          strokeWidth = 3;
+        }
+      } else {
+        // Fallback to default rendering
+        fillColor = node.color;
+        nodeRadius = node.radius;
+
+        if (this.selectedNodes.has(node.id)) {
+          strokeColor = this.config.selectedNodeColor;
+          strokeWidth = 3;
+        } else if (this.hoveredNode === node) {
+          strokeColor = this.config.hoveredNodeColor;
+          strokeWidth = 3;
+        }
       }
-      
+
       // Draw node shadow for depth
       if (!this.performanceMode) {
         this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
@@ -143,26 +231,26 @@ export class CanvasRenderer {
         this.ctx.shadowOffsetX = 0;
         this.ctx.shadowOffsetY = 2;
       }
-      
+
       // Draw node circle
       this.ctx.beginPath();
-      this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
-      
+      this.ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
+
       // Fill
       this.ctx.fillStyle = fillColor;
       this.ctx.fill();
-      
+
       // Reset shadow
       this.ctx.shadowColor = 'transparent';
       this.ctx.shadowBlur = 0;
       this.ctx.shadowOffsetX = 0;
       this.ctx.shadowOffsetY = 0;
-      
+
       // Stroke
       this.ctx.strokeStyle = strokeColor;
       this.ctx.lineWidth = strokeWidth / this.transform.k;
       this.ctx.stroke();
-      
+
       // Draw status indicator
       if (node.status && !this.performanceMode) {
         this.drawStatusIndicator(node);
@@ -172,13 +260,15 @@ export class CanvasRenderer {
 
   private drawStatusIndicator(node: Node) {
     if (!node.x || !node.y) return;
-    
+
+    // Get node radius from visual encoder if available
+    const nodeRadius = this.visualEncoder ? this.visualEncoder.getNodeSize(node) : node.radius;
     const indicatorRadius = 3 / this.transform.k;
-    const indicatorOffset = node.radius - indicatorRadius;
-    
+    const indicatorOffset = nodeRadius - indicatorRadius;
+
     const indicatorX = node.x + indicatorOffset * Math.cos(-Math.PI / 4);
     const indicatorY = node.y + indicatorOffset * Math.sin(-Math.PI / 4);
-    
+
     // Status colors matching dashboard theme
     const statusColors = {
       optimized: '#10a37f',
@@ -186,7 +276,7 @@ export class CanvasRenderer {
       missing: '#ef4444',
       noContent: '#666666',
     };
-    
+
     this.ctx.beginPath();
     this.ctx.arc(indicatorX, indicatorY, indicatorRadius, 0, 2 * Math.PI);
     this.ctx.fillStyle = statusColors[node.status] || '#666666';
@@ -203,31 +293,31 @@ export class CanvasRenderer {
     this.ctx.fillStyle = this.config.labelColor;
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'middle';
-    
-    nodes.forEach(node => {
+
+    nodes.forEach((node) => {
       if (!node.x || !node.y) return;
-      
+
+      // Get node radius from visual encoder if available
+      const nodeRadius = this.visualEncoder ? this.visualEncoder.getNodeSize(node) : node.radius;
+
       // Only show labels for larger nodes or selected/hovered nodes
-      const showLabel = 
-        node.radius > 8 || 
-        this.selectedNodes.has(node.id) || 
-        this.hoveredNode === node;
-      
+      const showLabel =
+        nodeRadius > 8 || this.selectedNodes.has(node.id) || this.hoveredNode === node;
+
       if (!showLabel) return;
-      
-      const labelX = node.x + node.radius + 5 / this.transform.k;
+
+      const labelX = node.x + nodeRadius + 5 / this.transform.k;
       const labelY = node.y;
-      
+
       // Truncate long labels
       const maxLength = 20;
-      const label = node.title.length > maxLength 
-        ? node.title.substring(0, maxLength) + '...' 
-        : node.title;
-      
+      const label =
+        node.title.length > maxLength ? node.title.substring(0, maxLength) + '...' : node.title;
+
       // Draw text background for better readability
       const metrics = this.ctx.measureText(label);
       const padding = 2 / this.transform.k;
-      
+
       this.ctx.fillStyle = `${this.config.backgroundColor}cc`;
       this.ctx.fillRect(
         labelX - padding,
@@ -235,7 +325,7 @@ export class CanvasRenderer {
         metrics.width + padding * 2,
         fontSize + padding * 2
       );
-      
+
       // Draw text
       this.ctx.fillStyle = this.config.labelColor;
       this.ctx.fillText(label, labelX, labelY);
@@ -250,7 +340,7 @@ export class CanvasRenderer {
       this.ctx.textAlign = 'left';
       this.ctx.fillText('Performance Mode', 10, 20);
     }
-    
+
     // Draw zoom level
     const zoomPercent = Math.round(this.transform.k * 100);
     this.ctx.fillStyle = '#666666';
@@ -295,9 +385,24 @@ export class CanvasRenderer {
     this.setupHighDPI();
   }
 
+  private updateThemeColors(theme: any) {
+    // Update config colors based on theme
+    this.config.backgroundColor = theme.background;
+    this.config.linkColor = theme.edges.default;
+    this.config.nodeStrokeColor = theme.node.strokeColor;
+    this.config.labelColor = theme.text.secondary;
+  }
+
+  setVisualEncoder(encoder: VisualEncoder | null) {
+    this.visualEncoder = encoder;
+  }
+
   destroy() {
     this.clear();
     this.hoveredNode = null;
     this.selectedNodes.clear();
+    if (this.visualEncoder) {
+      this.visualEncoder.destroy();
+    }
   }
 }
