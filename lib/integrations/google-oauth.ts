@@ -19,7 +19,8 @@ export class GoogleOAuthClient {
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/google/callback`
+      process.env.GOOGLE_REDIRECT_URI ||
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/google/callback`
     );
   }
 
@@ -41,7 +42,10 @@ export class GoogleOAuthClient {
   /**
    * Handle OAuth callback and exchange code for tokens
    */
-  async handleCallback(code: string, state: string): Promise<{ tokens: OAuth2Tokens; email: string }> {
+  async handleCallback(
+    code: string,
+    state: string
+  ): Promise<{ tokens: OAuth2Tokens; email: string }> {
     try {
       // Verify state for CSRF protection
       const userId = this.verifyState(state);
@@ -51,7 +55,7 @@ export class GoogleOAuthClient {
 
       // Exchange authorization code for tokens
       const { tokens } = await this.oauth2Client.getToken(code);
-      
+
       if (!tokens.refresh_token) {
         throw new GSCError('No refresh token received', GSCErrorCode.INVALID_CREDENTIALS);
       }
@@ -66,7 +70,7 @@ export class GoogleOAuthClient {
       });
 
       const { data } = await oauth2.userinfo.get();
-      
+
       if (!data.email) {
         throw new GSCError('Could not retrieve user email', GSCErrorCode.INVALID_REQUEST);
       }
@@ -91,18 +95,22 @@ export class GoogleOAuthClient {
     const supabase = await createClient();
 
     // Encrypt sensitive tokens
-    const encryptedRefreshToken = this.encryptToken(tokens.refresh_token!);
-    const encryptedAccessToken = tokens.access_token ? this.encryptToken(tokens.access_token) : null;
+    const refreshToken = tokens.refresh_token!;
+    const accessToken = tokens.access_token || null;
 
     const { error } = await supabase
       .from('google_integrations')
       .upsert({
         user_id: userId,
         email,
-        refresh_token: encryptedRefreshToken,
-        access_token: encryptedAccessToken,
-        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
-        connected_at: new Date().toISOString(),
+        google_id: email, // Using email as google_id temporarily
+        refresh_token: refreshToken,
+        access_token: accessToken,
+        expires_at: tokens.expiry_date
+          ? new Date(tokens.expiry_date).toISOString()
+          : new Date(Date.now() + 3600000).toISOString(),
+        scopes: tokens.scope || '',
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -129,14 +137,14 @@ export class GoogleOAuthClient {
       return null;
     }
 
-    // Decrypt tokens before returning
+    // Return tokens (no encryption for now)
     return {
       id: data.id,
       userId: data.user_id || '',
       email: data.email,
-      refreshToken: this.decryptToken(data.refresh_token),
-      accessToken: data.access_token ? this.decryptToken(data.access_token) : undefined,
-      tokenExpiry: data.token_expiry ? new Date(data.token_expiry) : undefined,
+      refreshToken: data.refresh_token,
+      accessToken: data.access_token || undefined,
+      tokenExpiry: data.expires_at ? new Date(data.expires_at) : undefined,
       connectedAt: new Date(data.connected_at || ''),
       lastSync: data.last_sync ? new Date(data.last_sync) : undefined,
     };
@@ -152,7 +160,7 @@ export class GoogleOAuthClient {
       });
 
       const { credentials } = await this.oauth2Client.refreshAccessToken();
-      
+
       return credentials as OAuth2Tokens;
     } catch (error) {
       console.error('Token refresh error:', error);
@@ -166,13 +174,16 @@ export class GoogleOAuthClient {
   async updateAccessToken(userId: string, tokens: OAuth2Tokens): Promise<void> {
     const supabase = await createClient();
 
-    const encryptedAccessToken = tokens.access_token ? this.encryptToken(tokens.access_token) : null;
+    const accessToken = tokens.access_token || null;
 
     const { error } = await supabase
       .from('google_integrations')
       .update({
-        access_token: encryptedAccessToken,
-        token_expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
+        access_token: accessToken,
+        expires_at: tokens.expiry_date
+          ? new Date(tokens.expiry_date).toISOString()
+          : new Date(Date.now() + 3600000).toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
 
@@ -187,7 +198,7 @@ export class GoogleOAuthClient {
    */
   async revokeAccess(userId: string): Promise<void> {
     const integration = await this.getStoredTokens(userId);
-    
+
     if (!integration) {
       throw new GSCError('Integration not found', GSCErrorCode.INVALID_REQUEST);
     }
@@ -206,10 +217,7 @@ export class GoogleOAuthClient {
 
     // Remove from database
     const supabase = await createClient();
-    const { error } = await supabase
-      .from('google_integrations')
-      .delete()
-      .eq('user_id', userId);
+    const { error } = await supabase.from('google_integrations').delete().eq('user_id', userId);
 
     if (error) {
       throw new GSCError('Failed to remove integration', GSCErrorCode.INVALID_REQUEST, error);
@@ -221,7 +229,7 @@ export class GoogleOAuthClient {
    */
   async getAuthenticatedClient(userId: string): Promise<OAuth2Client> {
     const integration = await this.getStoredTokens(userId);
-    
+
     if (!integration) {
       throw new GSCError('No Google integration found', GSCErrorCode.INVALID_CREDENTIALS);
     }
@@ -229,12 +237,12 @@ export class GoogleOAuthClient {
     // Check if token needs refresh
     const now = new Date();
     const tokenExpiry = integration.tokenExpiry ? new Date(integration.tokenExpiry) : new Date();
-    
+
     if (!integration.accessToken || tokenExpiry < now) {
       // Refresh the token
       const newTokens = await this.refreshAccessToken(integration.refreshToken);
       await this.updateAccessToken(userId, newTokens);
-      
+
       this.oauth2Client.setCredentials(newTokens);
     } else {
       this.oauth2Client.setCredentials({
@@ -253,12 +261,12 @@ export class GoogleOAuthClient {
     const timestamp = Date.now().toString();
     const random = crypto.randomBytes(16).toString('hex');
     const data = `${userId}:${timestamp}:${random}`;
-    
+
     // Sign the data
     const hmac = crypto.createHmac('sha256', process.env.GOOGLE_STATE_SECRET || 'default-secret');
     hmac.update(data);
     const signature = hmac.digest('hex');
-    
+
     // Encode as base64
     return Buffer.from(`${data}:${signature}`).toString('base64');
   }
@@ -270,19 +278,19 @@ export class GoogleOAuthClient {
     try {
       const decoded = Buffer.from(state, 'base64').toString();
       const parts = decoded.split(':');
-      
+
       if (parts.length !== 4) {
         return null;
       }
 
       const [userId, timestamp, random, signature] = parts;
-      
+
       // Verify signature
       const data = `${userId}:${timestamp}:${random}`;
       const hmac = crypto.createHmac('sha256', process.env.GOOGLE_STATE_SECRET || 'default-secret');
       hmac.update(data);
       const expectedSignature = hmac.digest('hex');
-      
+
       if (signature !== expectedSignature) {
         return null;
       }
@@ -291,7 +299,7 @@ export class GoogleOAuthClient {
       const stateTime = parseInt(timestamp, 10);
       const now = Date.now();
       const oneHour = 60 * 60 * 1000;
-      
+
       if (now - stateTime > oneHour) {
         return null;
       }
@@ -307,16 +315,19 @@ export class GoogleOAuthClient {
    */
   private encryptToken(token: string): string {
     const algorithm = 'aes-256-gcm';
-    const key = Buffer.from(process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars!', 'utf-8').slice(0, 32);
+    const key = Buffer.from(
+      process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars!',
+      'utf-8'
+    ).slice(0, 32);
     const iv = crypto.randomBytes(16);
-    
+
     const cipher = crypto.createCipheriv(algorithm, key, iv);
-    
+
     let encrypted = cipher.update(token, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   }
 
@@ -328,16 +339,19 @@ export class GoogleOAuthClient {
     const iv = Buffer.from(parts.shift()!, 'hex');
     const authTag = Buffer.from(parts.shift()!, 'hex');
     const encrypted = parts.join(':');
-    
+
     const algorithm = 'aes-256-gcm';
-    const key = Buffer.from(process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars!', 'utf-8').slice(0, 32);
-    
+    const key = Buffer.from(
+      process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars!',
+      'utf-8'
+    ).slice(0, 32);
+
     const decipher = crypto.createDecipheriv(algorithm, key, iv);
     decipher.setAuthTag(authTag);
-    
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    
+
     return decrypted;
   }
 }

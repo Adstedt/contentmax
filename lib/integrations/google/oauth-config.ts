@@ -1,6 +1,6 @@
 /**
  * Google OAuth Configuration
- * 
+ *
  * This module provides configuration and utilities for Google OAuth2 authentication
  * Used for integrating with Google Merchant Center, Search Console, and Analytics APIs
  */
@@ -20,9 +20,9 @@ const GoogleOAuthEnvSchema = z.object({
 export const GOOGLE_OAUTH_SCOPES = {
   // Core user information
   OPENID: 'openid',
-  EMAIL: 'email',
-  PROFILE: 'profile',
-  
+  EMAIL: 'https://www.googleapis.com/auth/userinfo.email',
+  PROFILE: 'https://www.googleapis.com/auth/userinfo.profile',
+
   // API-specific scopes
   MERCHANT_CENTER: 'https://www.googleapis.com/auth/content',
   SEARCH_CONSOLE: 'https://www.googleapis.com/auth/webmasters.readonly',
@@ -104,7 +104,7 @@ export function loadGoogleOAuthConfig(): GoogleOAuthConfig {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const missingVars = error.errors.map(e => e.path.join('.')).join(', ');
+      const missingVars = error.errors.map((e) => e.path.join('.')).join(', ');
       throw new Error(`Missing or invalid Google OAuth configuration: ${missingVars}`);
     }
     throw error;
@@ -116,7 +116,7 @@ export function loadGoogleOAuthConfig(): GoogleOAuthConfig {
  */
 export function generateAuthUrl(state?: string): string {
   const config = loadGoogleOAuthConfig();
-  
+
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
@@ -135,7 +135,7 @@ export function generateAuthUrl(state?: string): string {
  */
 export async function exchangeCodeForTokens(code: string): Promise<GoogleAuthTokens> {
   const config = loadGoogleOAuthConfig();
-  
+
   const params = new URLSearchParams({
     code,
     client_id: config.clientId,
@@ -165,7 +165,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleAuthTok
  */
 export async function refreshAccessToken(refreshToken: string): Promise<GoogleAuthTokens> {
   const config = loadGoogleOAuthConfig();
-  
+
   const params = new URLSearchParams({
     refresh_token: refreshToken,
     client_id: config.clientId,

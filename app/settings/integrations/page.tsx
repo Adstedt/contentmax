@@ -26,24 +26,30 @@ export default function IntegrationsPage() {
 
   useEffect(() => {
     fetchIntegrationStatus();
-    
+
     // Check for success/error messages from OAuth callback
     const success = searchParams.get('success');
     const error = searchParams.get('error');
-    
-    if (success === 'google_connected') {
-      setMessage({ type: 'success', text: 'Google Search Console connected successfully!' });
+
+    if (success === 'google_connected' || success === 'true') {
+      const account = searchParams.get('account');
+      setMessage({
+        type: 'success',
+        text: account
+          ? `Successfully connected Google account: ${account}`
+          : 'Google account connected successfully!',
+      });
       fetchSites();
     } else if (error) {
       const errorMessages: Record<string, string> = {
-        'invalid_request': 'Invalid request. Please try again.',
-        'unauthorized': 'You are not authorized to perform this action.',
-        'authentication_failed': 'Authentication failed. Please try again.',
-        'access_denied': 'Access was denied. Please grant the necessary permissions.',
+        invalid_request: 'Invalid request. Please try again.',
+        unauthorized: 'You are not authorized to perform this action.',
+        authentication_failed: 'Authentication failed. Please try again.',
+        access_denied: 'Access was denied. Please grant the necessary permissions.',
       };
-      setMessage({ 
-        type: 'error', 
-        text: errorMessages[error] || 'An error occurred during authentication.' 
+      setMessage({
+        type: 'error',
+        text: errorMessages[error] || 'An error occurred during authentication.',
       });
     }
   }, [searchParams]);
@@ -51,8 +57,10 @@ export default function IntegrationsPage() {
   const fetchIntegrationStatus = async () => {
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         router.push('/login');
         return;
@@ -105,7 +113,11 @@ export default function IntegrationsPage() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect Google Search Console? This will remove all stored data.')) {
+    if (
+      !confirm(
+        'Are you sure you want to disconnect Google Search Console? This will remove all stored data.'
+      )
+    ) {
       return;
     }
 
@@ -140,14 +152,12 @@ export default function IntegrationsPage() {
     setSyncing(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // Get current project (you might want to add a project selector)
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id')
-        .limit(1)
-        .single();
+      const { data: projects } = await supabase.from('projects').select('id').limit(1).single();
 
       if (!projects) {
         setMessage({ type: 'error', text: 'No project found. Please create a project first.' });
@@ -198,7 +208,9 @@ export default function IntegrationsPage() {
       <h1 className="text-3xl font-bold mb-6">Integrations</h1>
 
       {message && (
-        <Alert className={`mb-6 ${message.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
+        <Alert
+          className={`mb-6 ${message.type === 'error' ? 'border-red-500' : 'border-green-500'}`}
+        >
           <AlertDescription className="flex items-center gap-2">
             {message.type === 'success' ? (
               <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -235,7 +247,7 @@ export default function IntegrationsPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Last Sync</p>
                   <p className="text-sm">
-                    {integration.lastSync 
+                    {integration.lastSync
                       ? formatDistanceToNow(integration.lastSync, { addSuffix: true })
                       : 'Never synced'}
                   </p>
@@ -281,9 +293,7 @@ export default function IntegrationsPage() {
                   disabled={disconnecting}
                   className="flex items-center gap-2"
                 >
-                  {disconnecting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : null}
+                  {disconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Disconnect
                 </Button>
               </div>
@@ -320,14 +330,15 @@ export default function IntegrationsPage() {
                   Identify content optimization opportunities
                 </li>
               </ul>
-              
+
               <Button onClick={handleConnect} className="flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />
                 Connect Google Search Console
               </Button>
-              
+
               <p className="text-xs text-gray-500">
-                You will be redirected to Google to authorize access. We only request read-only access to your Search Console data.
+                You will be redirected to Google to authorize access. We only request read-only
+                access to your Search Console data.
               </p>
             </div>
           )}
