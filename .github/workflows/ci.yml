@@ -29,24 +29,21 @@ jobs:
         
       - name: Run linter
         run: npm run lint
-        continue-on-error: true
         
       - name: Type checking
         run: npm run type-check
-        continue-on-error: true
         
       - name: Run tests
-        run: npm test
-        continue-on-error: true
+        run: npm test -- --coverage
         env:
           CI: true
           
       - name: Build application
         run: npm run build
-        continue-on-error: true
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SKIP_ENV_VALIDATION: true
           
       - name: Upload coverage reports
         if: always()

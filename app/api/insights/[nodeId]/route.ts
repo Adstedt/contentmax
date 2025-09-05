@@ -8,7 +8,7 @@ const ParamsSchema = z.object({
   nodeId: z.string().uuid(),
 });
 
-export async function GET(request: NextRequest, { params }: { params: { nodeId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ nodeId: string }> }) {
   try {
     // Check authentication
     const session = await getServerSession();
@@ -16,9 +16,10 @@ export async function GET(request: NextRequest, { params }: { params: { nodeId: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validate nodeId
-    const { nodeId } = ParamsSchema.parse(params);
-    const supabase = createClient();
+    // Await params and validate nodeId
+    const resolvedParams = await params;
+    const { nodeId } = ParamsSchema.parse(resolvedParams);
+    const supabase = await createClient();
 
     // Fetch opportunity with related data
     const { data: opportunity, error } = await supabase

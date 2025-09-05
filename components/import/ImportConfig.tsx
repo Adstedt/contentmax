@@ -234,7 +234,7 @@ function ImportConfig({
             <p className="text-yellow-700">
               Processing {sitemapData.totalUrls} URLs with content scraping
               enabled may take{' '}
-              {Math.round((sitemapData.totalUrls / config.rateLimit / 60))} minutes
+              {Math.round((sitemapData.totalUrls / (config.rateLimit || 5) / 60))} minutes
               or more.
             </p>
           </div>

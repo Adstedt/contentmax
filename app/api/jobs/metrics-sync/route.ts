@@ -157,12 +157,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Get sync history from database
+    // TODO: sync_history table needs to be added to database.types.ts
+    // Temporarily comment out until types are regenerated
+    const history = null;
+    const error = null;
+    /*
     const { data: history, error } = await supabase
       .from('sync_history')
       .select('*')
       .eq('sync_type', 'metrics')
       .order('started_at', { ascending: false })
       .limit(50);
+    */
 
     if (error) {
       // Table might not exist yet

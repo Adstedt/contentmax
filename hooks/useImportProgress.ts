@@ -6,6 +6,12 @@ export interface ImportProgress {
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   overallProgress: number;
   currentStage: string;
+  stage?: string; // Legacy field for compatibility
+  percentage?: number; // Legacy field for compatibility
+  message?: string;
+  processed?: number;
+  total?: number;
+  estimatedTime?: number;
   stages: Array<{
     name: string;
     status: 'pending' | 'active' | 'complete' | 'error';

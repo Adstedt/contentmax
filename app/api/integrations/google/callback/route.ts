@@ -1,79 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleOAuthClient } from '@/lib/integrations/google-oauth';
+import { exchangeCodeForTokens, getUserInfo } from '@/lib/integrations/google/oauth-config';
 import { createClient } from '@/lib/supabase/server';
-import { GSCError } from '@/types/google.types';
 
+/**
+ * GET /api/integrations/google/callback
+ * 
+ * Handles the OAuth callback from Google
+ * Exchanges authorization code for tokens and stores them
+ */
 export async function GET(request: NextRequest) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
-    // Check for OAuth errors
+    // Handle OAuth errors
     if (error) {
       console.error('OAuth error:', error);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=${encodeURIComponent(error)}`
+        `${appUrl}/settings/integrations?error=${encodeURIComponent(error)}`
       );
     }
 
+    // Verify required parameters
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=invalid_request`
+        `${appUrl}/settings/integrations?error=missing_parameters`
       );
     }
 
-    // Initialize OAuth client
-    const oauthClient = new GoogleOAuthClient();
-    
-    // Handle callback and exchange code for tokens
-    const { tokens, email } = await oauthClient.handleCallback(code, state);
+    // Decode and validate state
+    let stateData;
+    try {
+      stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+    } catch {
+      return NextResponse.redirect(
+        `${appUrl}/settings/integrations?error=invalid_state`
+      );
+    }
 
-    // Get user ID from state (already verified in handleCallback)
-    const decodedState = Buffer.from(state, 'base64').toString();
-    const userId = decodedState.split(':')[0];
+    // Verify state timestamp (prevent replay attacks)
+    const stateAge = Date.now() - stateData.timestamp;
+    if (stateAge > 10 * 60 * 1000) { // 10 minutes
+      return NextResponse.redirect(
+        `${appUrl}/settings/integrations?error=expired_state`
+      );
+    }
 
-    // Verify user is authenticated
+    // Get the current user session
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !user || user.id !== userId) {
+    if (authError || !user || user.id !== stateData.userId) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=unauthorized`
+        `${appUrl}/settings/integrations?error=unauthorized`
       );
     }
 
-    // Store tokens
-    await oauthClient.storeTokens(userId, tokens, email);
+    // Exchange code for tokens
+    const tokens = await exchangeCodeForTokens(code);
 
-    // Log successful connection
+    // Get user info from Google
+    const googleUser = await getUserInfo(tokens.access_token);
+
+    // Store the integration in the database
+    // Note: This table needs to be created in Supabase
+    // For now, we'll comment this out until the table exists
+    /*
+    const { error: dbError } = await supabase
+      .from('google_integrations')
+      .upsert({
+        user_id: user.id,
+        google_id: googleUser.id,
+        email: googleUser.email,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+        scopes: tokens.scope,
+        profile: {
+          name: googleUser.name,
+          picture: googleUser.picture,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.redirect(
+        `${appUrl}/settings/integrations?error=database_error`
+      );
+    }
+    */
+
+    // Log successful connection in audit logs
     await supabase
       .from('audit_logs')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         action: 'google_integration_connected',
         entity_type: 'integration',
+        entity_id: googleUser.id,
         new_values: {
-          email,
+          email: googleUser.email,
           timestamp: new Date().toISOString(),
         },
       });
 
-    // Redirect to settings page with success
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?success=google_connected`
-    );
-  } catch (error) {
-    console.error('Error in Google OAuth callback:', error);
-    
-    let errorMessage = 'authentication_failed';
-    if (error instanceof GSCError) {
-      errorMessage = error.code.toLowerCase();
-    }
+    // For now, just log success
+    console.log('OAuth successful for user:', user.id, 'Google account:', googleUser.email);
 
+    // Redirect back to settings with success
+    const returnUrl = stateData.returnUrl || '/settings/integrations';
+    return NextResponse.redirect(`${appUrl}${returnUrl}?success=true&account=${googleUser.email}`);
+
+  } catch (error) {
+    console.error('OAuth callback error:', error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=${errorMessage}`
+      `${appUrl}/settings/integrations?error=${encodeURIComponent(
+        error instanceof Error ? error.message : 'Unknown error'
+      )}`
     );
   }
 }

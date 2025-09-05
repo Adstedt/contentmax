@@ -107,7 +107,10 @@
       "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\docs\\architecture/**)",
       "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\lib/**)",
       "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\lib\\supabase/**)",
-      "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\docs\\sprints\\sprint-4\\stories/**)"
+      "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\docs\\sprints\\sprint-4\\stories/**)",
+      "Bash(rm:*)",
+      "Bash(cmd /c \"rmdir /s /q .next\")",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

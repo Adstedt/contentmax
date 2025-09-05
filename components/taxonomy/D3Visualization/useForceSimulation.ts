@@ -26,8 +26,8 @@ export function useForceSimulation(
       ...node,
       radius: calculateNodeRadius(node),
       color: getNodeColor(node.status),
-      x: node.x || Math.random() * options.width,
-      y: node.y || Math.random() * options.height,
+      x: (node as any).x || Math.random() * options.width,
+      y: (node as any).y || Math.random() * options.height,
     } as Node));
     
     const links: Link[] = data.links.map(link => ({

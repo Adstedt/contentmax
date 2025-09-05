@@ -89,10 +89,11 @@ export async function POST(request: NextRequest) {
     );
 
     // Update last sync timestamp
-    await supabase
-      .from('google_integrations')
-      .update({ last_sync: new Date().toISOString() })
-      .eq('user_id', user.id);
+    // TODO: Create google_integrations table or use existing integrations table
+    // await supabase
+    //   .from('google_integrations')
+    //   .update({ last_sync: new Date().toISOString() })
+    //   .eq('user_id', user.id);
 
     return NextResponse.json({
       success: true,

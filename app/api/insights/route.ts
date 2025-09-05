@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Build query
     let opportunitiesQuery = supabase.from('opportunities').select(`

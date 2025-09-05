@@ -69,35 +69,44 @@ export async function POST(request: NextRequest) {
       endDate: validated.endDate,
     });
 
-    // Store metrics in database
-    const metricsToStore = metrics.map((metric) => ({
-      project_id: validated.projectId,
-      url: metric.url,
-      source: 'ga4',
-      metric_date: validated.endDate,
-      data: {
+    // First we need to find or create nodes for these URLs
+    const { data: nodes } = await supabase
+      .from('taxonomy_nodes')
+      .select('id, url')
+      .eq('project_id', validated.projectId)
+      .in('url', validated.urls);
+    
+    const urlToNodeId = new Map(nodes?.map(n => [n.url, n.id]) || []);
+    
+    // Store metrics in database - map to correct schema
+    const metricsToStore = metrics
+      .filter(metric => urlToNodeId.has(metric.url))
+      .map((metric) => ({
+        node_id: urlToNodeId.get(metric.url)!,
+        source: 'ga4',
+        date: validated.endDate,
         revenue: metric.revenue,
         transactions: metric.transactions,
-        conversionRate: metric.conversionRate,
-        averageOrderValue: metric.averageOrderValue,
+        conversion_rate: metric.conversionRate,
         sessions: metric.sessions,
-        bounceRate: metric.bounceRate,
-        engagementRate: metric.engagementRate,
-        averageEngagementTime: metric.averageEngagementTime,
-        eventsPerSession: metric.eventsPerSession,
-        newUsers: metric.newUsers,
-        totalUsers: metric.totalUsers,
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
+        bounce_rate: metric.bounceRate,
+        avg_session_duration: metric.averageEngagementTime,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+
+    if (metricsToStore.length === 0) {
+      return NextResponse.json({ 
+        message: 'No matching nodes found for URLs',
+        processed: 0 
+      });
+    }
 
     // Upsert metrics (update if exists, insert if not)
     const { error: upsertError } = await supabase
       .from('node_metrics')
       .upsert(metricsToStore, {
-        onConflict: 'project_id,url,source,metric_date',
-        returning: 'minimal',
+        onConflict: 'node_id,source,date'
       });
 
     if (upsertError) {

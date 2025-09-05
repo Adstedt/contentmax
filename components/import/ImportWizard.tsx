@@ -26,6 +26,9 @@ export interface ImportConfiguration {
   excludePatterns?: string[];
   maxPages?: number;
   priority?: 'high' | 'normal' | 'low';
+  extractMetadata?: boolean;
+  detectSkus?: boolean;
+  buildHierarchy?: boolean;
 }
 
 export interface SitemapPreview {
@@ -58,6 +61,7 @@ export interface ImportSummary {
     url: string;
     message: string;
   }>;
+  nextSteps: string[];
 }
 
 interface ImportWizardProps {
@@ -194,12 +198,21 @@ export default function ImportWizard({ onComplete }: ImportWizardProps) {
           )}
 
           {currentStep === ImportStep.PROCESSING && importId && (
-            <ProgressTracker importId={importId} onComplete={handleProcessingComplete} />
+            <ProgressTracker importId={importId} onComplete={handleProcessingComplete} onCancel={() => setCurrentStep(ImportStep.CONFIGURATION)} />
           )}
 
           {currentStep === ImportStep.REVIEW && importSummary && (
             <ImportSummaryComponent
-              summary={importSummary}
+              summary={{
+                ...importSummary,
+                categorizedUrls: {
+                  product: (importSummary.categorizedUrls as any)?.product || 0,
+                  category: (importSummary.categorizedUrls as any)?.category || 0,
+                  brand: (importSummary.categorizedUrls as any)?.brand || 0,
+                  blog: (importSummary.categorizedUrls as any)?.blog || 0,
+                  other: (importSummary.categorizedUrls as any)?.other || 0,
+                }
+              }}
               onComplete={() => onComplete(importId!)}
               onRestart={handleRestart}
             />

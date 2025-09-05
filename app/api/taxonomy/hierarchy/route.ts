@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
 
   // Analyze hierarchy health
   const analyzer = new HierarchyAnalyzer();
-  const analysis = analyzer.analyzeHierarchy(nodes || []);
+  const rootNode = nodes?.[0] || { id: 'root', name: 'Root', type: 'category', depth: 0, children: nodes || [] } as any;
+  const analysis = analyzer.analyzeHierarchyHealth(rootNode);
 
   return NextResponse.json({
     nodes: nodes || [],
@@ -120,7 +121,8 @@ export async function POST(request: NextRequest) {
   // Validate if requested
   if (validated.options?.validateIntegrity) {
     const analyzer = new HierarchyAnalyzer();
-    const validation = analyzer.validateHierarchy(hierarchy.nodes);
+    const rootNode = hierarchy.nodes[0] || { id: 'root', name: 'Root', type: 'category', depth: 0, children: hierarchy.nodes } as any;
+    const validation = analyzer.analyzeHierarchyHealth(rootNode);
 
     if (!validation.isValid) {
       return NextResponse.json(
@@ -217,11 +219,11 @@ export async function PATCH(request: NextRequest) {
   // Check node ownership through project
   const { data: node, error: nodeError } = await supabase
     .from('taxonomy_nodes')
-    .select('*, projects!inner(user_id)')
+    .select('*, project:projects!inner(*)')
     .eq('id', nodeId)
     .single();
 
-  if (nodeError || !node || node.projects.user_id !== user.id) {
+  if (nodeError || !node || (node as any).project?.organization_id !== user.id) {
     return NextResponse.json({ error: 'Node not found or access denied' }, { status: 403 });
   }
 
@@ -234,7 +236,7 @@ export async function PATCH(request: NextRequest) {
   if (validated.title !== undefined) updateData.title = validated.title;
   if (validated.position !== undefined) updateData.position = validated.position;
   if (validated.metadata !== undefined) {
-    updateData.metadata = { ...node.metadata, ...validated.metadata };
+    updateData.metadata = { ...(node.metadata as any || {}), ...validated.metadata };
   }
 
   const { data: updatedNode, error: updateError } = await supabase
@@ -254,17 +256,17 @@ export async function PATCH(request: NextRequest) {
     const { data: allNodes } = await supabase
       .from('taxonomy_nodes')
       .select('*')
-      .eq('project_id', node.project_id);
+      .eq('project_id', node.project_id || '');
 
     if (allNodes) {
       const builder = new HierarchyBuilder();
       const hierarchy = builder.buildFromUrls(
         allNodes.map((n) => ({
           url: n.url,
-          title: n.title,
+          title: n.title || '',
           metadata: n.metadata,
         })),
-        { projectId: node.project_id }
+        { projectId: node.project_id || '' }
       );
 
       // Update depths in database
@@ -307,11 +309,11 @@ export async function DELETE(request: NextRequest) {
   // Check node ownership through project
   const { data: node, error: nodeError } = await supabase
     .from('taxonomy_nodes')
-    .select('*, projects!inner(user_id)')
+    .select('*, project:projects!inner(*)')
     .eq('id', nodeId)
     .single();
 
-  if (nodeError || !node || node.projects.user_id !== user.id) {
+  if (nodeError || !node || (node as any).project?.organization_id !== user.id) {
     return NextResponse.json({ error: 'Node not found or access denied' }, { status: 403 });
   }
 
@@ -321,7 +323,7 @@ export async function DELETE(request: NextRequest) {
     const { data: allNodes } = await supabase
       .from('taxonomy_nodes')
       .select('id, parent_id')
-      .eq('project_id', node.project_id);
+      .eq('project_id', node.project_id || '');
 
     const descendants = new Set<string>();
     const findDescendants = (parentId: string) => {

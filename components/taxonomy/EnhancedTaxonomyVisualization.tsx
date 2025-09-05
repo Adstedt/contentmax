@@ -401,7 +401,7 @@ export function EnhancedTaxonomyVisualization({
               return (
                 <ProductCard
                   key={node.id}
-                  node={node}
+                  node={{ ...node, depth: node.depth || 0 }}
                   shoppingData={shoppingData.get(node.id)}
                   contentMetrics={getContentMetrics(node)}
                   opportunityScore={opportunityScores.get(node.id)}
@@ -419,6 +419,7 @@ export function EnhancedTaxonomyVisualization({
                   key={node.id}
                   node={{
                     ...node,
+                    depth: node.depth || 0,
                     children: data.nodes
                       .filter((n) =>
                         data.links.some((l) => l.source === node.id && l.target === n.id)

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { Header } from '@/components/layout/Header';
 import { TaxonomyVisualization } from '@/components/taxonomy/TaxonomyVisualization';
+import { FeatureErrorBoundary } from '@/components/shared/feature-error-boundary';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
 
 // Generate demo data for testing
@@ -131,7 +132,9 @@ export default async function TaxonomyPage() {
       />
 
       <main className="flex-1 p-6 overflow-hidden">
-        <TaxonomyVisualization data={demoData} />
+        <FeatureErrorBoundary featureName="Taxonomy Visualization">
+          <TaxonomyVisualization data={demoData} />
+        </FeatureErrorBoundary>
       </main>
     </div>
   );
