@@ -3,7 +3,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { SearchIcon, FilterIcon, HomeIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-react';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
+import { ForceGraph } from '@/components/taxonomy/D3Visualization';
 import { TaxonomyEnrichmentPipeline, type EnrichedTaxonomyNode } from '@/lib/taxonomy/enrich-data';
+import ProductsList from './ProductsList';
+import SimpleProductCard, { type Product } from './SimpleProductCard';
+import { createClient } from '@/lib/supabase/client';
 
 interface TaxonomyVisualizationProps {
   data: {
@@ -50,6 +54,9 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [enrichedNodes, setEnrichedNodes] = useState<Map<string, EnrichedTaxonomyNode>>(new Map());
   const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Enrich nodes with Sprint 4 features
   useEffect(() => {
@@ -198,6 +205,14 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   // Get selected card details
   const selectedCard = selectedNodeId ? categoryCards.find((c) => c.id === selectedNodeId) : null;
 
+  // Clear products when navigating to a different level or when current level has categories
+  useEffect(() => {
+    // If current level has any category cards, we're not at a leaf level, so clear products
+    if (currentLevelCards.length > 0) {
+      setProducts([]);
+    }
+  }, [breadcrumbs]); // Reset when breadcrumbs change
+
   // Health indicator colors
   const getHealthColor = (score: number) => {
     if (score >= 80) return '#10a37f'; // Green - Optimized
@@ -244,11 +259,65 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   };
 
   // Handle card navigation (double-click or dedicated button)
-  const handleCardNavigate = (card: CategoryCard) => {
-    if (card.children.length > 0) {
-      setBreadcrumbs([...breadcrumbs, { id: card.id, title: card.title }]);
-      setSelectedNodeId(null); // Clear selection when navigating
-    }
+  const handleCardNavigate = async (card: CategoryCard) => {
+    console.log('Navigating to card:', card.title, 'Children:', card.children.length);
+
+    // First clear any existing products
+    setProducts([]);
+
+    // Always navigate by updating breadcrumbs
+    setBreadcrumbs([...breadcrumbs, { id: card.id, title: card.title }]);
+    setSelectedNodeId(null); // Clear selection when navigating
+
+    // After navigation, check if we should fetch products
+    // We need a small delay to let the navigation complete
+    setTimeout(async () => {
+      // Get the new current level cards after navigation
+      const currentParentId = card.id;
+      const childCards = categoryCards.filter((c) => c.parent === currentParentId);
+
+      // If this category has no children (leaf category), fetch products
+      if (childCards.length === 0) {
+        console.log('This is a leaf category, fetching products for:', card.id);
+        setProductsLoading(true);
+        try {
+          const supabase = createClient();
+
+          // First get product IDs associated with this category
+          const { data: productCategories, error: catError } = await supabase
+            .from('product_categories')
+            .select('product_id')
+            .eq('category_id', card.id);
+
+          if (catError) throw catError;
+
+          console.log('Product categories found:', productCategories?.length || 0);
+
+          if (productCategories && productCategories.length > 0) {
+            // Then fetch the actual products
+            const productIds = productCategories.map((pc) => pc.product_id);
+            const { data: productsData, error: prodError } = await supabase
+              .from('products')
+              .select('*')
+              .in('id', productIds)
+              .limit(100); // Limit for performance
+
+            if (prodError) throw prodError;
+
+            console.log('Products fetched:', productsData?.length || 0);
+            setProducts(productsData || []);
+          } else {
+            console.log('No products in this category');
+            setProducts([]);
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
+          setProducts([]);
+        } finally {
+          setProductsLoading(false);
+        }
+      }
+    }, 100); // Small delay to ensure navigation completes
   };
 
   // Handle card expansion for showing subcategories
@@ -270,6 +339,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   const handleBreadcrumbClick = (index: number) => {
     setBreadcrumbs(breadcrumbs.slice(0, index + 1));
     setSelectedNodeId(null);
+    setProducts([]); // Clear products when navigating via breadcrumb
   };
 
   // Build tree structure from flat array
@@ -371,7 +441,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
             {/* View Controls */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex bg-[#1a1a1a] rounded overflow-hidden">
-                {(['cards', 'tree', 'graph'] as ViewMode[]).map((mode) => (
+                {(['cards', 'tree'] as ViewMode[]).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
@@ -516,13 +586,63 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                       }
                       setExpandedNodes(newExpanded);
                     }}
-                    onSelect={(nodeId) => {
+                    onSelect={async (nodeId) => {
                       setSelectedNodeId(nodeId);
                       const node = categoryCards.find((c) => c.id === nodeId);
                       if (node) {
                         // Build breadcrumb path to this node
                         const path = buildBreadcrumbPath(node, categoryCards);
                         setBreadcrumbs(path);
+
+                        // Clear existing products first
+                        setProducts([]);
+
+                        // Check if this is a leaf category and fetch products
+                        const hasChildren = categoryCards.some((c) => c.parent === nodeId);
+                        if (!hasChildren) {
+                          // This is a leaf category, fetch products
+                          console.log(
+                            'Tree navigation to leaf category, fetching products for:',
+                            nodeId
+                          );
+                          setProductsLoading(true);
+                          try {
+                            const supabase = createClient();
+
+                            // First get product IDs associated with this category
+                            const { data: productCategories, error: catError } = await supabase
+                              .from('product_categories')
+                              .select('product_id')
+                              .eq('category_id', nodeId);
+
+                            if (catError) throw catError;
+
+                            console.log(
+                              'Product categories found:',
+                              productCategories?.length || 0
+                            );
+
+                            if (productCategories && productCategories.length > 0) {
+                              // Then fetch the actual products
+                              const productIds = productCategories.map((pc) => pc.product_id);
+                              const { data: productsData, error: prodError } = await supabase
+                                .from('products')
+                                .select('*')
+                                .in('id', productIds)
+                                .limit(100); // Limit for performance
+
+                              if (prodError) throw prodError;
+
+                              console.log('Products fetched:', productsData?.length || 0);
+                              setProducts(productsData || []);
+                            }
+                          } catch (error) {
+                            console.error('Error fetching products:', error);
+                            setProducts([]);
+                          } finally {
+                            setProductsLoading(false);
+                          }
+                        }
                       }
                     }}
                   />
@@ -582,11 +702,13 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                   transformOrigin: 'top left',
                 }}
               >
+                {/* Show category cards */}
                 {currentLevelCards.map((card, index) => {
                   const isExpanded = expandedCards.has(card.id);
                   const subcategories = getSubcategories(card.id);
-                  // A card is a product ONLY if it has no children (leaf node)
-                  const isProduct = card.children.length === 0 && subcategories.length === 0;
+                  // Never treat taxonomy nodes as products - they're always categories
+                  // Products would be separate entities linked to categories
+                  const isProduct = false;
                   const enrichedData = enrichedNodes.get(card.id);
 
                   return (
@@ -605,9 +727,11 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                       {/* Main Card */}
                       <div
                         onClick={() => handleCardClick(card)}
+                        onDoubleClick={() => handleCardNavigate(card)}
                         className={`p-4 cursor-pointer rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#10a37f]/20 hover:border-[#10a37f] hover:-translate-y-1 hover:scale-[1.02] ${
                           selectedNodeId === card.id ? 'scale-[1.02]' : ''
                         }`}
+                        title="Double-click to navigate into this category"
                       >
                         {/* Card Header */}
                         <div className="flex items-start justify-between mb-3">
@@ -810,10 +934,16 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                             <div className="grid grid-cols-2 gap-3 mb-3">
                               <div>
                                 <div className="text-xs text-[#666] mb-1">
-                                  {card.children.length > 0 ? 'Subcategories' : 'Products'}
+                                  {card.children.length > 0
+                                    ? 'Subcategories'
+                                    : card.skuCount > 0
+                                      ? 'Products'
+                                      : 'Empty'}
                                 </div>
                                 <div className="text-sm font-mono text-white">
-                                  {card.children.length > 0 ? card.children.length : card.skuCount}
+                                  {card.children.length > 0
+                                    ? card.children.length
+                                    : card.skuCount || 0}
                                 </div>
                               </div>
                               <div>
@@ -850,36 +980,42 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
                           <div className="flex items-center gap-2">
                             {card.children.length > 0 && (
-                              <>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCardExpand(card.id);
-                                  }}
-                                  className="flex items-center gap-1 text-xs text-[#666] hover:text-[#10a37f] transition-colors px-2 py-1 rounded hover:bg-[#10a37f]/10"
-                                  title={
-                                    isExpanded ? 'Collapse subcategories' : 'Show subcategories'
-                                  }
-                                >
-                                  <span>{card.children.length} items</span>
-                                  {isExpanded ? (
-                                    <ChevronDownIcon className="w-3 h-3" />
-                                  ) : (
-                                    <ChevronRightIcon className="w-3 h-3" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCardNavigate(card);
-                                  }}
-                                  className="text-xs text-[#666] hover:text-[#10a37f] transition-colors px-2 py-1 rounded hover:bg-[#10a37f]/10"
-                                  title="Navigate to this category"
-                                >
-                                  Go →
-                                </button>
-                              </>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCardExpand(card.id);
+                                }}
+                                className="flex items-center gap-1 text-xs text-[#666] hover:text-[#10a37f] transition-colors px-2 py-1 rounded hover:bg-[#10a37f]/10"
+                                title={isExpanded ? 'Collapse subcategories' : 'Show subcategories'}
+                              >
+                                <span>{card.children.length} items</span>
+                                {isExpanded ? (
+                                  <ChevronDownIcon className="w-3 h-3" />
+                                ) : (
+                                  <ChevronRightIcon className="w-3 h-3" />
+                                )}
+                              </button>
                             )}
+
+                            {/* Always show navigate button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCardNavigate(card);
+                              }}
+                              className={`text-xs transition-colors px-2 py-1 rounded ${
+                                card.children.length === 0
+                                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300'
+                                  : 'text-[#666] hover:text-[#10a37f] hover:bg-[#10a37f]/10'
+                              }`}
+                              title={
+                                card.children.length === 0
+                                  ? 'View products in this category'
+                                  : 'Navigate to this category'
+                              }
+                            >
+                              {card.children.length === 0 ? 'View Products →' : 'Go →'}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -897,7 +1033,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                                   key={subcard.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setSelectedNodeId(subcard.id);
+                                    handleCardNavigate(subcard); // Navigate to subcategory
                                   }}
                                   className={`text-left p-2 rounded border transition-all duration-200 hover:border-[#10a37f] hover:bg-[#10a37f]/5 ${
                                     selectedNodeId === subcard.id
@@ -934,7 +1070,25 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                   );
                 })}
 
-                {currentLevelCards.length === 0 && (
+                {/* Show products as cards after categories */}
+                {products.length > 0 &&
+                  products.map((product) => (
+                    <SimpleProductCard
+                      key={product.id}
+                      product={product}
+                      onSelect={(p) => setSelectedProduct(p)}
+                      isSelected={selectedProduct?.id === product.id}
+                    />
+                  ))}
+
+                {/* Loading state for products */}
+                {productsLoading && (
+                  <div className="col-span-full flex justify-center items-center py-12">
+                    <div className="text-gray-400">Loading products...</div>
+                  </div>
+                )}
+
+                {currentLevelCards.length === 0 && products.length === 0 && !productsLoading && (
                   <div className="col-span-full text-center py-12">
                     <div className="text-[#666] mb-2">No categories found</div>
                     <div className="text-sm text-[#999]">
@@ -964,6 +1118,15 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                       setExpandedNodes(newExpanded);
                     }}
                     onSelect={setSelectedNodeId}
+                    onNavigate={(node) => {
+                      const card = categoryCards.find((c) => c.id === node.id);
+                      if (card) {
+                        // In tree view, clicking "View Products" switches to card view
+                        // and navigates to that category
+                        setViewMode('cards');
+                        handleCardNavigate(card);
+                      }
+                    }}
                     getHealthColor={getHealthColor}
                     getStatusColor={getStatusColor}
                     getTrendIcon={getTrendIcon}
@@ -972,22 +1135,25 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
               </div>
             )}
 
+            {/* Graph view temporarily disabled for MVP
             {viewMode === 'graph' && (
-              <div className="h-full bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] p-4 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-[#666] mb-2">Graph View</div>
-                  <div className="text-sm text-[#999]">
-                    Legacy force-directed graph view (if needed for technical users)
-                  </div>
-                  <button
-                    onClick={() => setViewMode('cards')}
-                    className="mt-4 px-4 py-2 bg-[#10a37f] text-white rounded text-sm hover:bg-[#0e906d] transition-colors"
-                  >
-                    Switch to Cards View
-                  </button>
-                </div>
+              <div className="h-full">
+                <ForceGraph
+                  data={data}
+                  width={800}
+                  height={600}
+                  onNodeClick={(node) => setSelectedNodeId(node.id)}
+                  forceConfig={{
+                    chargeStrength: -300,
+                    linkDistance: 50,
+                    centerStrength: 0.5,
+                  }}
+                  enableProgressiveLoading={false}
+                  staticLayout={false}
+                  className="w-full h-full"
+                />
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Overlay for mobile sidebar */}
@@ -1125,38 +1291,41 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
               </div>
 
               {/* Related Items */}
-              {selectedCard.children.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-[#999] uppercase tracking-wider mb-3">
-                    Child Categories
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedCard.children.slice(0, 5).map((childId) => {
-                      const child = categoryCards.find((c) => c.id === childId);
-                      if (!child) return null;
+              {
+                selectedCard.children.length > 0 ? (
+                  <div>
+                    <h3 className="text-sm font-medium text-[#999] uppercase tracking-wider mb-3">
+                      Child Categories
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedCard.children.slice(0, 5).map((childId) => {
+                        const child = categoryCards.find((c) => c.id === childId);
+                        if (!child) return null;
 
-                      return (
-                        <div
-                          key={childId}
-                          className="flex items-center justify-between p-2 bg-[#1a1a1a] rounded"
-                        >
-                          <span className="text-sm text-white truncate">{child.title}</span>
+                        return (
                           <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: getStatusColor(child.status) }}
-                          />
-                        </div>
-                      );
-                    })}
+                            key={childId}
+                            className="flex items-center justify-between p-2 bg-[#1a1a1a] rounded cursor-pointer hover:bg-[#222]"
+                            onClick={() => handleCardSelect(child)}
+                          >
+                            <span className="text-sm text-white truncate">{child.title}</span>
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: getStatusColor(child.status) }}
+                            />
+                          </div>
+                        );
+                      })}
 
-                    {selectedCard.children.length > 5 && (
-                      <div className="text-xs text-[#666] p-2">
-                        +{selectedCard.children.length - 5} more items
-                      </div>
-                    )}
+                      {selectedCard.children.length > 5 && (
+                        <div className="text-xs text-[#666] p-2">
+                          +{selectedCard.children.length - 5} more items
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null /* Products now shown in main view, not sidebar */
+              }
             </div>
           )}
 
@@ -1346,6 +1515,7 @@ interface TreeNodeDetailedProps {
   selectedNodeId: string | null;
   onToggle: (nodeId: string) => void;
   onSelect: (nodeId: string) => void;
+  onNavigate: (node: TreeNodeStructure) => void;
   getHealthColor: (score: number) => string;
   getStatusColor: (status: string) => string;
   getTrendIcon: (trend: string) => string;
@@ -1358,6 +1528,7 @@ function TreeNodeDetailed({
   selectedNodeId,
   onToggle,
   onSelect,
+  onNavigate,
   getHealthColor,
   getStatusColor,
   getTrendIcon,
@@ -1413,6 +1584,20 @@ function TreeNodeDetailed({
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Navigate button for leaf nodes */}
+          {!hasChildren && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(node);
+              }}
+              className="text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300 px-2 py-1 rounded transition-colors"
+              title="View products in this category"
+            >
+              View Products →
+            </button>
+          )}
+
           <div className="text-right">
             <div className="text-xs text-[#999]">Health</div>
             <div className="text-sm font-mono text-white">{node.healthScore}%</div>
@@ -1441,6 +1626,7 @@ function TreeNodeDetailed({
               selectedNodeId={selectedNodeId}
               onToggle={onToggle}
               onSelect={onSelect}
+              onNavigate={onNavigate}
               getHealthColor={getHealthColor}
               getStatusColor={getStatusColor}
               getTrendIcon={getTrendIcon}
