@@ -16,6 +16,7 @@ import { ProductCard } from './ProductCard';
 import { CategoryCard } from './CategoryCard';
 import { TaxonomyEmptyState } from './TaxonomyEmptyState';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
+import { ForceGraph } from '@/components/taxonomy/D3Visualization';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -401,75 +402,110 @@ export function EnhancedTaxonomyVisualization({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-auto p-6">
-        <div
-          className="grid gap-6"
-          style={{
-            gridTemplateColumns: currentLevelNodes.some((n) => isProduct(n))
-              ? 'repeat(auto-fill, minmax(240px, 1fr))'
-              : 'repeat(auto-fill, minmax(320px, 1fr))',
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-          }}
-        >
-          {currentLevelNodes.map((node) => {
-            if (isProduct(node)) {
-              return (
-                <ProductCard
-                  key={node.id}
-                  node={{ ...node, depth: node.depth || 0 }}
-                  shoppingData={shoppingData.get(node.id)}
-                  contentMetrics={getContentMetrics(node)}
-                  opportunityScore={opportunityScores.get(node.id)}
-                  revenueProjection={getRevenueProjection(node)}
-                  recommendations={recommendations.get(node.id)}
-                  onSelect={handleNodeSelect}
-                  onBulkSelect={handleBulkSelect}
-                  isSelected={selectedForBulk.has(node.id)}
-                />
-              );
-            } else {
-              const metrics = calculateCategoryMetrics(node);
-              return (
-                <CategoryCard
-                  key={node.id}
-                  node={{
-                    ...node,
-                    depth: node.depth || 0,
-                    children: data.nodes
-                      .filter((n) =>
-                        data.links.some((l) => l.source === node.id && l.target === n.id)
-                      )
-                      .map((n) => n.id),
-                    metrics,
-                    status:
-                      metrics.healthScore >= 80
-                        ? 'optimized'
-                        : metrics.healthScore >= 60
-                          ? 'needs-attention'
-                          : 'critical',
-                    trend: ['up', 'down', 'stable'][Math.floor(Math.random() * 3)] as any,
-                  }}
-                  opportunityScore={metrics.avgOpportunityScore}
-                  revenueProjection={metrics.totalRevenue * 0.2}
-                  priorityActions={Math.floor(Math.random() * 5)}
-                  onSelect={handleNodeSelect}
-                  onExpand={handleNodeExpand}
-                />
-              );
-            }
-          })}
-        </div>
-
-        {currentLevelNodes.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <p className="text-lg font-medium">No items found</p>
-            <p className="text-sm mt-2">Try adjusting your filters or search query</p>
+        {viewMode === 'graph' ? (
+          // Render ForceGraph for graph view mode
+          <div className="w-full h-full">
+            <ForceGraph
+              data={data}
+              width={1200}
+              height={800}
+              onNodeClick={(node) => handleNodeSelect(node.id)}
+              onNodeHover={(node) => {
+                if (node) {
+                  handleNodeSelect(node.id);
+                }
+              }}
+              forceConfig={{
+                chargeStrength: -300,
+                linkDistance: 50,
+                centerStrength: 0.5,
+              }}
+              enableProgressiveLoading={false}
+              staticLayout={false}
+              className="w-full h-full"
+            />
           </div>
+        ) : viewMode === 'tree' ? (
+          // Tree view mode (to be implemented)
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <p className="text-lg font-medium">Tree view coming soon</p>
+            <p className="text-sm mt-2">Use Cards or Graph view for now</p>
+          </div>
+        ) : (
+          // Cards view mode (existing implementation)
+          <>
+            <div
+              className="grid gap-6"
+              style={{
+                gridTemplateColumns: currentLevelNodes.some((n) => isProduct(n))
+                  ? 'repeat(auto-fill, minmax(240px, 1fr))'
+                  : 'repeat(auto-fill, minmax(320px, 1fr))',
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              {currentLevelNodes.map((node) => {
+                if (isProduct(node)) {
+                  return (
+                    <ProductCard
+                      key={node.id}
+                      node={{ ...node, depth: node.depth || 0 }}
+                      shoppingData={shoppingData.get(node.id)}
+                      contentMetrics={getContentMetrics(node)}
+                      opportunityScore={opportunityScores.get(node.id)}
+                      revenueProjection={getRevenueProjection(node)}
+                      recommendations={recommendations.get(node.id)}
+                      onSelect={handleNodeSelect}
+                      onBulkSelect={handleBulkSelect}
+                      isSelected={selectedForBulk.has(node.id)}
+                    />
+                  );
+                } else {
+                  const metrics = calculateCategoryMetrics(node);
+                  return (
+                    <CategoryCard
+                      key={node.id}
+                      node={{
+                        ...node,
+                        depth: node.depth || 0,
+                        children: data.nodes
+                          .filter((n) =>
+                            data.links.some((l) => l.source === node.id && l.target === n.id)
+                          )
+                          .map((n) => n.id),
+                        metrics,
+                        status:
+                          metrics.healthScore >= 80
+                            ? 'optimized'
+                            : metrics.healthScore >= 60
+                              ? 'needs-attention'
+                              : 'critical',
+                        trend: ['up', 'down', 'stable'][Math.floor(Math.random() * 3)] as any,
+                      }}
+                      opportunityScore={metrics.avgOpportunityScore}
+                      revenueProjection={metrics.totalRevenue * 0.2}
+                      priorityActions={Math.floor(Math.random() * 5)}
+                      onSelect={handleNodeSelect}
+                      onExpand={handleNodeExpand}
+                    />
+                  );
+                }
+              })}
+            </div>
+
+            {currentLevelNodes.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                <p className="text-lg font-medium">No items found</p>
+                <p className="text-sm mt-2">Try adjusting your filters or search query</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Zoom Controls */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white rounded-lg shadow-lg p-2">
+      {/* Zoom Controls - Only show for cards view */}
+      {viewMode === 'cards' && (
+        <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white rounded-lg shadow-lg p-2">
         <button
           onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
           className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
@@ -491,7 +527,8 @@ export function EnhancedTaxonomyVisualization({
         >
           Reset
         </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

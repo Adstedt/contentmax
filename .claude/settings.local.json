@@ -111,7 +111,12 @@
       "Bash(rm:*)",
       "Bash(cmd /c \"rmdir /s /q .next\")",
       "Bash(mv:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(cmd /c:*)",
+      "Bash(for:*)",
+      "Bash(grep:*)",
+      "Bash(done)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

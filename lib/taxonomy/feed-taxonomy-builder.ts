@@ -30,6 +30,8 @@ export class FeedTaxonomyBuilder {
   
   async buildFromProductFeed(products: any[], options?: { skipPersist?: boolean; userId?: string; projectId?: string }) {
     console.log(`Building taxonomy from ${products.length} products`);
+    console.log('First product received:', products[0]);
+    console.log('Options:', options);
     
     // Store products for later persistence
     this.products = products;
@@ -138,7 +140,10 @@ export class FeedTaxonomyBuilder {
         this.productAssignments.set(nodeId, new Set());
       }
       
-      this.productAssignments.get(nodeId)!.add(product.id || product.product_id);
+      // Use the same ID generation logic as in persistToDatabase
+      const productIndex = this.products.indexOf(product);
+      const productId = product.id || product.product_id || `prod_${Date.now()}_${productIndex}`;
+      this.productAssignments.get(nodeId)!.add(productId);
     }
   }
   
@@ -229,38 +234,59 @@ export class FeedTaxonomyBuilder {
       throw error;
     }
     
-    // Store products first
+    // Store products first - IN BATCHES for large feeds
     if (this.products.length > 0) {
-      const productsToInsert = this.products.map(product => ({
-        id: product.id || product.product_id,
-        title: product.title || product.product_title,
-        description: product.description,
-        price: product.price,
-        image_link: product.image_link,
-        link: product.link || product.url,
-        brand: product.brand,
-        condition: product.condition,
-        availability: product.availability,
-        gtin: product.gtin,
-        mpn: product.mpn,
-        product_type: product.product_type,
-        google_product_category: product.google_product_category,
-        user_id: userId,
-        project_id: projectId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
+      console.log(`Preparing to save ${this.products.length} products...`);
       
-      const { error: productError } = await supabase
-        .from('products')
-        .upsert(productsToInsert);
+      const BATCH_SIZE = 100; // Insert 100 products at a time
+      let totalSaved = 0;
       
-      if (productError) {
-        console.error('Failed to persist products:', productError);
-        // Continue anyway to at least save the taxonomy
-      } else {
-        console.log(`Saved ${this.products.length} products to database`);
+      for (let i = 0; i < this.products.length; i += BATCH_SIZE) {
+        const batch = this.products.slice(i, i + BATCH_SIZE);
+        const productsToInsert = batch.map((product, index) => ({
+          // Generate ID if not provided - CRITICAL FIX
+          id: product.id || product.product_id || `prod_${Date.now()}_${i + index}`,
+          title: product.title || product.product_title || 'Untitled Product',
+          description: product.description || null,
+          price: typeof product.price === 'object' && product.price !== null ? product.price.value : (typeof product.price === 'string' ? parseFloat(product.price.replace(/[^0-9.]/g, '')) : product.price),
+          image_link: product.image_link || null,
+          link: product.link || product.url || null,  // Keep for backwards compatibility
+          brand: product.brand || null,
+          condition: product.condition || null,
+          availability: product.availability || null,
+          gtin: product.gtin || null,
+          mpn: product.mpn || null,
+          product_type: product.product_type || null,
+          google_product_category: product.google_product_category || null,
+          additional_images: [],  // Empty array for the TEXT[] field
+          user_id: userId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+        
+        console.log(`Inserting batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(this.products.length/BATCH_SIZE)} (${productsToInsert.length} products)`);
+        
+        // Debug: Log first product to check structure
+        if (i === 0) {
+          console.log('First product to insert:', JSON.stringify(productsToInsert[0], null, 2));
+        }
+        
+        const { data: insertedProducts, error: productError } = await supabase
+          .from('products')
+          .upsert(productsToInsert)
+          .select();
+        
+        if (productError) {
+          console.error(`Failed to persist batch ${Math.floor(i/BATCH_SIZE) + 1}:`, productError);
+          console.error('Error details:', JSON.stringify(productError, null, 2));
+          // Continue with next batch
+        } else {
+          totalSaved += insertedProducts?.length || 0;
+          console.log(`Batch saved. Total products saved so far: ${totalSaved}`);
+        }
       }
+      
+      console.log(`Finished saving products. Total saved: ${totalSaved} out of ${this.products.length}`);
     }
     
     // Store product-category assignments
