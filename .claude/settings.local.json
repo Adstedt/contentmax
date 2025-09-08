@@ -110,7 +110,8 @@
       "Read(/C:\\Users\\audri\\Desktop\\dev\\contentmachine\\docs\\sprints\\sprint-4\\stories/**)",
       "Bash(rm:*)",
       "Bash(cmd /c \"rmdir /s /q .next\")",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

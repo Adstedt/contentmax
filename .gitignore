@@ -37,3 +37,11 @@ next-env.d.ts
 .vscode/
 .idea/
 .vercel
+
+# test files with potential secrets
+test-*.js
+verify-*.js
+check-*.js
+execute-*.js
+run-*.js
+*-test-results/
