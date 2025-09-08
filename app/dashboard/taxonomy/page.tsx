@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { Header } from '@/components/layout/Header';
-import { TaxonomyVisualization } from '@/components/taxonomy/TaxonomyVisualization';
+import { TaxonomyClient } from './TaxonomyClient';
 import { FeatureErrorBoundary } from '@/components/shared/feature-error-boundary';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
 
-// Generate demo data for testing
+// Keep demo data generator for reference but don't use directly
 function generateDemoData(nodeCount: number = 100) {
   const nodes: TaxonomyNode[] = [];
   const links: TaxonomyLink[] = [];
@@ -121,8 +121,12 @@ export default async function TaxonomyPage() {
     redirect('/auth/login');
   }
 
-  // Generate demo data
-  const demoData = generateDemoData(150);
+  // Get user's current project if exists
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
 
   return (
     <div className="flex-1 flex flex-col bg-[#000]">
@@ -133,7 +137,10 @@ export default async function TaxonomyPage() {
 
       <main className="flex-1 p-6 overflow-hidden">
         <FeatureErrorBoundary featureName="Taxonomy Visualization">
-          <TaxonomyVisualization data={demoData} />
+          <TaxonomyClient 
+            userId={user.id}
+            projectId={project?.id}
+          />
         </FeatureErrorBoundary>
       </main>
     </div>

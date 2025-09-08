@@ -1,0 +1,182 @@
+-- Add missing columns to taxonomy_nodes if they don't exist
+DO $$
+BEGIN
+  -- Add user_id if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public'
+                 AND table_name = 'taxonomy_nodes' 
+                 AND column_name = 'user_id') THEN
+    ALTER TABLE public.taxonomy_nodes ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+  END IF;
+  
+  -- Add project_id if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public'
+                 AND table_name = 'taxonomy_nodes' 
+                 AND column_name = 'project_id') THEN
+    ALTER TABLE public.taxonomy_nodes ADD COLUMN project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE;
+  END IF;
+  
+  -- Add product_count if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public'
+                 AND table_name = 'taxonomy_nodes' 
+                 AND column_name = 'product_count') THEN
+    ALTER TABLE public.taxonomy_nodes ADD COLUMN product_count INTEGER DEFAULT 0;
+  END IF;
+  
+  -- Add source if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public'
+                 AND table_name = 'taxonomy_nodes' 
+                 AND column_name = 'source') THEN
+    ALTER TABLE public.taxonomy_nodes ADD COLUMN source TEXT DEFAULT 'merchant';
+  END IF;
+  
+  -- Add updated_at if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public'
+                 AND table_name = 'taxonomy_nodes' 
+                 AND column_name = 'updated_at') THEN
+    ALTER TABLE public.taxonomy_nodes ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW());
+  END IF;
+END $$;
+
+-- Create indexes for new columns
+CREATE INDEX IF NOT EXISTS idx_taxonomy_user ON public.taxonomy_nodes(user_id);
+CREATE INDEX IF NOT EXISTS idx_taxonomy_project ON public.taxonomy_nodes(project_id);
+
+-- Now create the products table
+CREATE TABLE IF NOT EXISTS public.products (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+  
+  -- Basic product info
+  title TEXT NOT NULL,
+  description TEXT,
+  link TEXT,
+  image_link TEXT,
+  
+  -- Pricing
+  price DECIMAL(10, 2),
+  sale_price DECIMAL(10, 2),
+  currency TEXT DEFAULT 'USD',
+  
+  -- Product attributes
+  brand TEXT,
+  gtin TEXT,
+  mpn TEXT,
+  condition TEXT,
+  availability TEXT,
+  
+  -- Categories
+  product_type TEXT,
+  google_product_category TEXT,
+  
+  -- Additional data
+  metadata JSONB DEFAULT '{}',
+  
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Create indexes for products
+CREATE INDEX IF NOT EXISTS idx_products_user ON public.products(user_id);
+CREATE INDEX IF NOT EXISTS idx_products_project ON public.products(project_id);
+CREATE INDEX IF NOT EXISTS idx_products_brand ON public.products(brand);
+
+-- Create product_categories junction table
+CREATE TABLE IF NOT EXISTS public.product_categories (
+  product_id TEXT,
+  category_id TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  
+  PRIMARY KEY (product_id, category_id)
+);
+
+-- Create indexes for product_categories
+CREATE INDEX IF NOT EXISTS idx_product_cat_product ON public.product_categories(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_cat_category ON public.product_categories(category_id);
+CREATE INDEX IF NOT EXISTS idx_product_cat_user ON public.product_categories(user_id);
+
+-- Add foreign key constraints (only if they don't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                 WHERE constraint_name = 'fk_product_categories_product') THEN
+    ALTER TABLE public.product_categories 
+      ADD CONSTRAINT fk_product_categories_product 
+      FOREIGN KEY (product_id) 
+      REFERENCES public.products(id) 
+      ON DELETE CASCADE;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                 WHERE constraint_name = 'fk_product_categories_category') THEN
+    ALTER TABLE public.product_categories 
+      ADD CONSTRAINT fk_product_categories_category 
+      FOREIGN KEY (category_id) 
+      REFERENCES public.taxonomy_nodes(id) 
+      ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Enable Row Level Security
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_categories ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for products
+DROP POLICY IF EXISTS "Users can view their own products" ON public.products;
+CREATE POLICY "Users can view their own products" ON public.products
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own products" ON public.products;
+CREATE POLICY "Users can insert their own products" ON public.products
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own products" ON public.products;
+CREATE POLICY "Users can update their own products" ON public.products
+  FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own products" ON public.products;
+CREATE POLICY "Users can delete their own products" ON public.products
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies for product_categories
+DROP POLICY IF EXISTS "Users can view their own product categories" ON public.product_categories;
+CREATE POLICY "Users can view their own product categories" ON public.product_categories
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own product categories" ON public.product_categories;
+CREATE POLICY "Users can insert their own product categories" ON public.product_categories
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own product categories" ON public.product_categories;
+CREATE POLICY "Users can delete their own product categories" ON public.product_categories
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Grant permissions
+GRANT ALL ON public.products TO authenticated;
+GRANT ALL ON public.product_categories TO authenticated;
+
+-- Update RLS for taxonomy_nodes if needed
+ALTER TABLE public.taxonomy_nodes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own taxonomy nodes" ON public.taxonomy_nodes;
+CREATE POLICY "Users can view their own taxonomy nodes" ON public.taxonomy_nodes
+  FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can insert their own taxonomy nodes" ON public.taxonomy_nodes;
+CREATE POLICY "Users can insert their own taxonomy nodes" ON public.taxonomy_nodes
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can update their own taxonomy nodes" ON public.taxonomy_nodes;
+CREATE POLICY "Users can update their own taxonomy nodes" ON public.taxonomy_nodes
+  FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Users can delete their own taxonomy nodes" ON public.taxonomy_nodes;
+CREATE POLICY "Users can delete their own taxonomy nodes" ON public.taxonomy_nodes
+  FOR DELETE USING (auth.uid() = user_id OR user_id IS NULL);

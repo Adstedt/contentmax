@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "url": "https://www.kontorab.se/GoogleProductFeed/index?marketId=SWE&language=sv-SE",
+    "format": "xml",
+    "fetchedAt": "2025-09-05T18:59:18.011Z",
+    "title": "Kontorab",
+    "totalProducts": 0,
+    "testDate": "2025-09-05T18:59:18.118Z",
+    "processingTime": {
+      "fetch": "1140ms",
+      "build": "0ms",
+      "merge": "0ms",
+      "total": "1140ms"
+    }
+  },
+  "stats": {
+    "products": {
+      "total": 0,
+      "withProductType": 0,
+      "withGoogleCategory": 0,
+      "withBoth": 0,
+      "withImages": 0,
+      "withPrices": 0
+    },
+    "taxonomy": {
+      "totalNodes": 0,
+      "mergedNodes": 0,
+      "maxDepth": null,
+      "avgDepth": null,
+      "rootCategories": 0,
+      "categoriesWithProducts": 0
+    }
+  },
+  "rootCategories": [],
+  "sampleProducts": [],
+  "merges": []
+}

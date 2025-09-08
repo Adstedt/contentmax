@@ -72,8 +72,23 @@ export function EnhancedTaxonomyVisualization({
     return <TaxonomyEmptyState onGetStarted={handleGetStarted} />;
   }
 
-  // Determine if a node is a product (depth 3+) or category
-  const isProduct = (node: TaxonomyNode) => (node.depth || 0) >= 3;
+  // Determine if a node is a product or category
+  // Products have isProduct flag or are actual product nodes, not just deep categories
+  const isProduct = (node: TaxonomyNode) => {
+    // Check if this is actually a product node (has product-specific fields)
+    // or if it's marked as a product
+    return (node as any).isProduct === true || 
+           (node as any).price !== undefined ||
+           (node as any).brand !== undefined;
+  };
+  
+  // Check if a category node is a leaf (has no children)
+  const isLeafCategory = (node: TaxonomyNode) => {
+    const children = data.nodes.filter((n) =>
+      data.links.some((l) => l.source === node.id && l.target === n.id)
+    );
+    return children.length === 0;
+  };
 
   // Calculate metrics for categories
   const calculateCategoryMetrics = (node: TaxonomyNode) => {

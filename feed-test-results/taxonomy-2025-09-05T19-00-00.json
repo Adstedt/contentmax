@@ -1,0 +1,305 @@
+{
+  "metadata": {
+    "url": "https://www.kontorab.se/GoogleProductFeed/index?marketId=SWE&language=sv-SE",
+    "format": "xml",
+    "fetchedAt": "2025-09-05T18:59:59.281Z",
+    "title": "Kontorab",
+    "totalProducts": 14232,
+    "testDate": "2025-09-05T19:00:00.458Z",
+    "processingTime": {
+      "fetch": "1720ms",
+      "build": "72ms",
+      "merge": "398ms",
+      "total": "2190ms"
+    }
+  },
+  "stats": {
+    "products": {
+      "total": 14232,
+      "withProductType": 14232,
+      "withGoogleCategory": 0,
+      "withBoth": 0,
+      "withImages": 14232,
+      "withPrices": 14232
+    },
+    "taxonomy": {
+      "totalNodes": 864,
+      "mergedNodes": 863,
+      "maxDepth": 6,
+      "avgDepth": 2.9,
+      "rootCategories": 15,
+      "categoriesWithProducts": 864
+    }
+  },
+  "rootCategories": [
+    {
+      "id": "toner-inkjet",
+      "title": "Toner & Inkjet",
+      "path": "Toner & Inkjet",
+      "product_count": 3711,
+      "children_count": 3
+    },
+    {
+      "id": "kontorsmaterial",
+      "title": "Kontorsmaterial",
+      "path": "Kontorsmaterial",
+      "product_count": 3252,
+      "children_count": 21
+    },
+    {
+      "id": "kl-der-skydd",
+      "title": "KläDer & Skydd",
+      "path": "Kläder & Skydd",
+      "product_count": 1894,
+      "children_count": 13
+    },
+    {
+      "id": "st-d-kemartiklar",
+      "title": "StäD & Kemartiklar",
+      "path": "Städ & Kemartiklar",
+      "product_count": 1268,
+      "children_count": 22
+    },
+    {
+      "id": "elektronik-it",
+      "title": "Elektronik & IT",
+      "path": "Elektronik & IT",
+      "product_count": 731,
+      "children_count": 11
+    },
+    {
+      "id": "fritids-presentprodukter",
+      "title": "Fritids & Presentprodukter",
+      "path": "Fritids & Presentprodukter",
+      "product_count": 666,
+      "children_count": 13
+    },
+    {
+      "id": "emballage-post",
+      "title": "Emballage & Post",
+      "path": "Emballage & Post",
+      "product_count": 574,
+      "children_count": 2
+    },
+    {
+      "id": "m-bler-ergonomi",
+      "title": "MöBler & Ergonomi",
+      "path": "Möbler & Ergonomi",
+      "product_count": 544,
+      "children_count": 16
+    },
+    {
+      "id": "bord-servering",
+      "title": "Bord & Servering",
+      "path": "Bord & Servering",
+      "product_count": 435,
+      "children_count": 14
+    },
+    {
+      "id": "maskiner-tillbeh-r",
+      "title": "Maskiner & TillbehöR",
+      "path": "Maskiner & Tillbehör",
+      "product_count": 400,
+      "children_count": 14
+    },
+    {
+      "id": "livsmedel",
+      "title": "Livsmedel",
+      "path": "Livsmedel",
+      "product_count": 276,
+      "children_count": 7
+    },
+    {
+      "id": "outlet",
+      "title": "Outlet",
+      "path": "Outlet",
+      "product_count": 248,
+      "children_count": 8
+    },
+    {
+      "id": "hygien-torkpapper",
+      "title": "Hygien & Torkpapper",
+      "path": "Hygien & Torkpapper",
+      "product_count": 192,
+      "children_count": 10
+    },
+    {
+      "id": "pappershandelssortiment",
+      "title": "Pappershandelssortiment",
+      "path": "Pappershandelssortiment",
+      "product_count": 28,
+      "children_count": 2
+    },
+    {
+      "id": "tryck-profil",
+      "title": "Tryck & Profil",
+      "path": "Tryck & Profil",
+      "product_count": 13,
+      "children_count": 2
+    }
+  ],
+  "sampleProducts": [
+    {
+      "id": "0030040",
+      "title": "Sötningsmedel original 24x400st.",
+      "description": "Klassiskt sötningsmedel i portionsförpackningar. Perfekt som sockerersättning i kaffe och te.",
+      "link": "https://www.kontorab.se/livsmedel/kakor/smakakor/productpkab-0030040",
+      "price": {
+        "value": 824.32,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/kab-0030040.jpeg?ref=52EAED0A51&amp;w=320",
+      "product_type": "Livsmedel > Kakor > Småkakor",
+      "availability": "in stock",
+      "brand": "Hermesetas",
+      "gtin": "7610211070100",
+      "condition": "new"
+    },
+    {
+      "id": "1-9709",
+      "title": "Godis Toblerone cylinder 904g",
+      "description": "Godis Toblerone Cylinder 904g är en älskad chokladklassiker med sin karakteristiska trekantiga form och läckra smak av honungsmandelnougat.  Med en riklig mängd erbjuder den en tillfredsställande upplevelse för chokladentusiaster.\r\n\r\nDess unika design gör den perfekt för olika tillfällen och firanden, vilket gör den idealisk att ge bort som present eller för att dela med andra.",
+      "link": "https://www.kontorab.se/livsmedel/godis--choklad/choklad/productpkab-1-9709",
+      "price": {
+        "value": 514.08,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/8552238.jpg?ref=A485D974DC&amp;w=320",
+      "product_type": "Livsmedel > Godis & Choklad > Choklad",
+      "availability": "in stock",
+      "brand": "Toblerone",
+      "gtin": "7622202048890",
+      "condition": "new"
+    },
+    {
+      "id": "10000",
+      "title": "Glasskål 12 cm 0,38L",
+      "description": "Denna tåliga och praktiska glasskål är tillverkad av härdat glas och har en kapacitet på 0,38 liter.  Skålens stapelbara design gör det enkelt att förvara den när den inte används.\r\n\r\nPerfekt för olika matservings- och förvaringsbehov.  En smidig lösning i köket där funktionalitet möter stil.",
+      "link": "https://www.kontorab.se/bord--servering/dukning--servering/glas/productpkab-10000",
+      "price": {
+        "value": 48.75,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/",
+      "product_type": "Bord & Servering > Dukning & Servering > Glas",
+      "availability": "out of stock",
+      "brand": "Non-branded",
+      "gtin": "10026102100001",
+      "condition": "new"
+    },
+    {
+      "id": "1000005",
+      "title": "Täckfolie LD 2 x 100m 0,035mm transparent",
+      "description": "Av ofärgad återvunnen polyeten med hög styrka. Används bl.a. för täcknings- och byggändamål, fuktskydd på pallar samt som inslagningsfilm.",
+      "link": "https://www.kontorab.se/emballage--post/emballage/strackfilm-och-folie/productpkab-1000005",
+      "price": {
+        "value": 873.75,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/1000005.jpg?ref=4C9AAB3098&amp;w=320",
+      "product_type": "Emballage & Post > Emballage > Sträckfilm och folie",
+      "availability": "out of stock",
+      "brand": "Non-branded",
+      "gtin": "7391850100051",
+      "condition": "new"
+    },
+    {
+      "id": "1000009",
+      "title": "Polyetenfolie LD 2 x 50m 0,015mm transparent",
+      "description": "Av ofärgad återvunnen polyeten med hög styrka. Används bl.a. för täcknings- och byggändamål, fuktskydd på pallar samt som inslagningsfilm.",
+      "link": "https://www.kontorab.se/emballage--post/emballage/strackfilm-och-folie/productpkab-1000009",
+      "price": {
+        "value": 1511.25,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/1000005.jpg?ref=4C9AAB3098&amp;w=320",
+      "product_type": "Emballage & Post > Emballage > Sträckfilm och folie",
+      "availability": "in stock",
+      "brand": "Non-branded",
+      "gtin": "7391850100099",
+      "condition": "new"
+    },
+    {
+      "id": "1000057",
+      "title": "Gott & Blandat 160g",
+      "description": "En klassisk mix av söta och salta godisbitar med en härlig variation av smaker och konsistenser.",
+      "link": "https://www.kontorab.se/livsmedel/godis--choklad/godis/productpkab-1000057",
+      "price": {
+        "value": 20.16,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/kab-1000057.jpeg?ref=C0ABC1022E&amp;w=320",
+      "product_type": "Livsmedel > Godis & Choklad > Godis",
+      "availability": "in stock",
+      "brand": "Malaco",
+      "condition": "new"
+    },
+    {
+      "id": "10001798",
+      "title": "Snacks Chips Estrella Saltade 27x 40g/krt",
+      "link": "https://www.kontorab.se/livsmedel/godis--choklad/chips-notter--snacks/productpkab-10001798",
+      "price": {
+        "value": 265.44,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/kab-10001798.jpeg?ref=1E8DBB756C&amp;w=320",
+      "product_type": "Livsmedel > Godis & Choklad > Chips, Nötter & Snacks",
+      "availability": "out of stock",
+      "brand": "Estrella",
+      "condition": "new"
+    },
+    {
+      "id": "10001894",
+      "title": "Sourcream & onion chips 27x40g",
+      "description": "Sourcream &amp; onion chips i portionsstorlek. Perfekt för den som älskar krämig och lökig smak.",
+      "link": "https://www.kontorab.se/livsmedel/godis--choklad/chips-notter--snacks/productpkab-10001894",
+      "price": {
+        "value": 265.44,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/kab-10001894.jpeg?ref=0757022282&amp;w=320",
+      "product_type": "Livsmedel > Godis & Choklad > Chips, Nötter & Snacks",
+      "availability": "in stock",
+      "brand": "Estrella",
+      "gtin": "7310531027906",
+      "condition": "new"
+    },
+    {
+      "id": "10002283",
+      "title": "Goldbears 80g",
+      "description": "Klassiska Haribo Goldbears. Mjuka och fruktiga gelégodisar i flera smaker.",
+      "link": "https://www.kontorab.se/livsmedel/godis--choklad/godis/productpkab-10002283",
+      "price": {
+        "value": 11.2,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/kab-10002283.jpeg?ref=6F421D7F4E&amp;w=320",
+      "product_type": "Livsmedel > Godis & Choklad > Godis",
+      "availability": "in stock",
+      "brand": "HARIBO",
+      "gtin": "5996379193748",
+      "condition": "new"
+    },
+    {
+      "id": "1000301",
+      "title": "Stämpel UniStamp 37x11mm svart",
+      "description": "Stämpel UniStamp har designats för att möta alla slags behov för stämpling.  Denna svarta stämpel erbjuder personlig text i olika färger, och är lämplig för olika stämplingsbehov.\r\n\r\nVälj mellan en logotypstämpel eller en textendast-stämpel, båda alternativen är möjliga.  Ytterligare flexibiliteten finns med möjligheten att lägga till text på upp till fem rader, vilket gör den idealisk för att införliva mer komplicerade meddelanden eller detaljer.\r\n\r\nEnkel men funktionell, Stämpel UniStamp 37x11mm svart är din tillförlitliga partner i alla dina stämplingsbehov.",
+      "link": "https://www.kontorab.se/kontorsmaterial/markning/stamplar/productpkab-1000301",
+      "price": {
+        "value": 480,
+        "currency": "USD"
+      },
+      "image_link": "https://www.kontorab.se/globalassets/productimages/1000301.jpg?ref=8E29B99B4C&amp;w=320",
+      "product_type": "Kontorsmaterial > Märkning > Stämplar",
+      "availability": "out of stock",
+      "brand": "Unistamp",
+      "condition": "new"
+    }
+  ],
+  "merges": [
+    {
+      "from": "Toalettpapper, StöRre Rulle",
+      "to": "Toalettpapper, Mindre Rulle"
+    }
+  ]
+}
