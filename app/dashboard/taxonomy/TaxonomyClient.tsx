@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TaxonomyVisualization } from '@/components/taxonomy/TaxonomyVisualization';
 import { DataImportModal } from '@/components/onboarding/DataImportModal';
+import { ImportWizardV2 } from '@/components/import/ImportWizardV2';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, RefreshCw, Database } from 'lucide-react';
@@ -16,7 +17,10 @@ interface TaxonomyClientProps {
 
 export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClientProps) {
   const [showImportModal, setShowImportModal] = useState(false);
-  const [taxonomyData, setTaxonomyData] = useState<{ nodes: TaxonomyNode[], links: TaxonomyLink[] } | null>(null);
+  const [taxonomyData, setTaxonomyData] = useState<{
+    nodes: TaxonomyNode[];
+    links: TaxonomyLink[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
 
@@ -29,7 +33,7 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
     try {
       // Check if user has taxonomy data in database
       const response = await fetch(`/api/taxonomy/data?projectId=${projectId || ''}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.nodes && data.nodes.length > 0) {
@@ -58,7 +62,7 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
   const handleImportSuccess = async (importData: any) => {
     // Transform imported data to visualization format
     const { taxonomy } = importData;
-    
+
     // Reload data from database
     await loadTaxonomyData();
     setShowImportModal(false);
@@ -68,7 +72,7 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
     // Use the existing demo data generator for testing
     const nodes: TaxonomyNode[] = [];
     const links: TaxonomyLink[] = [];
-    
+
     // Create root node
     nodes.push({
       id: 'root',
@@ -81,7 +85,7 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
       revenue: 50000,
       status: 'optimized',
     });
-    
+
     // Create category nodes
     const categories = ['Electronics', 'Clothing', 'Books', 'Sports', 'Home'];
     categories.forEach((category, i) => {
@@ -95,16 +99,18 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
         skuCount: Math.floor(Math.random() * 50) + 10,
         traffic: Math.floor(Math.random() * 5000) + 1000,
         revenue: Math.floor(Math.random() * 20000) + 5000,
-        status: ['optimized', 'outdated', 'missing', 'noContent'][Math.floor(Math.random() * 4)] as any,
+        status: ['optimized', 'outdated', 'missing', 'noContent'][
+          Math.floor(Math.random() * 4)
+        ] as any,
       });
-      
+
       links.push({
         source: 'root',
         target: categoryId,
         strength: 0.8,
       });
     });
-    
+
     return { nodes, links };
   };
 
@@ -127,22 +133,28 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
           <div className="flex gap-2">
             <Button
               onClick={() => setShowImportModal(true)}
-              variant={hasData ? "outline" : "default"}
+              variant={hasData ? 'outline' : 'default'}
+              className={
+                hasData
+                  ? 'bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]'
+                  : 'bg-[#10a37f] hover:bg-[#0e8a6b] text-white'
+              }
             >
               <Upload className="mr-2 h-4 w-4" />
               {hasData ? 'Import New Data' : 'Import Products'}
             </Button>
-            
+
             {hasData && (
               <Button
                 onClick={loadTaxonomyData}
                 variant="outline"
+                className="bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             )}
-            
+
             {!hasData && (
               <Button
                 onClick={() => {
@@ -151,13 +163,14 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
                   setHasData(true);
                 }}
                 variant="ghost"
+                className="hover:bg-[#1a1a1a] text-[#999]"
               >
                 <Database className="mr-2 h-4 w-4" />
                 Use Demo Data
               </Button>
             )}
           </div>
-          
+
           {hasData && taxonomyData && (
             <div className="text-sm text-muted-foreground">
               {taxonomyData.nodes.length} categories • {taxonomyData.links.length} connections
@@ -169,8 +182,8 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
         {!hasData && !taxonomyData && (
           <Alert>
             <AlertDescription>
-              <strong>Welcome!</strong> Import your product catalog to visualize your taxonomy. 
-              You can use a product feed URL, upload a file, or connect to Google Merchant Center.
+              <strong>Welcome!</strong> Import your product catalog to visualize your taxonomy. You
+              can use a product feed URL, upload a file, or connect to Google Merchant Center.
             </AlertDescription>
           </Alert>
         )}
@@ -184,13 +197,22 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
         )}
       </div>
 
-      {/* Import Modal */}
-      <DataImportModal
-        open={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={handleImportSuccess}
-        projectId={projectId}
-      />
+      {/* Import Modal - Using new ImportWizardV2 */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-4 md:inset-8 lg:inset-12 bg-[#0a0a0a] rounded-lg shadow-2xl overflow-hidden">
+            <ImportWizardV2
+              onClose={() => setShowImportModal(false)}
+              onComplete={(data) => {
+                console.log('Import complete:', data);
+                handleImportSuccess(data);
+                setShowImportModal(false);
+              }}
+              projectId={projectId}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

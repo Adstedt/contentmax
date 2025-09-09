@@ -116,7 +116,8 @@
       "Bash(for:*)",
       "Bash(grep:*)",
       "Bash(done)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Read(//c/Users/audri/Desktop/dev/screenshots/**)"
     ],
     "deny": [],
     "ask": []

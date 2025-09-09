@@ -1,13 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Link, Upload, ShoppingBag, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
+import {
+  Loader2,
+  Link,
+  Upload,
+  ShoppingBag,
+  AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface DataImportModalProps {
@@ -22,6 +36,8 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
   const [feedUrl, setFeedUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [importStats, setImportStats] = useState<any>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importMessage, setImportMessage] = useState('');
   const { toast } = useToast();
 
   const handleUrlImport = async () => {
@@ -32,8 +48,13 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
 
     setImporting(true);
     setError(null);
+    setImportProgress(10);
+    setImportMessage('Connecting to feed URL...');
 
     try {
+      setImportProgress(30);
+      setImportMessage('Fetching product data...');
+
       const response = await fetch('/api/taxonomy/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,13 +69,22 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
         }),
       });
 
+      setImportProgress(60);
+      setImportMessage('Processing products and building taxonomy...');
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Import failed');
       }
 
+      setImportProgress(90);
+      setImportMessage('Finalizing import...');
+
       setImportStats(data);
+      setImportProgress(100);
+      setImportMessage('Import complete!');
+
       toast({
         title: 'Import Successful',
         description: `Imported ${data.taxonomy.stats.totalProducts} products into ${data.taxonomy.nodes} categories`,
@@ -74,6 +104,8 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
       });
     } finally {
       setImporting(false);
+      setImportProgress(0);
+      setImportMessage('');
     }
   };
 
@@ -135,7 +167,7 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-[#0a0a0a] border-[#2a2a2a] text-white">
         <DialogHeader>
           <DialogTitle>Import Your Product Data</DialogTitle>
           <DialogDescription>
@@ -151,7 +183,7 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
                 Successfully imported {importStats.taxonomy.stats.totalProducts} products!
               </AlertDescription>
             </Alert>
-            
+
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Categories Created</p>
@@ -175,7 +207,7 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
           </div>
         ) : (
           <Tabs defaultValue="url" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 bg-[#1a1a1a] border-[#2a2a2a]">
               <TabsTrigger value="url">Feed URL</TabsTrigger>
               <TabsTrigger value="file">Upload File</TabsTrigger>
               <TabsTrigger value="google">Google Merchant</TabsTrigger>
@@ -191,6 +223,7 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
                   value={feedUrl}
                   onChange={(e) => setFeedUrl(e.target.value)}
                   disabled={importing}
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#666]"
                 />
                 <p className="text-xs text-muted-foreground">
                   Enter your Google Shopping feed, product XML, JSON, or CSV feed URL
@@ -214,10 +247,10 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
                 </Alert>
               )}
 
-              <Button 
-                onClick={handleUrlImport} 
+              <Button
+                onClick={handleUrlImport}
                 disabled={importing || !feedUrl}
-                className="w-full"
+                className="w-full bg-[#10a37f] hover:bg-[#0e8a6b] text-white disabled:opacity-50"
               >
                 {importing ? (
                   <>
@@ -237,8 +270,12 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs"
-                  onClick={() => setFeedUrl('https://www.kontorab.se/GoogleProductFeed/index?marketId=SWE&language=sv-SE')}
+                  className="text-xs bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border-[#2a2a2a]"
+                  onClick={() =>
+                    setFeedUrl(
+                      'https://www.kontorab.se/GoogleProductFeed/index?marketId=SWE&language=sv-SE'
+                    )
+                  }
                 >
                   <ExternalLink className="mr-1 h-3 w-3" />
                   Swedish Office Supplies (14k products)
@@ -255,6 +292,7 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
                   accept=".json,.xml,.csv"
                   onChange={handleFileUpload}
                   disabled={importing}
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white file:bg-[#2a2a2a] file:text-white file:border-0"
                 />
                 <p className="text-xs text-muted-foreground">
                   Upload a JSON, XML, or CSV file containing your products
@@ -273,10 +311,11 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
               <Alert>
                 <ShoppingBag className="h-4 w-4" />
                 <AlertDescription>
-                  Google Merchant Center integration coming soon! For now, use your Google Shopping feed URL in the Feed URL tab.
+                  Google Merchant Center integration coming soon! For now, use your Google Shopping
+                  feed URL in the Feed URL tab.
                 </AlertDescription>
               </Alert>
-              
+
               <div className="space-y-2">
                 <p className="text-sm font-medium">How to get your Google feed URL:</p>
                 <ol className="text-xs text-muted-foreground space-y-1">
@@ -292,11 +331,26 @@ export function DataImportModal({ open, onClose, onSuccess, projectId }: DataImp
         )}
 
         {importing && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
-            <div className="text-center space-y-2">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-              <p className="text-sm">Importing your products...</p>
-              <p className="text-xs text-muted-foreground">This may take a few moments</p>
+          <div className="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur-sm flex items-center justify-center rounded-lg">
+            <div className="text-center space-y-4 p-8">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#10a37f]" />
+              <div className="space-y-2">
+                <p className="text-lg font-semibold text-white">Importing your products...</p>
+                <p className="text-sm text-[#999]">
+                  {importMessage || 'This may take a few moments'}
+                </p>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-64 mx-auto">
+                <div className="h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#10a37f] to-[#0e8a6b] transition-all duration-500 ease-out"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-[#666] mt-2">{importProgress}% complete</p>
+              </div>
             </div>
           </div>
         )}

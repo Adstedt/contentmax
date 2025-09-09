@@ -17,6 +17,7 @@ Transform ContentMax from a demo visualization to a production-ready system by i
 ## Key Strategic Change
 
 **Primary Data Source:** Google Merchant Product Feed (not sitemap)
+
 - Product feeds provide structured taxonomy via `product_type` and `google_product_category` fields
 - Rich product data available immediately (images, prices, attributes)
 - URLs in feed reveal site structure without ambiguity
@@ -43,6 +44,7 @@ Transform ContentMax from a demo visualization to a production-ready system by i
 ## Technical Scope
 
 ### In Scope
+
 - Google Merchant Center OAuth and feed processing (PRIMARY)
 - Taxonomy extraction from product feed categories
 - Product data model with full attributes
@@ -53,6 +55,7 @@ Transform ContentMax from a demo visualization to a production-ready system by i
 - Build error fixes and deployment readiness
 
 ### Out of Scope
+
 - Shopify native integration (Sprint 7)
 - Real-time feed updates (future enhancement)
 - Multi-merchant support (future feature)
@@ -60,20 +63,22 @@ Transform ContentMax from a demo visualization to a production-ready system by i
 
 ## Risk Mitigation
 
-| Risk | Mitigation Strategy |
-|------|-------------------|
-| Google OAuth complexity | Detailed documentation, clear error messages |
-| Large feed processing | Implement pagination and batch processing |
+| Risk                       | Mitigation Strategy                              |
+| -------------------------- | ------------------------------------------------ |
+| Google OAuth complexity    | Detailed documentation, clear error messages     |
+| Large feed processing      | Implement pagination and batch processing        |
 | No Google Merchant account | Sitemap fallback ensures universal compatibility |
-| API rate limits | Implement caching and throttling |
+| API rate limits            | Implement caching and throttling                 |
 
 ## REVISED Stories Breakdown
 
 ### Phase 0: Foundation (UNCHANGED - Critical Blockers)
+
 - **STORY-001**: Fix Build Blockers and TypeScript Errors (2 hours)
 - **STORY-002**: Configure Google OAuth Credentials (2 hours)
 
 ### Phase 1: Google Merchant Integration (PRIMARY FLOW)
+
 - **STORY-006**: Implement Google Merchant OAuth Flow (3 hours)
 - **STORY-007**: Parse Google Product Feed (4 hours)
 - **STORY-008**: Store Products with Full Attributes (3 hours)
@@ -82,15 +87,18 @@ Transform ContentMax from a demo visualization to a production-ready system by i
 - **STORY-009**: Display Product Cards with Real Data (3 hours)
 
 ### Phase 2: Metrics Integration (UNCHANGED)
+
 - **STORY-010**: Integrate Google Search Console Metrics (3 hours)
 - **STORY-011**: Integrate Google Analytics 4 Data (3 hours)
 - **STORY-012**: Calculate Opportunity Scores (4 hours)
 
 ### Phase 3: Fallback & Alternative Ingestion
+
 - **STORY-003** (REDUCED PRIORITY): Implement Sitemap Parser as Fallback (4 hours)
 - **NEW-STORY-016**: Smart Platform Detection & Onboarding Flow (2 hours)
 
 ### Phase 4: Production Readiness (UNCHANGED)
+
 - **STORY-013**: Add Error Recovery and Monitoring (3 hours)
 - **STORY-014**: Implement Integration Tests (4 hours)
 - **STORY-015**: Production Deployment Validation (3 hours)
@@ -117,16 +125,20 @@ Day 5: Metrics & Polish
 ├── STORY-011: GA4 ✅
 └── STORY-012: Scoring ✅
 
+Sprint 6 Extension: World-Class UX
+└── STORY-013: World-class import UX 🆕
+
 Sprint 7: Robustness & Scaling
 ├── STORY-003: Sitemap fallback
-├── STORY-013: Error recovery
-├── STORY-014: Integration tests
-└── STORY-015: Production validation
+├── STORY-014: Error recovery
+├── STORY-015: Integration tests
+└── STORY-016: Production validation
 ```
 
 ## Onboarding Flow Design
 
 ### Primary Path (Google Merchant)
+
 1. User enters website URL
 2. System detects if Google Merchant is available
 3. User authenticates with Google OAuth
@@ -135,6 +147,7 @@ Sprint 7: Robustness & Scaling
 6. Full visualization with products ready
 
 ### Fallback Path (No Merchant Feed)
+
 1. User enters website URL
 2. System detects no merchant feed available
 3. Prompt: "Import via sitemap for basic structure"
@@ -144,12 +157,12 @@ Sprint 7: Robustness & Scaling
 
 ## Data Quality Tiers
 
-| Source | Data Quality | Features Available |
-|--------|-------------|-------------------|
-| Google Merchant | ⭐⭐⭐⭐⭐ Excellent | Full products, images, prices, categories, attributes |
-| Shopify API (future) | ⭐⭐⭐⭐⭐ Excellent | Native integration, real-time updates |
-| Sitemap + Public APIs | ⭐⭐ Basic | URL structure, basic categories, limited enrichment |
-| Sitemap Only | ⭐ Minimal | URL patterns, inferred structure |
+| Source                | Data Quality         | Features Available                                    |
+| --------------------- | -------------------- | ----------------------------------------------------- |
+| Google Merchant       | ⭐⭐⭐⭐⭐ Excellent | Full products, images, prices, categories, attributes |
+| Shopify API (future)  | ⭐⭐⭐⭐⭐ Excellent | Native integration, real-time updates                 |
+| Sitemap + Public APIs | ⭐⭐ Basic           | URL structure, basic categories, limited enrichment   |
+| Sitemap Only          | ⭐ Minimal           | URL patterns, inferred structure                      |
 
 ## Definition of Done
 
@@ -180,6 +193,7 @@ Sprint 7: Robustness & Scaling
 - Ensure OAuth flow is smooth and well-documented
 
 ---
+
 **Created:** 2025-01-09  
 **Updated:** 2025-01-09 (v2 - Product Feed Prioritization)  
 **Author:** Sarah (Product Owner)  

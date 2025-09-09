@@ -25,7 +25,7 @@ const navigation = [
   { name: 'Database', href: '/database', icon: Database },
 ];
 
-const bottomNavigation = [{ name: 'Settings', href: '/settings', icon: Settings }];
+const bottomNavigation = [{ name: 'Settings', href: '/dashboard/settings', icon: Settings }];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -105,17 +105,21 @@ export function Sidebar() {
         <div className="border-t border-[#1a1a1a] px-2 py-3">
           {bottomNavigation.map((item) => {
             const Icon = item.icon;
-            const isComingSoon = true;
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 
             return (
               <Link
                 key={item.name}
-                href="#"
-                onClick={(e) => e.preventDefault()}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`
                   flex items-center px-3 py-2 text-sm rounded-md
                   transition-all duration-150
-                  ${isComingSoon ? 'text-[#666] cursor-not-allowed' : 'text-[#999] hover:text-white hover:bg-[#1a1a1a]'}
+                  ${
+                    isActive
+                      ? 'bg-[#1a1a1a] text-white'
+                      : 'text-[#999] hover:text-white hover:bg-[#1a1a1a]'
+                  }
                 `}
               >
                 <Icon className="mr-3 h-4 w-4" />
