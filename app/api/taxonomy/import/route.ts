@@ -3,6 +3,7 @@ import { FeedTaxonomyBuilder } from '@/lib/taxonomy/feed-taxonomy-builder';
 import { CategoryMerger } from '@/lib/taxonomy/category-merger';
 import { FeedFetcher } from '@/lib/taxonomy/feed-fetcher';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { MetaTagFetcher } from '@/lib/services/meta-tag-fetcher';
 import { z } from 'zod';
 
 // Request validation schemas
@@ -14,6 +15,7 @@ const ImportFromUrlSchema = z.object({
     mergeSimilar: z.boolean().default(true),
     similarityThreshold: z.number().min(0).max(1).default(0.85),
     persistToDatabase: z.boolean().default(true),
+    fetchMetaTags: z.boolean().default(false),
   }).optional(),
 });
 
@@ -27,12 +29,14 @@ const ImportFromProductsSchema = z.object({
     product_type: z.string().optional(),
     google_product_category: z.string().optional(),
     url: z.string().optional(),
+    link: z.string().optional(),
   })).min(1),
   projectId: z.string().optional(),
   options: z.object({
     mergeSimilar: z.boolean().default(true),
     similarityThreshold: z.number().min(0).max(1).default(0.85),
     persistToDatabase: z.boolean().default(true),
+    fetchMetaTags: z.boolean().default(false),
   }).optional(),
 });
 
@@ -132,7 +136,35 @@ export async function POST(request: NextRequest) {
         depth: node.depth,
         product_count: node.product_count
       }));
-    
+
+    // Optional: Fetch meta tags for products and nodes
+    let metaFetchResults = null;
+    if (validated.options?.fetchMetaTags && validated.options?.persistToDatabase !== false) {
+      console.log('Triggering meta tag fetching in background...');
+
+      // Start meta tag fetching in background (non-blocking)
+      const metaFetcher = new MetaTagFetcher();
+
+      // Get all node IDs and product IDs that were just created
+      const nodeIds = Array.from(finalNodes.keys());
+
+      // Trigger fetching but don't wait for completion
+      Promise.all([
+        metaFetcher.updateTaxonomyMetaTags(nodeIds.slice(0, 50)), // Limit to first 50 nodes
+        // Products meta tags can be fetched separately if needed
+      ]).then(() => {
+        console.log('Meta tag fetching completed in background');
+      }).catch(error => {
+        console.error('Meta tag fetching failed:', error);
+      });
+
+      metaFetchResults = {
+        triggered: true,
+        message: 'Meta tag fetching started in background. This may take a few minutes.',
+        nodeCount: Math.min(nodeIds.length, 50),
+      };
+    }
+
     // Prepare response
     const response = {
       success: true,
@@ -145,9 +177,10 @@ export async function POST(request: NextRequest) {
         rootCategories: hierarchy.slice(0, 5), // Top 5 root categories
         sampleHierarchy: createSampleHierarchy(hierarchy[0]), // First root with children
       },
+      metaFetchResults,
       message: `Successfully built taxonomy with ${finalNodes.size} categories from ${products.length} products`,
     };
-    
+
     return NextResponse.json(response);
     
   } catch (error) {

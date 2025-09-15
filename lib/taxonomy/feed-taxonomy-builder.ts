@@ -12,6 +12,9 @@ export interface TaxonomyNode {
   id: string;
   title: string;
   path: string;
+  url?: string;
+  meta_title?: string;
+  meta_description?: string;
   depth: number;
   parent_id?: string;
   product_count: number;
@@ -20,6 +23,7 @@ export interface TaxonomyNode {
     google_category?: string;
     merchant_category?: string;
     created_from: 'feed' | 'sitemap';
+    base_url?: string;
   };
 }
 
@@ -27,37 +31,58 @@ export class FeedTaxonomyBuilder {
   private nodes: Map<string, TaxonomyNode> = new Map();
   private productAssignments: Map<string, Set<string>> = new Map();
   private products: any[] = [];
-  
+  private baseUrl: string = '';
+
   async buildFromProductFeed(products: any[], options?: { skipPersist?: boolean; userId?: string; projectId?: string }) {
     console.log(`Building taxonomy from ${products.length} products`);
     console.log('First product received:', products[0]);
     console.log('Options:', options);
-    
+
     // Store products for later persistence
     this.products = products;
-    
+
+    // Extract base URL from product links
+    this.extractBaseUrl(products);
+
     // Step 1: Extract all unique category paths
     const categoryPaths = this.extractCategoryPaths(products);
-    
+
     // Step 2: Build hierarchical structure
     for (const path of categoryPaths) {
       this.createNodesFromPath(path);
     }
-    
+
     // Step 3: Assign products to categories
     for (const product of products) {
       this.assignProductToCategory(product);
     }
-    
+
     // Step 4: Calculate product counts
     this.calculateProductCounts();
-    
+
     // Step 5: Store in database (skip in tests)
     if (!options?.skipPersist) {
       return await this.persistToDatabase(options?.userId, options?.projectId);
     }
-    
+
     return Array.from(this.nodes.values());
+  }
+
+  private extractBaseUrl(products: any[]): void {
+    // Find first product with a valid URL to extract base domain
+    for (const product of products) {
+      const url = product.link || product.url;
+      if (url) {
+        try {
+          const urlObj = new URL(url);
+          this.baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+          console.log('Extracted base URL:', this.baseUrl);
+          break;
+        } catch (e) {
+          // Invalid URL, continue
+        }
+      }
+    }
   }
   
   private extractCategoryPaths(products: any[]): Set<string> {
@@ -83,7 +108,7 @@ export class FeedTaxonomyBuilder {
   private normalizePathString(pathString: string): string {
     // Handle different delimiters: >, /, |
     return pathString
-      .replace(/\s*[>\/|]\s*/g, ' > ')
+      .replace(/\s*[>/|]\s*/g, ' > ')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -92,13 +117,13 @@ export class FeedTaxonomyBuilder {
     const segments = pathString.split(' > ').filter(Boolean);
     let currentPath = '';
     let parentId: string | undefined;
-    
+
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i].trim();
       currentPath = currentPath ? `${currentPath}/${segment}` : segment;
-      
+
       const nodeId = this.generateNodeId(currentPath);
-      
+
       if (!this.nodes.has(nodeId)) {
         const node: TaxonomyNode = {
           id: nodeId,
@@ -110,13 +135,14 @@ export class FeedTaxonomyBuilder {
           source: 'merchant',
           metadata: {
             merchant_category: pathString,
-            created_from: 'feed'
+            created_from: 'feed',
+            base_url: this.baseUrl
           }
         };
-        
+
         this.nodes.set(nodeId, node);
       }
-      
+
       parentId = nodeId;
     }
   }
@@ -191,7 +217,7 @@ export class FeedTaxonomyBuilder {
       .map(word => {
         if (word.length === 0) return word;
         // Check if word contains non-ASCII characters (like Swedish å, ä, ö)
-        if (/[^\u0000-\u007F]/.test(word)) {
+        if (/[^\u0020-\u007F]/.test(word)) {
           // For words with special characters, only capitalize first letter
           return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
         } else {
@@ -202,6 +228,8 @@ export class FeedTaxonomyBuilder {
       .join(' ')
       .trim();
   }
+
+  // Removed URL generation methods - URLs should be discovered from actual site or provided in feed
   
   private async persistToDatabase(userId?: string, projectId?: string) {
     const supabase = await createServerSupabaseClient();
@@ -217,6 +245,9 @@ export class FeedTaxonomyBuilder {
         id: node.id,
         title: node.title,
         path: node.path,
+        url: node.url || null,
+        meta_title: node.meta_title || null,
+        meta_description: node.meta_description || null,
         depth: node.depth,
         parent_id: node.parent_id,
         product_count: node.product_count,
@@ -259,6 +290,9 @@ export class FeedTaxonomyBuilder {
           product_type: product.product_type || null,
           google_product_category: product.google_product_category || null,
           additional_images: [],  // Empty array for the TEXT[] field
+          // Extract meta fields if available
+          meta_title: product.meta_title || product.seo_title || null,
+          meta_description: product.meta_description || product.seo_description || null,
           user_id: userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
