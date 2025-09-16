@@ -118,7 +118,8 @@
       "Bash(done)",
       "Bash(npm run lint:*)",
       "Read(//c/Users/audri/Desktop/dev/screenshots/**)",
-      "Bash(jq:*)"
+      "Bash(jq:*)",
+      "Bash(npm run test:*)"
     ],
     "deny": [],
     "ask": []
