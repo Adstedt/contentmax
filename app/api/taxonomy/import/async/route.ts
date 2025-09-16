@@ -131,39 +131,54 @@ async function processImportAsync(jobId: string, url: string, options: any, user
     try {
       const builder = new FeedTaxonomyBuilder();
 
+      // Track the last progress to ensure it only increases
+      let lastProgress = job.progress || 50;
+
       // Build taxonomy with progress callback
       await builder.buildFromProductFeed(feedResult.products, {
         skipPersist: !options?.persistToDatabase,
         userId,
         onProgress: (progress) => {
           // Update job with building progress
-          job.status = `building:${progress.phase}`;
           job.logs.push(`[${new Date().toISOString()}] ${progress.message}`);
 
           // Calculate overall progress based on phase
           let phaseProgress = progress.total > 0 ? progress.current / progress.total : 0;
+          let newProgress = lastProgress;
 
           // Map phases to progress ranges
           if (progress.phase === 'extracting') {
-            job.progress = 50 + Math.round(phaseProgress * 5); // 50-55%
+            job.status = 'building:extracting';
+            newProgress = 50 + Math.round(phaseProgress * 5); // 50-55%
           } else if (progress.phase === 'building') {
-            job.progress = 55 + Math.round(phaseProgress * 10); // 55-65%
+            job.status = 'building:building';
+            newProgress = 55 + Math.round(phaseProgress * 10); // 55-65%
             job.categoriesCreated = progress.current;
           } else if (progress.phase === 'assigning') {
-            job.progress = 65 + Math.round(phaseProgress * 10); // 65-75%
+            job.status = 'building:assigning';
+            newProgress = 65 + Math.round(phaseProgress * 10); // 65-75%
           } else if (progress.phase === 'counting') {
-            job.progress = 75 + Math.round(phaseProgress * 5); // 75-80%
+            job.status = 'building:counting';
+            newProgress = 75 + Math.round(phaseProgress * 5); // 75-80%
           } else if (progress.phase === 'persisting') {
-            // Persisting phase goes from 0/3 to 3/3
-            // Map this to 80-90% progress range
-            const persistProgress = Math.min(phaseProgress, 1.0); // Cap at 1.0
-            job.progress = 80 + Math.round(persistProgress * 10);
             job.status = 'saving';
+            // Persisting phase goes from 0/3 to 3/3
+            // For step 0-1 (nodes): 80-83%
+            // For step 1-2 (products): 83-87%
+            // For step 2-3 (assignments): 87-90%
+            if (progress.current <= 1) {
+              newProgress = 80 + Math.round(progress.current * 3);
+            } else if (progress.current <= 2) {
+              newProgress = 83 + Math.round((progress.current - 1) * 4);
+            } else {
+              newProgress = 87 + Math.round((progress.current - 2) * 3);
+            }
+          }
 
-            // Log for debugging
-            console.log(
-              `Persist progress: ${progress.current}/${progress.total} = ${phaseProgress} -> ${job.progress}%`
-            );
+          // Only update if progress increased (never go backwards)
+          if (newProgress > lastProgress) {
+            job.progress = newProgress;
+            lastProgress = newProgress;
           }
         },
       });
@@ -172,7 +187,12 @@ async function processImportAsync(jobId: string, url: string, options: any, user
       nodes = builder.getNodes();
       job.categoriesCreated = nodes.size;
       job.status = 'saved'; // Database save complete
-      job.progress = 90; // We're at 90% after all persistence
+
+      // Ensure we're at 90% after persistence
+      if (job.progress < 90) {
+        job.progress = 90;
+      }
+
       job.logs.push(`[${new Date().toISOString()}] Created and saved ${nodes.size} categories`);
 
       // Small delay to ensure UI updates
@@ -182,7 +202,7 @@ async function processImportAsync(jobId: string, url: string, options: any, user
       finalNodes = nodes;
       if (options?.mergeSimilar) {
         job.status = 'merging';
-        job.progress = 91;
+        if (job.progress < 91) job.progress = 91;
         job.logs.push(`[${new Date().toISOString()}] Merging similar categories...`);
         await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to show status
 
@@ -190,14 +210,14 @@ async function processImportAsync(jobId: string, url: string, options: any, user
         finalNodes = merger.mergeSimilarCategories(nodes);
         job.categoriesCreated = finalNodes.size;
         job.logs.push(`[${new Date().toISOString()}] Merged to ${finalNodes.size} categories`);
-        job.progress = 94;
+        if (job.progress < 94) job.progress = 94;
       } else {
         // If not merging, go straight to higher progress
-        job.progress = 94;
+        if (job.progress < 94) job.progress = 94;
       }
 
       job.status = 'finalizing';
-      job.progress = 95;
+      if (job.progress < 95) job.progress = 95;
       job.logs.push(`[${new Date().toISOString()}] Finalizing import...`);
 
       // Small delay to show finalizing status
@@ -209,10 +229,10 @@ async function processImportAsync(jobId: string, url: string, options: any, user
       finalNodes = new Map();
     }
 
-    // Mark as completed
+    // Mark as completed - ensure we always reach 100%
     job.categoriesCreated = finalNodes?.size || nodes?.size || 0;
     job.status = 'completed';
-    job.progress = 100;
+    job.progress = 100; // Always set to 100 when complete
     job.completedAt = new Date().toISOString();
     job.logs.push(`[${new Date().toISOString()}] Import completed successfully`);
     job.summary = {

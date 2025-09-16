@@ -337,10 +337,10 @@ export class FeedTaxonomyBuilder {
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
         // Report progress for product saving
-        // We're in step 2 of 3 (0=nodes, 1=products start, 2=products end, 3=assignments)
-        // Map batch progress from 1.0 to 2.0
-        const batchRatio = (batchNumber - 1) / Math.max(totalBatches - 1, 1);
-        const batchProgress = 1.0 + batchRatio; // Will go from 1.0 to 2.0
+        // Products are step 1-2 out of 0-3 (nodes=0-1, products=1-2, assignments=2-3)
+        // Calculate smooth progress from 1.0 to just under 2.0
+        const batchRatio = (batchNumber - 1) / totalBatches;
+        const batchProgress = 1.0 + batchRatio * 0.99; // Will go from 1.0 to 1.99
 
         this.reportProgress(
           'persisting',
@@ -408,11 +408,12 @@ export class FeedTaxonomyBuilder {
         `Finished saving products. Total saved: ${totalSaved} out of ${this.products.length}`
       );
 
-      // Report completion of product saving
-      this.reportProgress('persisting', 2, 3, 'Products saved successfully');
+      // Report completion of product saving (exactly at 2.0)
+      this.reportProgress('persisting', 2.0, 3, 'Products saved successfully');
     }
 
-    this.reportProgress('persisting', 2.5, 3, 'Creating category assignments...');
+    // Starting category assignments (2.0 to 3.0)
+    this.reportProgress('persisting', 2.1, 3, 'Creating category assignments...');
 
     // Store product-category assignments
     const assignments = [];
@@ -440,8 +441,8 @@ export class FeedTaxonomyBuilder {
 
     console.log(`Created ${nodesArray.length} taxonomy nodes from product feed`);
 
-    // Report final completion
-    this.reportProgress('persisting', 3, 3, 'Database save complete');
+    // Report final completion (exactly at 3.0)
+    this.reportProgress('persisting', 3.0, 3, 'Database save complete');
 
     return data || nodesArray; // Return nodes even if data is undefined
   }
