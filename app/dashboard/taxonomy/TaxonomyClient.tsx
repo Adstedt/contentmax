@@ -23,6 +23,8 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('Initializing...');
 
   useEffect(() => {
     loadTaxonomyData();
@@ -30,15 +32,35 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
 
   const loadTaxonomyData = async () => {
     setLoading(true);
+    setLoadingProgress(10);
+    setLoadingMessage('Connecting to database...');
+
     try {
       // Check if user has taxonomy data in database
+      setLoadingProgress(30);
+      setLoadingMessage('Fetching taxonomy nodes...');
+
       const response = await fetch(`/api/taxonomy/data?projectId=${projectId || ''}`);
+
+      setLoadingProgress(60);
+      setLoadingMessage('Processing taxonomy structure...');
 
       if (response.ok) {
         const data = await response.json();
+
+        setLoadingProgress(80);
+        setLoadingMessage(`Building visualization for ${data.nodes?.length || 0} categories...`);
+
         if (data.nodes && data.nodes.length > 0) {
+          // Add a small delay for very large datasets to prevent UI freeze
+          if (data.nodes.length > 1000) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+
           setTaxonomyData(data);
           setHasData(true);
+          setLoadingProgress(100);
+          setLoadingMessage('Complete!');
         } else {
           // No data - show onboarding
           setHasData(false);
@@ -54,8 +76,10 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
     } catch (error) {
       console.error('Failed to load taxonomy data:', error);
       setHasData(false);
+      setLoadingMessage('Failed to load data');
     } finally {
-      setLoading(false);
+      // Small delay before hiding loading for smooth transition
+      setTimeout(() => setLoading(false), 300);
     }
   };
 
@@ -117,9 +141,18 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[600px]">
-        <div className="text-center space-y-2">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading taxonomy data...</p>
+        <div className="text-center space-y-4 max-w-md">
+          <RefreshCw className="h-12 w-12 animate-spin mx-auto text-[#10a37f]" />
+          <div className="space-y-2">
+            <p className="text-lg font-medium">{loadingMessage}</p>
+            <div className="w-full bg-[#1a1a1a] rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-[#10a37f] h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-[#666]">{loadingProgress}% complete</p>
+          </div>
         </div>
       </div>
     );
@@ -172,8 +205,16 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
           </div>
 
           {hasData && taxonomyData && (
-            <div className="text-sm text-muted-foreground">
-              {taxonomyData.nodes.length} categories • {taxonomyData.links.length} connections
+            <div className="flex items-center gap-4 text-sm">
+              <div className="text-muted-foreground">
+                {taxonomyData.nodes.length.toLocaleString()} categories •{' '}
+                {taxonomyData.links.length.toLocaleString()} connections
+              </div>
+              {taxonomyData.nodes.length > 500 && (
+                <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded text-xs font-medium">
+                  Large Dataset - Performance Mode
+                </span>
+              )}
             </div>
           )}
         </div>
