@@ -339,10 +339,11 @@ export function ImportProgress({
           const isCompleted =
             progress > 0 &&
             ((phase.id === 'fetching' && progress > 50) ||
-              (phase.id === 'extracting' && progress > 60) ||
-              (phase.id === 'building' && progress > 75) ||
-              (phase.id === 'assigning' && progress > 85) ||
-              (phase.id === 'counting' && progress > 90) ||
+              (phase.id === 'extracting' && progress > 55) ||
+              (phase.id === 'building' && progress > 65) ||
+              (phase.id === 'assigning' && progress > 75) ||
+              (phase.id === 'counting' && progress > 80) ||
+              (phase.id === 'saving' && progress > 90) ||
               (phase.id === 'merging' && progress > 92) ||
               (phase.id === 'finalizing' && progress >= 95));
 

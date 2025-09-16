@@ -112,7 +112,10 @@ export class FeedTaxonomyBuilder {
 
     // Step 5: Store in database (skip in tests)
     if (!options?.skipPersist) {
-      return await this.persistToDatabase(options?.userId, options?.projectId);
+      this.reportProgress('persisting', 0, 1, 'Saving to database...');
+      const result = await this.persistToDatabase(options?.userId, options?.projectId);
+      this.reportProgress('persisting', 1, 1, 'Database save complete');
+      return result;
     }
 
     return Array.from(this.nodes.values());
@@ -288,6 +291,8 @@ export class FeedTaxonomyBuilder {
     // Sort by depth to insert parents first
     nodesArray.sort((a, b) => a.depth - b.depth);
 
+    this.reportProgress('persisting', 0, 3, 'Saving taxonomy nodes...');
+
     // Batch insert nodes with user and project association
     const { data, error } = await supabase
       .from('taxonomy_nodes')
@@ -317,6 +322,8 @@ export class FeedTaxonomyBuilder {
       throw error;
     }
 
+    this.reportProgress('persisting', 1, 3, 'Saving products...');
+
     // Store products first - IN BATCHES for large feeds
     if (this.products.length > 0) {
       console.log(`Preparing to save ${this.products.length} products...`);
@@ -326,6 +333,17 @@ export class FeedTaxonomyBuilder {
 
       for (let i = 0; i < this.products.length; i += BATCH_SIZE) {
         const batch = this.products.slice(i, i + BATCH_SIZE);
+
+        // Report progress for product saving
+        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(this.products.length / BATCH_SIZE);
+        this.reportProgress(
+          'persisting',
+          1,
+          3,
+          `Saving products batch ${batchNumber}/${totalBatches}...`
+        );
+
         const productsToInsert = batch.map((product, index) => ({
           // Generate ID if not provided - CRITICAL FIX
           id: product.id || product.product_id || `prod_${Date.now()}_${i + index}`,
@@ -384,6 +402,8 @@ export class FeedTaxonomyBuilder {
       );
     }
 
+    this.reportProgress('persisting', 2, 3, 'Creating category assignments...');
+
     // Store product-category assignments
     const assignments = [];
     for (const [nodeId, productIds] of this.productAssignments.entries()) {
@@ -409,6 +429,9 @@ export class FeedTaxonomyBuilder {
     }
 
     console.log(`Created ${nodesArray.length} taxonomy nodes from product feed`);
+
+    this.reportProgress('persisting', 3, 3, 'Database save complete');
+
     return data;
   }
 

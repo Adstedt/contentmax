@@ -144,23 +144,26 @@ async function processImportAsync(jobId: string, url: string, options: any, user
 
           // Map phases to progress ranges
           if (progress.phase === 'extracting') {
-            job.progress = 50 + Math.round(phaseProgress * 10); // 50-60%
+            job.progress = 50 + Math.round(phaseProgress * 5); // 50-55%
           } else if (progress.phase === 'building') {
-            job.progress = 60 + Math.round(phaseProgress * 15); // 60-75%
+            job.progress = 55 + Math.round(phaseProgress * 10); // 55-65%
             job.categoriesCreated = progress.current;
           } else if (progress.phase === 'assigning') {
-            job.progress = 75 + Math.round(phaseProgress * 10); // 75-85%
+            job.progress = 65 + Math.round(phaseProgress * 10); // 65-75%
           } else if (progress.phase === 'counting') {
-            job.progress = 85 + Math.round(phaseProgress * 5); // 85-90%
+            job.progress = 75 + Math.round(phaseProgress * 5); // 75-80%
+          } else if (progress.phase === 'persisting') {
+            job.progress = 80 + Math.round(phaseProgress * 10); // 80-90%
+            job.status = 'saving';
           }
         },
       });
 
       const nodes = builder.getNodes();
       job.categoriesCreated = nodes.size;
-      job.status = 'building'; // Reset status from building:counting
-      job.progress = 90; // Ensure we're at 90% after counting
-      job.logs.push(`[${new Date().toISOString()}] Created ${nodes.size} categories`);
+      job.status = 'saved'; // Database save complete
+      job.progress = 90; // We're at 90% after all persistence
+      job.logs.push(`[${new Date().toISOString()}] Created and saved ${nodes.size} categories`);
 
       // Optional: Merge similar categories
       finalNodes = nodes;
@@ -168,14 +171,16 @@ async function processImportAsync(jobId: string, url: string, options: any, user
         job.status = 'merging';
         job.progress = 91;
         job.logs.push(`[${new Date().toISOString()}] Merging similar categories...`);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to show status
+
         const merger = new CategoryMerger();
         finalNodes = merger.mergeSimilarCategories(nodes);
         job.categoriesCreated = finalNodes.size;
         job.logs.push(`[${new Date().toISOString()}] Merged to ${finalNodes.size} categories`);
-        job.progress = 93;
+        job.progress = 94;
       } else {
         // If not merging, go straight to higher progress
-        job.progress = 93;
+        job.progress = 94;
       }
 
       job.status = 'finalizing';
