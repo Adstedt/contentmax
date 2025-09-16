@@ -23,6 +23,9 @@ export interface TaxonomyNode {
   traffic?: number;
   revenue?: number;
   status?: 'optimized' | 'outdated' | 'missing' | 'noContent';
+  opportunityScore?: number; // 0-100
+  opportunityType?: 'quick-win' | 'strategic' | 'incremental' | 'long-term' | 'maintain';
+  projectedImpact?: number;
 }
 
 export interface TaxonomyLink {
@@ -48,9 +51,20 @@ export interface ForceGraphProps {
   className?: string;
 }
 
-// Color scheme matching dashboard
-const getNodeColor = (status?: string): string => {
-  switch (status) {
+// Color scheme based on opportunity score
+const getNodeColor = (node: TaxonomyNode): string => {
+  // If opportunity score exists, use it for coloring
+  if (node.opportunityScore !== undefined) {
+    const score = node.opportunityScore;
+    if (score >= 80) return '#ef4444'; // Red - High opportunity
+    if (score >= 60) return '#f59e0b'; // Orange - Medium-high
+    if (score >= 40) return '#eab308'; // Yellow - Medium
+    if (score >= 20) return '#22c55e'; // Green - Low (performing well)
+    return '#6b7280'; // Gray - No data or very low
+  }
+
+  // Fall back to status-based coloring
+  switch (node.status) {
     case 'optimized':
       return '#10a37f';
     case 'outdated':
@@ -67,9 +81,15 @@ const getNodeColor = (status?: string): string => {
 // Calculate node radius based on metrics
 const calculateNodeRadius = (node: TaxonomyNode): number => {
   const baseRadius = 5;
-  const maxRadius = 20;
+  const maxRadius = 25;
 
-  // Use skuCount as primary metric, with fallbacks
+  // If projected impact exists, use it to size nodes
+  if (node.projectedImpact !== undefined && node.projectedImpact > 0) {
+    const scaleFactor = Math.log10(node.projectedImpact + 1) * 3;
+    return Math.min(baseRadius + scaleFactor, maxRadius);
+  }
+
+  // Otherwise use skuCount as primary metric, with fallbacks
   const metric = node.skuCount || node.traffic || 1;
   const scaledRadius = baseRadius + Math.sqrt(metric) * 0.5;
 
@@ -115,7 +135,7 @@ export function ForceGraph({
     const nodes: Node[] = data.nodes.map((node) => ({
       ...node,
       radius: calculateNodeRadius(node),
-      color: getNodeColor(node.status),
+      color: getNodeColor(node),
       // Will set positions after
       x: undefined,
       y: undefined,

@@ -2,8 +2,8 @@
  * Integration tests for Google OAuth configuration
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { 
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
   loadGoogleOAuthConfig,
   generateAuthUrl,
   exchangeCodeForTokens,
@@ -12,7 +12,7 @@ import {
   isOAuthConfigured,
   getMissingConfig,
   GOOGLE_OAUTH_SCOPES,
-  ALL_SCOPES
+  ALL_SCOPES,
 } from '@/lib/integrations/google/oauth-config';
 
 describe('Google OAuth Configuration', () => {
@@ -26,7 +26,7 @@ describe('Google OAuth Configuration', () => {
   afterEach(() => {
     // Restore original environment
     process.env = originalEnv;
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('loadGoogleOAuthConfig', () => {
@@ -43,7 +43,7 @@ describe('Google OAuth Configuration', () => {
         clientSecret: 'test-client-secret',
         redirectUri: 'http://localhost:3000/api/integrations/google/callback',
         merchantId: 'test-merchant-id',
-        serviceAccountKey: undefined
+        serviceAccountKey: undefined,
       });
     });
 
@@ -51,7 +51,9 @@ describe('Google OAuth Configuration', () => {
       delete process.env.GOOGLE_CLIENT_ID;
       delete process.env.GOOGLE_CLIENT_SECRET;
 
-      expect(() => loadGoogleOAuthConfig()).toThrow('Missing or invalid Google OAuth configuration');
+      expect(() => loadGoogleOAuthConfig()).toThrow(
+        'Missing or invalid Google OAuth configuration'
+      );
     });
 
     it('should throw error for invalid redirect URI', () => {
@@ -59,7 +61,9 @@ describe('Google OAuth Configuration', () => {
       process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
       process.env.GOOGLE_REDIRECT_URI = 'not-a-valid-url';
 
-      expect(() => loadGoogleOAuthConfig()).toThrow('Missing or invalid Google OAuth configuration');
+      expect(() => loadGoogleOAuthConfig()).toThrow(
+        'Missing or invalid Google OAuth configuration'
+      );
     });
   });
 
@@ -120,7 +124,7 @@ describe('Google OAuth Configuration', () => {
       const url = generateAuthUrl();
 
       // Check that all scopes are included
-      ALL_SCOPES.forEach(scope => {
+      ALL_SCOPES.forEach((scope) => {
         expect(url).toContain(encodeURIComponent(scope));
       });
     });
@@ -139,8 +143,12 @@ describe('Google OAuth Configuration', () => {
       expect(GOOGLE_OAUTH_SCOPES.EMAIL).toBe('email');
       expect(GOOGLE_OAUTH_SCOPES.PROFILE).toBe('profile');
       expect(GOOGLE_OAUTH_SCOPES.MERCHANT_CENTER).toBe('https://www.googleapis.com/auth/content');
-      expect(GOOGLE_OAUTH_SCOPES.SEARCH_CONSOLE).toBe('https://www.googleapis.com/auth/webmasters.readonly');
-      expect(GOOGLE_OAUTH_SCOPES.ANALYTICS).toBe('https://www.googleapis.com/auth/analytics.readonly');
+      expect(GOOGLE_OAUTH_SCOPES.SEARCH_CONSOLE).toBe(
+        'https://www.googleapis.com/auth/webmasters.readonly'
+      );
+      expect(GOOGLE_OAUTH_SCOPES.ANALYTICS).toBe(
+        'https://www.googleapis.com/auth/analytics.readonly'
+      );
     });
 
     it('should include all scopes in ALL_SCOPES array', () => {
@@ -171,7 +179,7 @@ describe('Google OAuth Configuration', () => {
           scope: 'openid email profile',
         };
 
-        global.fetch = vi.fn().mockResolvedValueOnce({
+        global.fetch = jest.fn().mockResolvedValueOnce({
           ok: true,
           json: async () => mockTokens,
         } as Response);
@@ -191,7 +199,7 @@ describe('Google OAuth Configuration', () => {
       });
 
       it('should handle token exchange errors', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce({
+        global.fetch = jest.fn().mockResolvedValueOnce({
           ok: false,
           text: async () => 'Invalid authorization code',
         } as Response);
@@ -211,7 +219,7 @@ describe('Google OAuth Configuration', () => {
           scope: 'openid email profile',
         };
 
-        global.fetch = vi.fn().mockResolvedValueOnce({
+        global.fetch = jest.fn().mockResolvedValueOnce({
           ok: true,
           json: async () => mockTokens,
         } as Response);
@@ -232,7 +240,7 @@ describe('Google OAuth Configuration', () => {
           picture: 'https://example.com/picture.jpg',
         };
 
-        global.fetch = vi.fn().mockResolvedValueOnce({
+        global.fetch = jest.fn().mockResolvedValueOnce({
           ok: true,
           json: async () => mockUserInfo,
         } as Response);
@@ -251,14 +259,12 @@ describe('Google OAuth Configuration', () => {
       });
 
       it('should handle user info fetch errors', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce({
+        global.fetch = jest.fn().mockResolvedValueOnce({
           ok: false,
           text: async () => 'Unauthorized',
         } as Response);
 
-        await expect(getUserInfo('invalid-token')).rejects.toThrow(
-          'Failed to get user info'
-        );
+        await expect(getUserInfo('invalid-token')).rejects.toThrow('Failed to get user info');
       });
     });
   });
