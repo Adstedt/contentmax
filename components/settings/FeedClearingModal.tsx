@@ -75,46 +75,87 @@ export function FeedClearingModal({
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Now delete the main tables
+      // Now delete the main tables and any related import history
       const steps = [
         { name: 'products', table: 'products' },
         { name: 'taxonomy nodes', table: 'taxonomy_nodes' },
-        { name: 'search metrics', table: 'search_metrics' },
-        { name: 'search queries', table: 'search_queries' },
+        { name: 'import history', table: 'import_history' },
+        { name: 'import progress', table: 'import_progress' },
+        { name: 'sync history', table: 'sync_history' },
+        // Tables that might exist but not critical
+        { name: 'scraped content', table: 'scraped_content', optional: true },
+        { name: 'node metrics', table: 'node_metrics', optional: true },
+        { name: 'performance history', table: 'performance_history', optional: true },
       ];
 
       for (const step of steps) {
         setClearingProgress(`Deleting ${step.name}...`);
 
-        // Delete data based on user_id
-        const { error } = await supabase.from(step.table).delete().eq('user_id', user.id);
+        try {
+          // Delete data based on user_id
+          const { error } = await supabase.from(step.table).delete().eq('user_id', user.id);
 
-        if (error && error.code !== 'PGRST116') {
-          // Ignore "no rows" error
-          console.error(`Error clearing ${step.name}:`, error);
-          throw new Error(`Failed to clear ${step.name}`);
+          if (error) {
+            // Check if it's a "no rows" error (PGRST116) or table doesn't exist
+            const isNoRowsError = error.code === 'PGRST116';
+            const isTableMissing =
+              error.message?.includes('relation') ||
+              error.message?.includes('does not exist') ||
+              error.code === '42P01';
+
+            if (!isNoRowsError && !isTableMissing) {
+              // This is a real error, but only throw if it's not an optional table
+              if (!step.optional) {
+                console.error(`Error clearing ${step.name}:`, error);
+                throw new Error(`Failed to clear ${step.name}`);
+              } else {
+                console.warn(
+                  `Warning: Could not clear optional table ${step.name}:`,
+                  error.message
+                );
+              }
+            } else if (isTableMissing && !step.optional) {
+              console.warn(`Table ${step.table} doesn't exist, skipping...`);
+            }
+          }
+        } catch (error) {
+          // If it's an optional table, just log and continue
+          if (step.optional) {
+            console.warn(`Optional table ${step.name} could not be cleared:`, error);
+          } else {
+            throw error;
+          }
         }
 
         // Small delay to show progress
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      // If a specific feed ID was provided, also remove the connection record
-      if (feedId) {
+      // If a specific feed ID was provided, also try to remove the connection record
+      if (feedId && feedId !== 'imported-feed') {
         setClearingProgress('Removing feed connection...');
-        const { error } = await supabase.from('data_source_connections').delete().eq('id', feedId);
+        try {
+          const { error } = await supabase
+            .from('data_source_connections')
+            .delete()
+            .eq('id', feedId);
 
-        if (error) {
-          console.error('Error removing feed connection:', error);
+          if (error && error.code !== 'PGRST116' && !error.message?.includes('does not exist')) {
+            console.error('Error removing feed connection:', error);
+          }
+        } catch (error) {
+          console.error('Warning: Could not remove feed connection:', error);
         }
       }
 
       setClearingProgress('Complete!');
       toast.success('All feed data has been cleared successfully');
 
-      // Wait a moment before closing
+      // Call onComplete immediately to update UI
+      onComplete();
+
+      // Wait a moment before closing modal
       setTimeout(() => {
-        onComplete();
         onClose();
         setConfirmText('');
         setClearingProgress('');
