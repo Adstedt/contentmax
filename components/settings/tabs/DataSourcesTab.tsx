@@ -74,12 +74,20 @@ export function DataSourcesTab() {
       console.log('Loading data sources for user:', user.id);
 
       // First check if we have any imported data (products/taxonomy)
-      const { data: products, error: productsError, count: productsCount } = await supabase
+      const {
+        data: products,
+        error: productsError,
+        count: productsCount,
+      } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      const { data: taxonomy, error: taxonomyError, count: taxonomyCount } = await supabase
+      const {
+        data: taxonomy,
+        error: taxonomyError,
+        count: taxonomyCount,
+      } = await supabase
         .from('taxonomy_nodes')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
@@ -106,7 +114,7 @@ export function DataSourcesTab() {
           status: 'active',
           last_sync_at: importHistory?.[0]?.completed_at || importHistory?.[0]?.created_at || null,
           next_sync_at: null,
-          items_synced: (productsCount || 0),
+          items_synced: productsCount || 0,
           error_message: null,
           created_at: importHistory?.[0]?.created_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -165,9 +173,7 @@ export function DataSourcesTab() {
       // For mock implementation, just update the UI
       setDataSources((prev) =>
         prev.map((ds) =>
-          ds.id === source.id
-            ? { ...ds, last_sync_at: new Date().toISOString() }
-            : ds
+          ds.id === source.id ? { ...ds, last_sync_at: new Date().toISOString() } : ds
         )
       );
 
@@ -400,8 +406,12 @@ export function DataSourcesTab() {
           setSelectedSourceForClear(null);
         }}
         onComplete={() => {
-          loadDataSources();
+          // Immediately remove the data source from state for instant UI update
+          setDataSources((prev) => prev.filter((ds) => ds.id !== selectedSourceForClear?.id));
+          toast.success('Data source and all associated data cleared successfully');
           setSelectedSourceForClear(null);
+          // Reload in background to ensure consistency
+          setTimeout(() => loadDataSources(), 500);
         }}
         feedName={selectedSourceForClear?.name}
         feedId={selectedSourceForClear?.id}

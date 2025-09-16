@@ -20,7 +20,7 @@ const navigation = [
   { name: 'Exploring', href: '/dashboard', icon: Home },
   { name: 'Generate', href: '/generate', icon: Sparkles },
   { name: 'Content', href: '/content', icon: FileText },
-  { name: 'Taxonomy', href: '/taxonomy', icon: GitBranch },
+  { name: 'Taxonomy', href: '/dashboard/taxonomy', icon: GitBranch },
   { name: 'Review', href: '/review', icon: CheckCircle },
   { name: 'Database', href: '/database', icon: Database },
 ];
@@ -70,9 +70,10 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 space-y-0.5">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             const Icon = item.icon;
-            const isComingSoon = item.href !== '/dashboard';
+            // Enable Taxonomy and Dashboard, disable others
+            const isComingSoon = !['/dashboard', '/dashboard/taxonomy'].includes(item.href);
 
             return (
               <Link

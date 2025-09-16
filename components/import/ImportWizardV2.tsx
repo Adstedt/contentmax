@@ -230,55 +230,58 @@ export function ImportWizardV2({ onClose, onComplete, projectId }: ImportWizardV
             projectId={projectId}
             isProcessing={isProcessing}
             setIsProcessing={setIsProcessing}
+            onNext={currentStepConfig.id === 'processing' ? goToNext : undefined}
           />
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-[#2a2a2a] p-6">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={goToPrevious}
-            disabled={currentStep === 0 || isProcessing}
-            className="bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]"
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
-          </Button>
-
-          <div className="flex gap-2">
-            {currentStepConfig.canSkip && (
-              <Button
-                variant="ghost"
-                onClick={goToNext}
-                disabled={isProcessing}
-                className="hover:bg-[#1a1a1a] text-[#999]"
-              >
-                Skip
-              </Button>
-            )}
-
+      {/* Footer - Hide for ImportProgress step as it has its own Next button */}
+      {currentStepConfig.id !== 'processing' && (
+        <div className="border-t border-[#2a2a2a] p-6">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
             <Button
-              onClick={goToNext}
-              disabled={!canGoNext() || isProcessing}
-              className="bg-[#10a37f] hover:bg-[#0e8a6b] text-white disabled:opacity-50"
+              variant="outline"
+              onClick={goToPrevious}
+              disabled={currentStep === 0 || isProcessing}
+              className="bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]"
             >
-              {currentStep === WIZARD_STEPS.length - 1 ? (
-                <>
-                  Complete
-                  <Check className="w-4 h-4 ml-2" />
-                </>
-              ) : (
-                <>
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </>
-              )}
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
             </Button>
+
+            <div className="flex gap-2">
+              {currentStepConfig.canSkip && (
+                <Button
+                  variant="ghost"
+                  onClick={goToNext}
+                  disabled={isProcessing}
+                  className="hover:bg-[#1a1a1a] text-[#999]"
+                >
+                  Skip
+                </Button>
+              )}
+
+              <Button
+                onClick={goToNext}
+                disabled={!canGoNext() || isProcessing}
+                className="bg-[#10a37f] hover:bg-[#0e8a6b] text-white disabled:opacity-50"
+              >
+                {currentStep === WIZARD_STEPS.length - 1 ? (
+                  <>
+                    Complete
+                    <Check className="w-4 h-4 ml-2" />
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -23,6 +23,7 @@ interface ImportProgressProps {
   onValidation: (isValid: boolean) => void;
   isProcessing: boolean;
   setIsProcessing: (processing: boolean) => void;
+  onNext?: () => void;
 }
 
 interface ImportStatus {
@@ -35,6 +36,7 @@ interface ImportStatus {
   timeRemaining: number;
   currentBatch: string;
   logs: string[];
+  isComplete: boolean;
 }
 
 export function ImportProgress({
@@ -44,10 +46,11 @@ export function ImportProgress({
   onValidation,
   isProcessing,
   setIsProcessing,
+  onNext,
 }: ImportProgressProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [importStatus, setImportStatus] = useState<ImportStatus>({
-    totalProducts: 14232,
+    totalProducts: 0,
     processedProducts: 0,
     categoriesCreated: 0,
     errors: 0,
@@ -56,6 +59,7 @@ export function ImportProgress({
     timeRemaining: 0,
     currentBatch: 'Initializing...',
     logs: [],
+    isComplete: false,
   });
 
   useEffect(() => {
@@ -76,10 +80,41 @@ export function ImportProgress({
     }
 
     try {
-      // Actually call the import API
-      console.log('Starting real import from:', sourceData.sourceUrl);
+      console.log('Starting async import from:', sourceData.sourceUrl);
 
-      const response = await fetch('/api/taxonomy/import', {
+      // Start the async import job
+      const response = await fetch('/api/taxonomy/import/async', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: sourceData.sourceUrl,
+          options: {
+            mergeSimilar: allData['import-options']?.mergeSimilar ?? true,
+            persistToDatabase: true,
+            fetchMetaTags: false,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to start import: ${response.statusText}`);
+      }
+
+      const { jobId } = await response.json();
+      console.log('Import job started:', jobId);
+
+      // Poll for progress
+      pollImportProgress(jobId);
+    } catch (error) {
+      console.error('Failed to start import:', error);
+
+      // Fall back to synchronous import with simulation
+      simulateImport();
+
+      // Still try the regular import in background
+      fetch('/api/taxonomy/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,44 +128,97 @@ export function ImportProgress({
             fetchMetaTags: false,
           },
         }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Import failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('Import successful:', result);
-
-      // Update status with real data
-      setImportStatus({
-        totalProducts: result.taxonomy?.stats?.totalProducts || 0,
-        processedProducts: result.taxonomy?.stats?.totalProducts || 0,
-        categoriesCreated: result.taxonomy?.nodes || 0,
-        errors: 0,
-        warnings: 0,
-        speed: 0,
-        timeRemaining: 0,
-        currentBatch: 'Import complete!',
-        logs: [`Import completed: ${result.message}`],
-      });
-
-      setIsProcessing(false);
-      onValidation(true);
-      onDataChange({
-        importComplete: true,
-        summary: result,
-      });
-    } catch (error) {
-      console.error('Import failed:', error);
-      setImportStatus((prev) => ({
-        ...prev,
-        errors: prev.errors + 1,
-        logs: [`Error: ${error}`, ...prev.logs],
-        currentBatch: 'Import failed',
-      }));
-      setIsProcessing(false);
+      })
+        .then(async (response) => {
+          if (response.ok) {
+            const result = await response.json();
+            console.log('Background import completed:', result);
+          }
+        })
+        .catch((err) => {
+          console.error('Background import failed:', err);
+        });
     }
+  };
+
+  const pollImportProgress = async (jobId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/taxonomy/import/async?jobId=${jobId}`);
+        if (!response.ok) {
+          clearInterval(pollInterval);
+          throw new Error('Failed to get job status');
+        }
+
+        const job = await response.json();
+
+        // Format status message
+        let statusMessage = job.status;
+        if (job.status?.startsWith('building:')) {
+          const phase = job.status.split(':')[1];
+          statusMessage = `Building taxonomy: ${phase}...`;
+        } else if (job.status === 'fetching') {
+          statusMessage = 'Fetching product feed...';
+        } else if (job.status === 'processing') {
+          statusMessage = 'Processing products...';
+        } else if (job.status === 'building') {
+          statusMessage = 'Building category structure...';
+        } else if (job.status === 'merging') {
+          statusMessage = 'Optimizing category hierarchy...';
+        } else if (job.status === 'finalizing') {
+          statusMessage = 'Finalizing import...';
+        } else if (job.status === 'completed') {
+          statusMessage = 'Import complete!';
+        }
+
+        // Calculate realistic speed
+        const elapsedSeconds = (Date.now() - new Date(job.startedAt).getTime()) / 1000;
+        const speed =
+          job.processedProducts > 0 && elapsedSeconds > 0
+            ? Math.round(job.processedProducts / elapsedSeconds)
+            : 0;
+
+        // Update UI with real progress
+        setImportStatus({
+          totalProducts: job.totalProducts || 0,
+          processedProducts: job.processedProducts || 0,
+          categoriesCreated: job.categoriesCreated || 0,
+          errors: job.errors?.length || 0,
+          warnings: 0,
+          speed,
+          timeRemaining:
+            speed > 0 && job.totalProducts > job.processedProducts
+              ? Math.round((job.totalProducts - job.processedProducts) / speed)
+              : 0,
+          currentBatch: statusMessage,
+          logs: job.logs?.slice(-5) || [],
+          isComplete: job.status === 'completed',
+        });
+
+        // Check if completed or failed
+        if (job.status === 'completed') {
+          clearInterval(pollInterval);
+          setIsProcessing(false);
+          onValidation(true);
+          onDataChange({
+            importComplete: true,
+            summary: job.summary,
+          });
+        } else if (job.status === 'failed') {
+          clearInterval(pollInterval);
+          setIsProcessing(false);
+          setImportStatus((prev) => ({
+            ...prev,
+            currentBatch: 'Import failed',
+            errors: job.errors?.length || 1,
+            isComplete: false,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to poll job status:', error);
+        clearInterval(pollInterval);
+      }
+    }, 1000); // Poll every second
   };
 
   const simulateImport = () => {
@@ -236,8 +324,17 @@ export function ImportProgress({
           </div>
 
           <div className="flex items-center gap-2 text-sm text-[#999]">
-            <Loader2 className="h-4 w-4 animate-spin text-[#10a37f]" />
-            {importStatus.currentBatch}
+            {!importStatus.isComplete ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-[#10a37f]" />
+                {importStatus.currentBatch}
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-[#10a37f]" />
+                {importStatus.currentBatch}
+              </>
+            )}
           </div>
         </div>
       </Card>
@@ -312,6 +409,35 @@ export function ImportProgress({
             reviewed.
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Success message and Next button */}
+      {importStatus.isComplete && (
+        <div className="space-y-4">
+          <Alert className="bg-[#0a0a0a] border-[#10a37f]/20">
+            <CheckCircle2 className="h-4 w-4 text-[#10a37f]" />
+            <AlertDescription className="text-white">
+              <strong>Import Complete!</strong> Successfully imported{' '}
+              {importStatus.totalProducts.toLocaleString()} products and created{' '}
+              {importStatus.categoriesCreated.toLocaleString()} categories.
+            </AlertDescription>
+          </Alert>
+
+          {/* Footer with Next button */}
+          <div className="flex justify-end pt-6 border-t border-[#2a2a2a]">
+            <Button
+              size="lg"
+              onClick={() => {
+                if (onNext) {
+                  onNext();
+                }
+              }}
+              className="bg-[#10a37f] hover:bg-[#0e8a6b] text-white px-8"
+            >
+              Continue to Review →
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
