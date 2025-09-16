@@ -150,7 +150,7 @@ export function ImportFieldMapper({
                     <SelectValue placeholder="Select source field" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#0a0a0a] border-[#2a2a2a]">
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="_none">None</SelectItem>
                     {sourceFields.map((sourceField) => (
                       <SelectItem key={sourceField} value={sourceField}>
                         {sourceField}

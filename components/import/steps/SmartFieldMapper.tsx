@@ -46,7 +46,14 @@ interface MappingConfig {
   sampleValues?: string[];
 }
 
-type TransformationType = 'none' | 'lowercase' | 'uppercase' | 'trim' | 'number' | 'date' | 'custom';
+type TransformationType =
+  | 'none'
+  | 'lowercase'
+  | 'uppercase'
+  | 'trim'
+  | 'number'
+  | 'date'
+  | 'custom';
 
 interface CustomField {
   name: string;
@@ -55,22 +62,104 @@ interface CustomField {
 }
 
 const PRODUCT_SCHEMA = [
-  { key: 'id', label: 'Product ID', required: true, dataType: 'string', description: 'Unique identifier for the product' },
-  { key: 'title', label: 'Product Title', required: true, dataType: 'string', description: 'Name of the product' },
-  { key: 'description', label: 'Description', required: false, dataType: 'text', description: 'Detailed product description' },
-  { key: 'category', label: 'Category', required: true, dataType: 'string', description: 'Product category or type' },
-  { key: 'price', label: 'Price', required: true, dataType: 'number', description: 'Product price' },
-  { key: 'currency', label: 'Currency', required: false, dataType: 'string', description: 'Price currency (e.g., USD)' },
-  { key: 'brand', label: 'Brand', required: false, dataType: 'string', description: 'Product brand or manufacturer' },
-  { key: 'sku', label: 'SKU', required: false, dataType: 'string', description: 'Stock keeping unit' },
-  { key: 'gtin', label: 'GTIN/EAN/UPC', required: false, dataType: 'string', description: 'Global trade item number' },
-  { key: 'image_url', label: 'Image URL', required: false, dataType: 'url', description: 'Product image URL' },
-  { key: 'availability', label: 'Availability', required: false, dataType: 'string', description: 'Stock availability' },
-  { key: 'condition', label: 'Condition', required: false, dataType: 'string', description: 'Product condition (new/used)' },
-  { key: 'link', label: 'Product URL', required: false, dataType: 'url', description: 'Product page URL' },
+  {
+    key: 'id',
+    label: 'Product ID',
+    required: true,
+    dataType: 'string',
+    description: 'Unique identifier for the product',
+  },
+  {
+    key: 'title',
+    label: 'Product Title',
+    required: true,
+    dataType: 'string',
+    description: 'Name of the product',
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    required: false,
+    dataType: 'text',
+    description: 'Detailed product description',
+  },
+  {
+    key: 'category',
+    label: 'Category',
+    required: true,
+    dataType: 'string',
+    description: 'Product category or type',
+  },
+  {
+    key: 'price',
+    label: 'Price',
+    required: true,
+    dataType: 'number',
+    description: 'Product price',
+  },
+  {
+    key: 'currency',
+    label: 'Currency',
+    required: false,
+    dataType: 'string',
+    description: 'Price currency (e.g., USD)',
+  },
+  {
+    key: 'brand',
+    label: 'Brand',
+    required: false,
+    dataType: 'string',
+    description: 'Product brand or manufacturer',
+  },
+  {
+    key: 'sku',
+    label: 'SKU',
+    required: false,
+    dataType: 'string',
+    description: 'Stock keeping unit',
+  },
+  {
+    key: 'gtin',
+    label: 'GTIN/EAN/UPC',
+    required: false,
+    dataType: 'string',
+    description: 'Global trade item number',
+  },
+  {
+    key: 'image_url',
+    label: 'Image URL',
+    required: false,
+    dataType: 'url',
+    description: 'Product image URL',
+  },
+  {
+    key: 'availability',
+    label: 'Availability',
+    required: false,
+    dataType: 'string',
+    description: 'Stock availability',
+  },
+  {
+    key: 'condition',
+    label: 'Condition',
+    required: false,
+    dataType: 'string',
+    description: 'Product condition (new/used)',
+  },
+  {
+    key: 'link',
+    label: 'Product URL',
+    required: false,
+    dataType: 'url',
+    description: 'Product page URL',
+  },
 ];
 
-export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: SmartFieldMapperProps) {
+export function SmartFieldMapper({
+  fileData,
+  onMappingComplete,
+  onValidation,
+}: SmartFieldMapperProps) {
   const [mappings, setMappings] = useState<Record<string, MappingConfig>>({});
   const [transformations, setTransformations] = useState<Record<string, TransformationType>>({});
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -86,9 +175,9 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
 
   useEffect(() => {
     // Validate mappings
-    const requiredFieldsMapped = PRODUCT_SCHEMA
-      .filter(field => field.required)
-      .every(field => mappings[field.key]?.sourceField);
+    const requiredFieldsMapped = PRODUCT_SCHEMA.filter((field) => field.required).every(
+      (field) => mappings[field.key]?.sourceField
+    );
 
     onValidation(requiredFieldsMapped);
     onMappingComplete({
@@ -104,10 +193,13 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
     const preview = fileData.preview;
 
     // Mapping confidence rules
-    const mappingRules: Record<string, { patterns: string[], analyzer?: (values: string[]) => number }> = {
+    const mappingRules: Record<
+      string,
+      { patterns: string[]; analyzer?: (values: string[]) => number }
+    > = {
       id: {
         patterns: ['id', 'product_id', 'item_id', 'sku', 'code', 'identifier'],
-        analyzer: (values) => values.every(v => v && v.length > 0) ? 100 : 50,
+        analyzer: (values) => (values.every((v) => v && v.length > 0) ? 100 : 50),
       },
       title: {
         patterns: ['title', 'name', 'product_name', 'item_name', 'description_short'],
@@ -129,7 +221,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
       price: {
         patterns: ['price', 'cost', 'amount', 'value', 'sale_price'],
         analyzer: (values) => {
-          const isNumeric = values.every(v => !isNaN(parseFloat(v?.replace(/[^0-9.-]/g, ''))));
+          const isNumeric = values.every((v) => !isNaN(parseFloat(v?.replace(/[^0-9.-]/g, ''))));
           return isNumeric ? 100 : 30;
         },
       },
@@ -145,7 +237,9 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
       image_url: {
         patterns: ['image', 'image_url', 'image_link', 'picture', 'photo'],
         analyzer: (values) => {
-          const hasUrls = values.some(v => v?.includes('http') || v?.includes('.jpg') || v?.includes('.png'));
+          const hasUrls = values.some(
+            (v) => v?.includes('http') || v?.includes('.jpg') || v?.includes('.png')
+          );
           return hasUrls ? 95 : 40;
         },
       },
@@ -158,26 +252,26 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
       link: {
         patterns: ['link', 'url', 'product_url', 'product_link'],
         analyzer: (values) => {
-          const hasUrls = values.every(v => v?.includes('http'));
+          const hasUrls = values.every((v) => v?.includes('http'));
           return hasUrls ? 100 : 20;
         },
       },
     };
 
     // Perform intelligent mapping
-    PRODUCT_SCHEMA.forEach(targetField => {
+    PRODUCT_SCHEMA.forEach((targetField) => {
       const rules = mappingRules[targetField.key];
       if (!rules) return;
 
       let bestMatch = null;
       let bestConfidence = 0;
 
-      headers.forEach(header => {
+      headers.forEach((header) => {
         const headerLower = header.toLowerCase();
         let confidence = 0;
 
         // Check pattern matching
-        const patternMatch = rules.patterns.some(pattern => 
+        const patternMatch = rules.patterns.some((pattern) =>
           headerLower.includes(pattern.toLowerCase())
         );
 
@@ -185,13 +279,13 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
           confidence = 70;
 
           // Exact match gets higher confidence
-          if (rules.patterns.some(pattern => headerLower === pattern.toLowerCase())) {
+          if (rules.patterns.some((pattern) => headerLower === pattern.toLowerCase())) {
             confidence = 90;
           }
 
           // Run data analyzer if available
           if (rules.analyzer && preview.length > 0) {
-            const sampleValues = preview.map(row => row[header]);
+            const sampleValues = preview.map((row) => row[header]);
             const dataConfidence = rules.analyzer(sampleValues);
             confidence = Math.min(100, (confidence + dataConfidence) / 2);
           }
@@ -209,14 +303,14 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
           confidence: bestConfidence,
           suggested: true,
           dataType: targetField.dataType,
-          sampleValues: preview.slice(0, 3).map(row => row[bestMatch]),
+          sampleValues: preview.slice(0, 3).map((row) => row[bestMatch]),
         };
 
         // Auto-set transformation based on data type
         if (targetField.dataType === 'number') {
-          setTransformations(prev => ({ ...prev, [targetField.key]: 'number' }));
+          setTransformations((prev) => ({ ...prev, [targetField.key]: 'number' }));
         } else if (targetField.dataType === 'url') {
-          setTransformations(prev => ({ ...prev, [targetField.key]: 'trim' }));
+          setTransformations((prev) => ({ ...prev, [targetField.key]: 'trim' }));
         }
       }
     });
@@ -226,7 +320,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
   };
 
   const handleMappingChange = (targetField: string, sourceField: string) => {
-    setMappings(prev => ({
+    setMappings((prev) => ({
       ...prev,
       [targetField]: {
         ...prev[targetField],
@@ -243,8 +337,10 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
   };
 
   const getUnmappedFields = () => {
-    const mappedSourceFields = Object.values(mappings).map(m => m.sourceField).filter(Boolean);
-    return fileData.headers.filter(h => !mappedSourceFields.includes(h));
+    const mappedSourceFields = Object.values(mappings)
+      .map((m) => m.sourceField)
+      .filter(Boolean);
+    return fileData.headers.filter((h) => !mappedSourceFields.includes(h));
   };
 
   return (
@@ -306,9 +402,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <label className="text-sm font-medium">
-                            {field.label}
-                          </label>
+                          <label className="text-sm font-medium">{field.label}</label>
                           {field.required && <span className="text-red-500 text-xs">Required</span>}
                           {mapping?.suggested && (
                             <Badge variant="outline" className={confidenceBadge.color}>
@@ -330,7 +424,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
                             <SelectValue placeholder="Select source field" />
                           </SelectTrigger>
                           <SelectContent className="bg-[#0a0a0a] border-[#2a2a2a]">
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="_none">None</SelectItem>
                             {fileData.headers.map((header) => (
                               <SelectItem key={header} value={header}>
                                 {header}
@@ -371,14 +465,17 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
                 <div key={field} className="flex items-center gap-4">
                   <div className="flex-1">
                     <p className="text-sm font-medium">
-                      {PRODUCT_SCHEMA.find(f => f.key === field)?.label}
+                      {PRODUCT_SCHEMA.find((f) => f.key === field)?.label}
                     </p>
                     <p className="text-xs text-[#666]">{mapping.sourceField}</p>
                   </div>
                   <Select
                     value={transformations[field] || 'none'}
-                    onValueChange={(value) => 
-                      setTransformations(prev => ({ ...prev, [field]: value as TransformationType }))
+                    onValueChange={(value) =>
+                      setTransformations((prev) => ({
+                        ...prev,
+                        [field]: value as TransformationType,
+                      }))
                     }
                   >
                     <SelectTrigger className="w-48 bg-[#0a0a0a] border-[#2a2a2a]">
@@ -405,7 +502,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#2a2a2a]">
-                  {PRODUCT_SCHEMA.filter(f => mappings[f.key]?.sourceField).map(field => (
+                  {PRODUCT_SCHEMA.filter((f) => mappings[f.key]?.sourceField).map((field) => (
                     <th key={field.key} className="text-left p-2 text-[#666]">
                       {field.label}
                     </th>
@@ -415,7 +512,7 @@ export function SmartFieldMapper({ fileData, onMappingComplete, onValidation }: 
               <tbody>
                 {fileData.preview.slice(0, 5).map((row, index) => (
                   <tr key={index} className="border-b border-[#2a2a2a]">
-                    {PRODUCT_SCHEMA.filter(f => mappings[f.key]?.sourceField).map(field => {
+                    {PRODUCT_SCHEMA.filter((f) => mappings[f.key]?.sourceField).map((field) => {
                       const sourceField = mappings[field.key]?.sourceField;
                       const value = sourceField ? row[sourceField] : '';
                       return (

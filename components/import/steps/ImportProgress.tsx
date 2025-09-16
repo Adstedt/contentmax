@@ -64,9 +64,73 @@ export function ImportProgress({
     }
   }, []);
 
-  const startImport = () => {
+  const startImport = async () => {
     setIsProcessing(true);
-    simulateImport();
+
+    // Check if we have a URL to import from
+    const sourceData = allData['source-selection'];
+    if (!sourceData || !sourceData.sourceUrl) {
+      console.error('No source URL found');
+      simulateImport(); // Fallback to simulation
+      return;
+    }
+
+    try {
+      // Actually call the import API
+      console.log('Starting real import from:', sourceData.sourceUrl);
+
+      const response = await fetch('/api/taxonomy/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'url',
+          url: sourceData.sourceUrl,
+          options: {
+            mergeSimilar: allData['import-options']?.mergeSimilar ?? true,
+            persistToDatabase: true,
+            fetchMetaTags: false,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Import failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Import successful:', result);
+
+      // Update status with real data
+      setImportStatus({
+        totalProducts: result.taxonomy?.stats?.totalProducts || 0,
+        processedProducts: result.taxonomy?.stats?.totalProducts || 0,
+        categoriesCreated: result.taxonomy?.nodes || 0,
+        errors: 0,
+        warnings: 0,
+        speed: 0,
+        timeRemaining: 0,
+        currentBatch: 'Import complete!',
+        logs: [`Import completed: ${result.message}`],
+      });
+
+      setIsProcessing(false);
+      onValidation(true);
+      onDataChange({
+        importComplete: true,
+        summary: result,
+      });
+    } catch (error) {
+      console.error('Import failed:', error);
+      setImportStatus((prev) => ({
+        ...prev,
+        errors: prev.errors + 1,
+        logs: [`Error: ${error}`, ...prev.logs],
+        currentBatch: 'Import failed',
+      }));
+      setIsProcessing(false);
+    }
   };
 
   const simulateImport = () => {

@@ -9,7 +9,7 @@ import {
   Package,
   FolderTree,
   AlertCircle,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ export function FeedClearingModal({
   onClose,
   onComplete,
   feedName = 'All Feeds',
-  feedId
+  feedId,
 }: FeedClearingModalProps) {
   const [confirmText, setConfirmText] = useState('');
   const [isClearing, setIsClearing] = useState(false);
@@ -46,12 +46,37 @@ export function FeedClearingModal({
     setClearingProgress('Starting data deletion...');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
       // Clear data in order to maintain referential integrity
+      // Note: product_categories is a junction table without user_id, so handle it differently
+
+      // First, delete from junction table (references products)
+      setClearingProgress('Deleting product category relationships...');
+      const { data: userProducts } = await supabase
+        .from('products')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (userProducts && userProducts.length > 0) {
+        const productIds = userProducts.map((p) => p.id);
+        const { error: catError } = await supabase
+          .from('product_categories')
+          .delete()
+          .in('product_id', productIds);
+
+        if (catError && catError.code !== 'PGRST116') {
+          console.error('Error clearing product categories:', catError);
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Now delete the main tables
       const steps = [
-        { name: 'product categories', table: 'product_categories' },
         { name: 'products', table: 'products' },
         { name: 'taxonomy nodes', table: 'taxonomy_nodes' },
         { name: 'search metrics', table: 'search_metrics' },
@@ -62,28 +87,22 @@ export function FeedClearingModal({
         setClearingProgress(`Deleting ${step.name}...`);
 
         // Delete data based on user_id
-        const { error } = await supabase
-          .from(step.table)
-          .delete()
-          .eq('user_id', user.id)
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Safety check to ensure we're deleting real data
+        const { error } = await supabase.from(step.table).delete().eq('user_id', user.id);
 
-        if (error && error.code !== 'PGRST116') { // Ignore "no rows" error
+        if (error && error.code !== 'PGRST116') {
+          // Ignore "no rows" error
           console.error(`Error clearing ${step.name}:`, error);
           throw new Error(`Failed to clear ${step.name}`);
         }
 
         // Small delay to show progress
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       // If a specific feed ID was provided, also remove the connection record
       if (feedId) {
         setClearingProgress('Removing feed connection...');
-        const { error } = await supabase
-          .from('data_source_connections')
-          .delete()
-          .eq('id', feedId);
+        const { error } = await supabase.from('data_source_connections').delete().eq('id', feedId);
 
         if (error) {
           console.error('Error removing feed connection:', error);
@@ -100,7 +119,6 @@ export function FeedClearingModal({
         setConfirmText('');
         setClearingProgress('');
       }, 1000);
-
     } catch (error) {
       console.error('Error clearing feed data:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to clear feed data');
@@ -140,12 +158,12 @@ export function FeedClearingModal({
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-semibold text-white text-center mb-2">
-          Clear Feed Data
-        </h2>
+        <h2 className="text-xl font-semibold text-white text-center mb-2">Clear Feed Data</h2>
 
         <p className="text-[#999] text-center mb-6">
-          {feedName !== 'All Feeds' ? `Clear data for "${feedName}"` : 'Clear all imported feed data'}
+          {feedName !== 'All Feeds'
+            ? `Clear data for "${feedName}"`
+            : 'Clear all imported feed data'}
         </p>
 
         {/* Warning Box */}
