@@ -330,14 +330,18 @@ export class FeedTaxonomyBuilder {
 
       const BATCH_SIZE = 100; // Insert 100 products at a time
       let totalSaved = 0;
+      const totalBatches = Math.ceil(this.products.length / BATCH_SIZE);
 
       for (let i = 0; i < this.products.length; i += BATCH_SIZE) {
         const batch = this.products.slice(i, i + BATCH_SIZE);
-
-        // Report progress for product saving - map batch progress from 1.0 to 2.0 (out of 3 total steps)
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(this.products.length / BATCH_SIZE);
-        const batchProgress = 1 + batchNumber / totalBatches; // Will go from 1.0 to 2.0
+
+        // Report progress for product saving
+        // We're in step 2 of 3 (0=nodes, 1=products start, 2=products end, 3=assignments)
+        // Map batch progress from 1.0 to 2.0
+        const batchRatio = (batchNumber - 1) / Math.max(totalBatches - 1, 1);
+        const batchProgress = 1.0 + batchRatio; // Will go from 1.0 to 2.0
+
         this.reportProgress(
           'persisting',
           batchProgress,
@@ -394,7 +398,9 @@ export class FeedTaxonomyBuilder {
           // Continue with next batch
         } else {
           totalSaved += insertedProducts?.length || 0;
-          console.log(`Batch saved. Total products saved so far: ${totalSaved}`);
+          console.log(
+            `Batch ${batchNumber}/${totalBatches} saved. Total products saved: ${totalSaved}`
+          );
         }
       }
 

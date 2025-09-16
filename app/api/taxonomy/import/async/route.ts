@@ -154,13 +154,16 @@ async function processImportAsync(jobId: string, url: string, options: any, user
           } else if (progress.phase === 'counting') {
             job.progress = 75 + Math.round(phaseProgress * 5); // 75-80%
           } else if (progress.phase === 'persisting') {
-            // More granular progress for persisting phase (80-90%)
-            job.progress = 80 + Math.round(phaseProgress * 10);
+            // Persisting phase goes from 0/3 to 3/3
+            // Map this to 80-90% progress range
+            const persistProgress = Math.min(phaseProgress, 1.0); // Cap at 1.0
+            job.progress = 80 + Math.round(persistProgress * 10);
             job.status = 'saving';
-            // Update the message to show what's happening
-            if (progress.message.includes('batch')) {
-              job.status = 'saving';
-            }
+
+            // Log for debugging
+            console.log(
+              `Persist progress: ${progress.current}/${progress.total} = ${phaseProgress} -> ${job.progress}%`
+            );
           }
         },
       });
