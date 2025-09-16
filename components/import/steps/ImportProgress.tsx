@@ -152,8 +152,18 @@ export function ImportProgress({
       try {
         const response = await fetch(`/api/taxonomy/import/async?jobId=${jobId}`);
         if (!response.ok) {
+          // Don't throw immediately, the job might have been completed and cleaned up
+          if (response.status === 404) {
+            console.log('Job not found, might have been completed and cleaned up');
+            // Check if we already marked it as complete
+            if (importStatus.progressPercent >= 100) {
+              clearInterval(pollInterval);
+              return;
+            }
+          }
           clearInterval(pollInterval);
-          throw new Error('Failed to get job status');
+          console.error('Failed to get job status:', response.status, response.statusText);
+          return;
         }
 
         const job = await response.json();
@@ -404,13 +414,14 @@ export function ImportProgress({
               </span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <Progress
-              value={progress}
-              className="h-3 bg-[#0a0a0a]"
-              style={{
-                transition: 'all 0.3s ease-out',
-              }}
-            />
+            <div className="relative h-3 bg-[#0a0a0a] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#10a37f] transition-all duration-300 ease-out rounded-full"
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
+            </div>
             <div className="flex justify-between text-xs text-[#666]">
               <span>{importStatus.speed} products/sec</span>
               <span>~{formatTime(importStatus.timeRemaining)} remaining</span>

@@ -159,19 +159,23 @@ async function processImportAsync(jobId: string, url: string, options: any, user
       const nodes = builder.getNodes();
       job.categoriesCreated = nodes.size;
       job.status = 'building'; // Reset status from building:counting
+      job.progress = 90; // Ensure we're at 90% after counting
       job.logs.push(`[${new Date().toISOString()}] Created ${nodes.size} categories`);
 
       // Optional: Merge similar categories
       finalNodes = nodes;
       if (options?.mergeSimilar) {
         job.status = 'merging';
-        job.progress = 90;
+        job.progress = 91;
         job.logs.push(`[${new Date().toISOString()}] Merging similar categories...`);
         const merger = new CategoryMerger();
         finalNodes = merger.mergeSimilarCategories(nodes);
         job.categoriesCreated = finalNodes.size;
         job.logs.push(`[${new Date().toISOString()}] Merged to ${finalNodes.size} categories`);
-        job.progress = 92;
+        job.progress = 93;
+      } else {
+        // If not merging, go straight to higher progress
+        job.progress = 93;
       }
 
       job.status = 'finalizing';
@@ -205,11 +209,12 @@ async function processImportAsync(jobId: string, url: string, options: any, user
     job.failedAt = new Date().toISOString();
   }
 
-  // Clean up old jobs after 1 hour
+  // Clean up old jobs after 2 hours (give plenty of time for UI to poll)
   setTimeout(
     () => {
+      console.log(`Cleaning up import job ${jobId}`);
       importJobs.delete(jobId);
     },
-    60 * 60 * 1000
+    2 * 60 * 60 * 1000
   );
 }
