@@ -9,7 +9,7 @@ import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visuali
 function generateDemoData(nodeCount: number = 100) {
   const nodes: TaxonomyNode[] = [];
   const links: TaxonomyLink[] = [];
-  
+
   // Create root node
   nodes.push({
     id: 'root',
@@ -22,7 +22,7 @@ function generateDemoData(nodeCount: number = 100) {
     revenue: 50000,
     status: 'optimized',
   });
-  
+
   // Create category nodes
   const categories = ['Electronics', 'Clothing', 'Books', 'Sports', 'Home'];
   categories.forEach((category, i) => {
@@ -36,16 +36,18 @@ function generateDemoData(nodeCount: number = 100) {
       skuCount: Math.floor(Math.random() * 50) + 10,
       traffic: Math.floor(Math.random() * 5000) + 1000,
       revenue: Math.floor(Math.random() * 20000) + 5000,
-      status: ['optimized', 'outdated', 'missing', 'noContent'][Math.floor(Math.random() * 4)] as any,
+      status: ['optimized', 'outdated', 'missing', 'noContent'][
+        Math.floor(Math.random() * 4)
+      ] as any,
     });
-    
+
     // Link to root
     links.push({
       source: 'root',
       target: categoryId,
       strength: 0.8,
     });
-    
+
     // Create subcategory nodes
     const subcategoryCount = Math.floor(Math.random() * 5) + 3;
     for (let j = 0; j < subcategoryCount && nodes.length < nodeCount; j++) {
@@ -59,16 +61,18 @@ function generateDemoData(nodeCount: number = 100) {
         skuCount: Math.floor(Math.random() * 20) + 5,
         traffic: Math.floor(Math.random() * 1000) + 200,
         revenue: Math.floor(Math.random() * 5000) + 1000,
-        status: ['optimized', 'outdated', 'missing', 'noContent'][Math.floor(Math.random() * 4)] as any,
+        status: ['optimized', 'outdated', 'missing', 'noContent'][
+          Math.floor(Math.random() * 4)
+        ] as any,
       });
-      
+
       // Link to category
       links.push({
         source: categoryId,
         target: subcategoryId,
         strength: 0.6,
       });
-      
+
       // Create product nodes
       const productCount = Math.floor(Math.random() * 8) + 2;
       for (let k = 0; k < productCount && nodes.length < nodeCount; k++) {
@@ -82,9 +86,11 @@ function generateDemoData(nodeCount: number = 100) {
           skuCount: Math.floor(Math.random() * 5) + 1,
           traffic: Math.floor(Math.random() * 100) + 10,
           revenue: Math.floor(Math.random() * 1000) + 100,
-          status: ['optimized', 'outdated', 'missing', 'noContent'][Math.floor(Math.random() * 4)] as any,
+          status: ['optimized', 'outdated', 'missing', 'noContent'][
+            Math.floor(Math.random() * 4)
+          ] as any,
         });
-        
+
         // Link to subcategory
         links.push({
           source: subcategoryId,
@@ -94,7 +100,7 @@ function generateDemoData(nodeCount: number = 100) {
       }
     }
   });
-  
+
   // Add some cross-links for interesting patterns
   for (let i = 0; i < 10 && i < nodes.length - 1; i++) {
     const sourceIdx = Math.floor(Math.random() * nodes.length);
@@ -107,7 +113,7 @@ function generateDemoData(nodeCount: number = 100) {
       });
     }
   }
-  
+
   return { nodes, links };
 }
 
@@ -128,6 +134,49 @@ export default async function TaxonomyPage() {
     .eq('user_id', user.id)
     .single();
 
+  // Prefetch taxonomy data on server for instant initial load
+  let initialData = null;
+  try {
+    // Fetch taxonomy nodes
+    const { data: taxonomyNodes } = await supabase
+      .from('taxonomy_nodes')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('depth', { ascending: true });
+
+    if (taxonomyNodes && taxonomyNodes.length > 0) {
+      // Transform to visualization format
+      const nodes: TaxonomyNode[] = taxonomyNodes.map((node) => ({
+        id: node.id,
+        url: node.url || `/${node.path}`,
+        title: node.title,
+        children: [],
+        depth: node.depth,
+        skuCount: node.product_count || 0,
+        traffic: Math.floor(Math.random() * 5000) + 1000, // Will be replaced with real data
+        revenue: Math.floor(Math.random() * 20000) + 5000, // Will be replaced with real data
+        status: 'optimized' as const, // Default status
+      }));
+
+      // Build links from parent relationships
+      const links: TaxonomyLink[] = [];
+      for (const node of taxonomyNodes) {
+        if (node.parent_id) {
+          links.push({
+            source: node.parent_id,
+            target: node.id,
+            strength: 0.8 - node.depth * 0.2, // Weaker links for deeper nodes
+          });
+        }
+      }
+
+      initialData = { nodes, links };
+    }
+  } catch (error) {
+    console.error('Error prefetching taxonomy data:', error);
+    // Continue without initial data - client will fetch
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-[#000]">
       <Header
@@ -137,10 +186,7 @@ export default async function TaxonomyPage() {
 
       <main className="flex-1 p-6 overflow-hidden">
         <FeatureErrorBoundary featureName="Taxonomy Visualization">
-          <TaxonomyClient 
-            userId={user.id}
-            projectId={project?.id}
-          />
+          <TaxonomyClient userId={user.id} projectId={project?.id} initialData={initialData} />
         </FeatureErrorBoundary>
       </main>
     </div>

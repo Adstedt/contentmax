@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { TaxonomyVisualization } from '@/components/taxonomy/TaxonomyVisualization';
-import { DataImportModal } from '@/components/onboarding/DataImportModal';
 import { ImportWizardV2 } from '@/components/import/ImportWizardV2';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, RefreshCw, Database } from 'lucide-react';
+import { Upload, RefreshCw, Database, AlertCircle } from 'lucide-react';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
+import { useTaxonomyData } from '@/hooks/useTaxonomyData';
 
 interface TaxonomyClientProps {
   initialData?: any;
@@ -17,79 +17,73 @@ interface TaxonomyClientProps {
 
 export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClientProps) {
   const [showImportModal, setShowImportModal] = useState(false);
-  const [taxonomyData, setTaxonomyData] = useState<{
-    nodes: TaxonomyNode[];
-    links: TaxonomyLink[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasData, setHasData] = useState(false);
+  const [showDemoData, setShowDemoData] = useState(false);
+
+  // Use SWR for data fetching with caching
+  const {
+    data: taxonomyData,
+    error,
+    isLoading,
+    isRefreshing,
+    hasData,
+    isEmpty,
+    refresh,
+    mutate,
+  } = useTaxonomyData({
+    projectId,
+    fallbackData: initialData,
+  });
+
+  // Show import modal if no data on first load
+  useEffect(() => {
+    if (!isLoading && isEmpty && !showDemoData) {
+      setShowImportModal(true);
+    }
+  }, [isLoading, isEmpty, showDemoData]);
+
+  // Calculate loading progress for smooth UX
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('Initializing...');
 
   useEffect(() => {
-    loadTaxonomyData();
-  }, [projectId]);
+    if (isLoading) {
+      // Smooth progress animation
+      setLoadingProgress(10);
+      setLoadingMessage('Connecting to database...');
 
-  const loadTaxonomyData = async () => {
-    setLoading(true);
-    setLoadingProgress(10);
-    setLoadingMessage('Connecting to database...');
+      const timer1 = setTimeout(() => {
+        setLoadingProgress(40);
+        setLoadingMessage('Loading taxonomy nodes...');
+      }, 200);
 
-    try {
-      // Check if user has taxonomy data in database
-      setLoadingProgress(30);
-      setLoadingMessage('Fetching taxonomy nodes...');
+      const timer2 = setTimeout(() => {
+        setLoadingProgress(70);
+        setLoadingMessage('Processing relationships...');
+      }, 400);
 
-      const response = await fetch(`/api/taxonomy/data?projectId=${projectId || ''}`);
+      const timer3 = setTimeout(() => {
+        setLoadingProgress(90);
+        setLoadingMessage('Building visualization...');
+      }, 600);
 
-      setLoadingProgress(60);
-      setLoadingMessage('Processing taxonomy structure...');
-
-      if (response.ok) {
-        const data = await response.json();
-
-        setLoadingProgress(80);
-        setLoadingMessage(`Building visualization for ${data.nodes?.length || 0} categories...`);
-
-        if (data.nodes && data.nodes.length > 0) {
-          // Add a small delay for very large datasets to prevent UI freeze
-          if (data.nodes.length > 1000) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-
-          setTaxonomyData(data);
-          setHasData(true);
-          setLoadingProgress(100);
-          setLoadingMessage('Complete!');
-        } else {
-          // No data - show onboarding
-          setHasData(false);
-          if (!taxonomyData) {
-            setShowImportModal(true);
-          }
-        }
-      } else if (response.status === 404) {
-        // No data found
-        setHasData(false);
-        setShowImportModal(true);
-      }
-    } catch (error) {
-      console.error('Failed to load taxonomy data:', error);
-      setHasData(false);
-      setLoadingMessage('Failed to load data');
-    } finally {
-      // Small delay before hiding loading for smooth transition
-      setTimeout(() => setLoading(false), 300);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    } else if (taxonomyData) {
+      setLoadingProgress(100);
+      setLoadingMessage('Complete!');
     }
-  };
+  }, [isLoading, taxonomyData]);
 
   const handleImportSuccess = async (importData: any) => {
-    // Transform imported data to visualization format
-    const { taxonomy } = importData;
-
-    // Reload data from database
-    await loadTaxonomyData();
+    // Use SWR mutate to refresh the data
+    await mutate();
     setShowImportModal(false);
+
+    // Clear any demo data
+    setShowDemoData(false);
   };
 
   const generateDemoData = () => {
@@ -138,7 +132,8 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
     return { nodes, links };
   };
 
-  if (loading) {
+  // Show loading only on initial load, not on refresh
+  if (isLoading && !taxonomyData) {
     return (
       <div className="flex items-center justify-center h-[600px]">
         <div className="text-center space-y-4 max-w-md">
@@ -166,34 +161,35 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
           <div className="flex gap-2">
             <Button
               onClick={() => setShowImportModal(true)}
-              variant={hasData ? 'outline' : 'default'}
+              variant={hasData || showDemoData ? 'outline' : 'default'}
               className={
-                hasData
+                hasData || showDemoData
                   ? 'bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]'
                   : 'bg-[#10a37f] hover:bg-[#0e8a6b] text-white'
               }
             >
               <Upload className="mr-2 h-4 w-4" />
-              {hasData ? 'Import New Data' : 'Import Products'}
+              {hasData || showDemoData ? 'Import New Data' : 'Import Products'}
             </Button>
 
-            {hasData && (
+            {(hasData || showDemoData) && (
               <Button
-                onClick={loadTaxonomyData}
+                onClick={refresh}
                 variant="outline"
-                className="bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a]"
+                disabled={isRefreshing}
+                className="bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white border-[#2a2a2a] disabled:opacity-50"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
+                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
             )}
 
-            {!hasData && (
+            {!hasData && !showDemoData && (
               <Button
                 onClick={() => {
                   const demoData = generateDemoData();
-                  setTaxonomyData(demoData);
-                  setHasData(true);
+                  mutate(demoData, false); // Update cache with demo data
+                  setShowDemoData(true);
                 }}
                 variant="ghost"
                 className="hover:bg-[#1a1a1a] text-[#999]"
@@ -204,7 +200,7 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
             )}
           </div>
 
-          {hasData && taxonomyData && (
+          {(hasData || showDemoData) && taxonomyData && (
             <div className="flex items-center gap-4 text-sm">
               <div className="text-muted-foreground">
                 {taxonomyData.nodes.length.toLocaleString()} categories •{' '}
@@ -215,12 +211,27 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
                   Large Dataset - Performance Mode
                 </span>
               )}
+              {isRefreshing && (
+                <span className="px-2 py-1 bg-blue-500/10 text-blue-500 rounded text-xs font-medium animate-pulse">
+                  Updating...
+                </span>
+              )}
             </div>
           )}
         </div>
 
+        {/* Error handling */}
+        {error && (
+          <Alert className="bg-[#0a0a0a] border-red-500/20">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-[#999]">
+              Failed to load taxonomy data. Please try refreshing the page.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Info Alert for New Users */}
-        {!hasData && !taxonomyData && (
+        {!hasData && !showDemoData && !isLoading && (
           <Alert>
             <AlertDescription>
               <strong>Welcome!</strong> Import your product catalog to visualize your taxonomy. You
@@ -230,9 +241,9 @@ export function TaxonomyClient({ initialData, projectId, userId }: TaxonomyClien
         )}
 
         {/* Visualization */}
-        {taxonomyData && (
+        {(taxonomyData || showDemoData) && (
           <TaxonomyVisualization
-            data={taxonomyData}
+            data={taxonomyData || generateDemoData()}
             onNodeClick={(node) => console.log('Node clicked:', node)}
           />
         )}

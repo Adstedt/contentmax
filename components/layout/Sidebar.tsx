@@ -15,6 +15,7 @@ import {
   Database,
 } from 'lucide-react';
 import { useState } from 'react';
+import { prefetchTaxonomyData } from '@/hooks/useTaxonomyData';
 
 const navigation = [
   { name: 'Exploring', href: '/dashboard', icon: Home },
@@ -82,6 +83,12 @@ export function Sidebar() {
                 onClick={(e) => {
                   if (isComingSoon) e.preventDefault();
                   else setIsMobileMenuOpen(false);
+                }}
+                onMouseEnter={() => {
+                  // Prefetch taxonomy data on hover for instant loading
+                  if (item.href === '/dashboard/taxonomy' && !isComingSoon) {
+                    prefetchTaxonomyData();
+                  }
                 }}
                 className={`
                   flex items-center px-3 py-2 text-sm rounded-md
