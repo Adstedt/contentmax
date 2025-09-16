@@ -111,9 +111,12 @@ export function ImportWizardV2({ onClose, onComplete, projectId }: ImportWizardV
   };
 
   const goToNext = () => {
+    console.log(`goToNext called: currentStep=${currentStep}, total steps=${WIZARD_STEPS.length}`);
     if (currentStep < WIZARD_STEPS.length - 1) {
+      console.log(`Advancing to step ${currentStep + 1}`);
       setCurrentStep(currentStep + 1);
     } else if (onComplete) {
+      console.log('At last step, calling onComplete');
       onComplete(wizardData);
     }
   };

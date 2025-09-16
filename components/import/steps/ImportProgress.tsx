@@ -222,19 +222,19 @@ export function ImportProgress({
         if (job.status === 'completed') {
           clearInterval(pollInterval);
           setIsProcessing(false);
-          onValidation(true);
+
+          // Store the summary data for the Review Results step
           onDataChange({
             importComplete: true,
             summary: job.summary,
           });
 
-          // Auto-advance to Review Results after a short delay
-          setTimeout(() => {
-            if (onNext) {
-              console.log('Auto-advancing to Review Results');
-              onNext();
-            }
-          }, 2000);
+          // Mark this step as valid
+          onValidation(true);
+
+          // Don't auto-advance, let user click the button
+          // This ensures the data is properly saved before navigation
+          console.log('Import completed, showing Continue button');
         } else if (job.status === 'failed') {
           clearInterval(pollInterval);
           setIsProcessing(false);
@@ -542,9 +542,23 @@ export function ImportProgress({
             <Button
               size="lg"
               onClick={() => {
-                if (onNext) {
-                  onNext();
-                }
+                console.log('Continue to Review clicked');
+                // Ensure data is saved before advancing
+                onValidation(true);
+                onDataChange({
+                  importComplete: true,
+                  summary: importStatus,
+                });
+
+                // Small delay to ensure state updates
+                setTimeout(() => {
+                  if (onNext) {
+                    console.log('Calling onNext to advance to Review Results');
+                    onNext();
+                  } else {
+                    console.error('onNext function not provided to ImportProgress component');
+                  }
+                }, 100);
               }}
               className="bg-[#10a37f] hover:bg-[#0e8a6b] text-white px-8"
             >

@@ -24,13 +24,19 @@ interface ImportResultsProps {
 }
 
 export function ImportResults({ data, allData, onDataChange, onValidation }: ImportResultsProps) {
-  const summary = allData['processing']?.summary || {
-    totalProducts: 14232,
-    processedProducts: 14232,
-    categoriesCreated: 864,
-    errors: 12,
-    warnings: 132,
-  };
+  console.log('ImportResults component rendered with data:', { data, allData });
+
+  // Get summary from the processing step data
+  const summary = allData['processing']?.summary ||
+    data?.summary || {
+      totalProducts: allData['processing']?.totalProducts || 0,
+      processedProducts: allData['processing']?.processedProducts || 0,
+      categoriesCreated: allData['processing']?.categoriesCreated || 0,
+      errors: allData['processing']?.errors || 0,
+      warnings: allData['processing']?.warnings || 0,
+    };
+
+  console.log('Using summary:', summary);
 
   useEffect(() => {
     onValidation(true);
