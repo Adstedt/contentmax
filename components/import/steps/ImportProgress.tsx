@@ -14,6 +14,10 @@ import {
   Pause,
   Play,
   X,
+  Download,
+  GitBranch,
+  Link2,
+  Calculator,
 } from 'lucide-react';
 
 interface ImportProgressProps {
@@ -37,6 +41,7 @@ interface ImportStatus {
   currentBatch: string;
   logs: string[];
   isComplete: boolean;
+  progressPercent: number;
 }
 
 export function ImportProgress({
@@ -60,6 +65,7 @@ export function ImportProgress({
     currentBatch: 'Initializing...',
     logs: [],
     isComplete: false,
+    progressPercent: 0,
   });
 
   useEffect(() => {
@@ -156,7 +162,13 @@ export function ImportProgress({
         let statusMessage = job.status;
         if (job.status?.startsWith('building:')) {
           const phase = job.status.split(':')[1];
-          statusMessage = `Building taxonomy: ${phase}...`;
+          const phaseMessages = {
+            extracting: 'Extracting category paths',
+            building: 'Building category structure',
+            assigning: 'Assigning products to categories',
+            counting: 'Calculating product counts',
+          };
+          statusMessage = phaseMessages[phase] || `Building taxonomy: ${phase}...`;
         } else if (job.status === 'fetching') {
           statusMessage = 'Fetching product feed...';
         } else if (job.status === 'processing') {
@@ -193,6 +205,7 @@ export function ImportProgress({
           currentBatch: statusMessage,
           logs: job.logs?.slice(-5) || [],
           isComplete: job.status === 'completed',
+          progressPercent: job.progress || job.progressPercent || 0,
         });
 
         // Check if completed or failed
@@ -271,7 +284,8 @@ export function ImportProgress({
     return () => clearInterval(interval);
   };
 
-  const progress = (importStatus.processedProducts / importStatus.totalProducts) * 100;
+  // Use the actual progress from the job, not calculated from products
+  const progress = importStatus.progressPercent || 0;
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -280,8 +294,82 @@ export function ImportProgress({
     return `${minutes}m ${secs}s`;
   };
 
+  // Determine current phase for visual indicator
+  const getPhaseFromStatus = (status: string) => {
+    if (status === 'fetching') return 'fetching';
+    if (status === 'processing') return 'processing';
+    if (status?.startsWith('building:')) {
+      return status.split(':')[1];
+    }
+    if (status === 'building') return 'building';
+    if (status === 'merging') return 'merging';
+    if (status === 'finalizing' || status === 'completed') return 'finalizing';
+    return null;
+  };
+
+  const currentPhase = getPhaseFromStatus(importStatus.currentBatch);
+
+  const phases = [
+    { id: 'fetching', label: 'Fetching Feed', icon: Download },
+    { id: 'extracting', label: 'Extracting', icon: GitBranch },
+    { id: 'building', label: 'Building', icon: FolderTree },
+    { id: 'assigning', label: 'Assigning', icon: Link2 },
+    { id: 'counting', label: 'Counting', icon: Calculator },
+    { id: 'merging', label: 'Merging', icon: GitBranch },
+    { id: 'finalizing', label: 'Finalizing', icon: CheckCircle2 },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Phase Indicators */}
+      <div className="flex items-center justify-between gap-2">
+        {phases.map((phase) => {
+          const Icon = phase.icon;
+          const isActive = currentPhase === phase.id;
+          const isCompleted =
+            progress > 0 &&
+            ((phase.id === 'fetching' && progress > 50) ||
+              (phase.id === 'extracting' && progress > 60) ||
+              (phase.id === 'building' && progress > 75) ||
+              (phase.id === 'assigning' && progress > 85) ||
+              (phase.id === 'counting' && progress > 90) ||
+              (phase.id === 'merging' && progress > 92) ||
+              (phase.id === 'finalizing' && progress >= 95));
+
+          return (
+            <div
+              key={phase.id}
+              className={`flex flex-col items-center gap-1 flex-1 transition-all ${
+                isActive ? 'scale-105' : ''
+              }`}
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                  isActive
+                    ? 'border-[#10a37f] bg-[#10a37f]/20 text-[#10a37f]'
+                    : isCompleted
+                      ? 'border-[#10a37f]/50 bg-[#1a1a1a] text-[#10a37f]/50'
+                      : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#666]'
+                }`}
+              >
+                {isActive ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Icon className="h-5 w-5" />
+                )}
+              </div>
+              <span
+                className={`text-xs ${
+                  isActive ? 'text-white' : isCompleted ? 'text-[#999]' : 'text-[#666]'
+                }`}
+              >
+                {phase.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Main Progress */}
       <Card className="p-6 bg-[#1a1a1a] border-[#2a2a2a]">
         <div className="space-y-4">
@@ -316,7 +404,13 @@ export function ImportProgress({
               </span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-3 bg-[#0a0a0a]" />
+            <Progress
+              value={progress}
+              className="h-3 bg-[#0a0a0a]"
+              style={{
+                transition: 'all 0.3s ease-out',
+              }}
+            />
             <div className="flex justify-between text-xs text-[#666]">
               <span>{importStatus.speed} products/sec</span>
               <span>~{formatTime(importStatus.timeRemaining)} remaining</span>

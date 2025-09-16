@@ -139,19 +139,26 @@ async function processImportAsync(jobId: string, url: string, options: any, user
           job.status = `building:${progress.phase}`;
           job.logs.push(`[${new Date().toISOString()}] ${progress.message}`);
 
-          // Calculate overall progress (50-90% range for building)
-          const phaseProgress = progress.total > 0 ? progress.current / progress.total : 0;
-          job.progress = 50 + Math.round(phaseProgress * 40);
+          // Calculate overall progress based on phase
+          let phaseProgress = progress.total > 0 ? progress.current / progress.total : 0;
 
-          // Update categories created as we go
-          if (progress.phase === 'building') {
+          // Map phases to progress ranges
+          if (progress.phase === 'extracting') {
+            job.progress = 50 + Math.round(phaseProgress * 10); // 50-60%
+          } else if (progress.phase === 'building') {
+            job.progress = 60 + Math.round(phaseProgress * 15); // 60-75%
             job.categoriesCreated = progress.current;
+          } else if (progress.phase === 'assigning') {
+            job.progress = 75 + Math.round(phaseProgress * 10); // 75-85%
+          } else if (progress.phase === 'counting') {
+            job.progress = 85 + Math.round(phaseProgress * 5); // 85-90%
           }
         },
       });
 
       const nodes = builder.getNodes();
       job.categoriesCreated = nodes.size;
+      job.status = 'building'; // Reset status from building:counting
       job.logs.push(`[${new Date().toISOString()}] Created ${nodes.size} categories`);
 
       // Optional: Merge similar categories
@@ -164,11 +171,15 @@ async function processImportAsync(jobId: string, url: string, options: any, user
         finalNodes = merger.mergeSimilarCategories(nodes);
         job.categoriesCreated = finalNodes.size;
         job.logs.push(`[${new Date().toISOString()}] Merged to ${finalNodes.size} categories`);
+        job.progress = 92;
       }
 
       job.status = 'finalizing';
       job.progress = 95;
       job.logs.push(`[${new Date().toISOString()}] Finalizing import...`);
+
+      // Small delay to show finalizing status
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (buildError) {
       // If taxonomy building fails, still mark as partial success if we got products
       job.errors.push(`Taxonomy build error: ${buildError}`);
