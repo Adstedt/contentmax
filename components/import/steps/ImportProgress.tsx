@@ -227,6 +227,14 @@ export function ImportProgress({
             importComplete: true,
             summary: job.summary,
           });
+
+          // Auto-advance to Review Results after a short delay
+          setTimeout(() => {
+            if (onNext) {
+              console.log('Auto-advancing to Review Results');
+              onNext();
+            }
+          }, 2000);
         } else if (job.status === 'failed') {
           clearInterval(pollInterval);
           setIsProcessing(false);
@@ -241,7 +249,7 @@ export function ImportProgress({
         console.error('Failed to poll job status:', error);
         clearInterval(pollInterval);
       }
-    }, 1000); // Poll every second
+    }, 500); // Poll every 500ms for more responsive updates
   };
 
   const simulateImport = () => {

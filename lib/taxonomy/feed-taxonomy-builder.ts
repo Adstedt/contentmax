@@ -334,12 +334,13 @@ export class FeedTaxonomyBuilder {
       for (let i = 0; i < this.products.length; i += BATCH_SIZE) {
         const batch = this.products.slice(i, i + BATCH_SIZE);
 
-        // Report progress for product saving
+        // Report progress for product saving - map batch progress from 1.0 to 2.0 (out of 3 total steps)
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
         const totalBatches = Math.ceil(this.products.length / BATCH_SIZE);
+        const batchProgress = 1 + batchNumber / totalBatches; // Will go from 1.0 to 2.0
         this.reportProgress(
           'persisting',
-          1,
+          batchProgress,
           3,
           `Saving products batch ${batchNumber}/${totalBatches}...`
         );
@@ -400,9 +401,12 @@ export class FeedTaxonomyBuilder {
       console.log(
         `Finished saving products. Total saved: ${totalSaved} out of ${this.products.length}`
       );
+
+      // Report completion of product saving
+      this.reportProgress('persisting', 2, 3, 'Products saved successfully');
     }
 
-    this.reportProgress('persisting', 2, 3, 'Creating category assignments...');
+    this.reportProgress('persisting', 2.5, 3, 'Creating category assignments...');
 
     // Store product-category assignments
     const assignments = [];
@@ -430,9 +434,10 @@ export class FeedTaxonomyBuilder {
 
     console.log(`Created ${nodesArray.length} taxonomy nodes from product feed`);
 
+    // Report final completion
     this.reportProgress('persisting', 3, 3, 'Database save complete');
 
-    return data;
+    return data || nodesArray; // Return nodes even if data is undefined
   }
 
   // Public method to get nodes for testing

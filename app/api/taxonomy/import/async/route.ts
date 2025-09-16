@@ -126,7 +126,8 @@ async function processImportAsync(jobId: string, url: string, options: any, user
     job.status = 'building';
     job.logs.push(`[${new Date().toISOString()}] Building taxonomy structure...`);
 
-    let finalNodes: any;
+    let finalNodes: any = new Map();
+    let nodes: any = new Map();
     try {
       const builder = new FeedTaxonomyBuilder();
 
@@ -153,17 +154,26 @@ async function processImportAsync(jobId: string, url: string, options: any, user
           } else if (progress.phase === 'counting') {
             job.progress = 75 + Math.round(phaseProgress * 5); // 75-80%
           } else if (progress.phase === 'persisting') {
-            job.progress = 80 + Math.round(phaseProgress * 10); // 80-90%
+            // More granular progress for persisting phase (80-90%)
+            job.progress = 80 + Math.round(phaseProgress * 10);
             job.status = 'saving';
+            // Update the message to show what's happening
+            if (progress.message.includes('batch')) {
+              job.status = 'saving';
+            }
           }
         },
       });
 
-      const nodes = builder.getNodes();
+      // After buildFromProductFeed completes (which includes persistence)
+      nodes = builder.getNodes();
       job.categoriesCreated = nodes.size;
       job.status = 'saved'; // Database save complete
       job.progress = 90; // We're at 90% after all persistence
       job.logs.push(`[${new Date().toISOString()}] Created and saved ${nodes.size} categories`);
+
+      // Small delay to ensure UI updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Optional: Merge similar categories
       finalNodes = nodes;
@@ -196,16 +206,27 @@ async function processImportAsync(jobId: string, url: string, options: any, user
       finalNodes = new Map();
     }
 
-    job.categoriesCreated = finalNodes.size || 0;
+    // Mark as completed
+    job.categoriesCreated = finalNodes?.size || nodes?.size || 0;
     job.status = 'completed';
     job.progress = 100;
     job.completedAt = new Date().toISOString();
     job.logs.push(`[${new Date().toISOString()}] Import completed successfully`);
     job.summary = {
       totalProducts: feedResult.products.length,
-      categoriesCreated: finalNodes.size || 0,
+      processedProducts: feedResult.products.length,
+      categoriesCreated: job.categoriesCreated,
       duration: Date.now() - new Date(job.startedAt).getTime(),
     };
+
+    console.log(`Import job ${jobId} completed successfully:`, job.summary);
+
+    // Keep the job alive for a bit longer to ensure UI can poll the completion
+    setTimeout(() => {
+      if (importJobs.get(jobId)?.status === 'completed') {
+        console.log(`Job ${jobId} still showing as completed after delay`);
+      }
+    }, 5000);
   } catch (error) {
     console.error('Import job failed:', error);
     job.status = 'failed';
