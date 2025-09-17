@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { TrafficCalculator } from '@/lib/scoring/traffic-calculator';
 import { OpportunityRevenueCalculator } from '@/lib/scoring/opportunity-revenue-calculator';
 import { PricingCalculator, type PricingData } from '@/lib/scoring/pricing-calculator';
@@ -403,6 +403,7 @@ export class OpportunityService {
       user_id: userId,
     }));
 
+    const supabase = createClient();
     const { error } = await supabase.from('opportunity_scores').upsert(records, {
       onConflict: 'node_id,user_id',
     });

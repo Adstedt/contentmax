@@ -1,670 +1,282 @@
-/**
- * Metrics Aggregator
- *
- * Aggregates search and analytics metrics from products to categories
- * using bottom-up approach
- */
-
-import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization';
-import type { SearchMetric } from '@/lib/services/gsc-service';
-import type { MappedAnalyticsMetric } from '@/lib/integration/ga4-mapper';
-
-export interface AggregatedMetrics {
-  nodeId: string;
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  avgPosition: number;
-  urlCount: number;
-  childMetrics?: AggregatedMetrics[];
-}
-
-export interface AggregatedAnalyticsMetrics {
-  nodeId: string;
-  revenue: number;
-  transactions: number;
-  sessions: number;
-  users: number;
-  conversionRate: number;
-  avgOrderValue: number;
-  engagementRate: number;
-  bounceRate: number;
-  pageViews: number;
-  productCount: number;
-  childMetrics?: AggregatedAnalyticsMetrics[];
-}
-
-export interface ProductMetric {
-  productId: string;
-  nodeId?: string;
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  position: number;
-}
+import { TaxonomyNode, Product, IntegratedMetric, AggregatedMetrics } from '@/types/integration';
 
 export class MetricsAggregator {
   /**
    * Aggregate metrics from products to categories (bottom-up)
+   * This allows category-level views to show aggregated metrics from all child products
    */
   aggregateToCategories(
     nodes: TaxonomyNode[],
-    productMetrics: Map<string, ProductMetric>
+    productMetrics: Map<string, IntegratedMetric>
   ): Map<string, AggregatedMetrics> {
     const nodeMetrics = new Map<string, AggregatedMetrics>();
 
-    // Step 1: Initialize leaf nodes with product metrics
-    for (const [productId, metric] of productMetrics) {
-      if (!metric.nodeId) continue;
-
-      if (!nodeMetrics.has(metric.nodeId)) {
-        nodeMetrics.set(metric.nodeId, this.initializeMetrics(metric.nodeId));
-      }
-
-      const catMetrics = nodeMetrics.get(metric.nodeId)!;
-      this.addMetrics(catMetrics, metric);
-    }
-
-    // Step 2: Build parent-child relationships map
-    const childToParent = new Map<string, string>();
-    const parentToChildren = new Map<string, Set<string>>();
-
+    // Step 1: Initialize metrics for all nodes
     for (const node of nodes) {
-      if (node.parentId) {
-        childToParent.set(node.id, node.parentId);
+      nodeMetrics.set(node.id, this.initMetrics(node.id));
+    }
 
-        if (!parentToChildren.has(node.parentId)) {
-          parentToChildren.set(node.parentId, new Set());
-        }
-        parentToChildren.get(node.parentId)!.add(node.id);
+    // Step 2: Aggregate product metrics to their direct categories
+    for (const [productId, metrics] of productMetrics) {
+      const product = this.findProductById(productId);
+      if (!product || !product.category_id) continue;
+
+      const categoryMetrics = nodeMetrics.get(product.category_id);
+      if (categoryMetrics) {
+        this.addMetrics(categoryMetrics, metrics);
       }
     }
 
-    // Step 3: Sort nodes by depth (deepest first for bottom-up)
-    const sortedNodes = this.sortNodesByDepth(nodes, childToParent, 'desc');
+    // Step 3: Aggregate up the taxonomy tree (bottom-up)
+    const sortedNodes = this.sortNodesByDepth(nodes, 'desc');
 
-    // Step 4: Aggregate up the tree
     for (const node of sortedNodes) {
-      const children = parentToChildren.get(node.id);
-      if (!children || children.size === 0) continue;
+      const currentMetrics = nodeMetrics.get(node.id);
+      if (!currentMetrics) continue;
 
-      // Initialize parent metrics if not exists
-      if (!nodeMetrics.has(node.id)) {
-        nodeMetrics.set(node.id, this.initializeMetrics(node.id));
-      }
-
-      const parentMetrics = nodeMetrics.get(node.id)!;
-
-      // Aggregate child metrics
-      for (const childId of children) {
-        const childMetrics = nodeMetrics.get(childId);
+      // Add metrics from all child nodes
+      const children = nodes.filter((n) => n.parent_id === node.id);
+      for (const child of children) {
+        const childMetrics = nodeMetrics.get(child.id);
         if (childMetrics) {
-          this.aggregateChildMetrics(parentMetrics, childMetrics);
+          this.addAggregatedMetrics(currentMetrics, childMetrics);
         }
       }
-    }
 
-    // Step 5: Calculate final CTR and average positions
-    for (const metrics of nodeMetrics.values()) {
-      this.finalizeMetrics(metrics);
+      // Calculate averages and rates
+      this.calculateDerivedMetrics(currentMetrics);
     }
 
     return nodeMetrics;
   }
 
   /**
-   * Aggregate search metrics from URLs
+   * Combine metrics from multiple sources for a single entity
    */
-  aggregateSearchMetrics(
-    nodes: TaxonomyNode[],
-    urlMetrics: SearchMetric[],
-    urlToNodeMap: Map<string, string>
-  ): Map<string, AggregatedMetrics> {
-    const nodeMetrics = new Map<string, AggregatedMetrics>();
+  combineMetrics(gscMetrics?: any, ga4Metrics?: any, marketMetrics?: any): IntegratedMetric {
+    const combined: Partial<IntegratedMetric> = {
+      // GSC metrics
+      gsc_clicks: gscMetrics?.clicks || 0,
+      gsc_impressions: gscMetrics?.impressions || 0,
+      gsc_ctr: gscMetrics?.ctr || 0,
+      gsc_position: gscMetrics?.position || 0,
+      gsc_match_confidence: gscMetrics?.confidence,
 
-    // Step 1: Group metrics by node
-    for (const metric of urlMetrics) {
-      const nodeId = urlToNodeMap.get(metric.url);
-      if (!nodeId) continue;
+      // GA4 metrics
+      ga4_sessions: ga4Metrics?.sessions || 0,
+      ga4_revenue: ga4Metrics?.revenue || 0,
+      ga4_transactions: ga4Metrics?.transactions || 0,
+      ga4_conversion_rate: ga4Metrics?.conversion_rate || 0,
+      ga4_match_confidence: ga4Metrics?.confidence,
 
-      if (!nodeMetrics.has(nodeId)) {
-        nodeMetrics.set(nodeId, this.initializeMetrics(nodeId));
-      }
+      // Market metrics
+      market_price_median: marketMetrics?.median_price,
+      market_competitor_count: marketMetrics?.competitor_count,
+      price_position: marketMetrics?.price_position,
+      market_match_confidence: marketMetrics?.confidence,
 
-      const catMetrics = nodeMetrics.get(nodeId)!;
-      this.addSearchMetrics(catMetrics, metric);
-    }
+      is_aggregated: false,
+      child_count: 0,
+    };
 
-    // Step 2: Build parent-child relationships
-    const childToParent = new Map<string, string>();
-    const parentToChildren = new Map<string, Set<string>>();
-
-    for (const node of nodes) {
-      if (node.parentId) {
-        childToParent.set(node.id, node.parentId);
-
-        if (!parentToChildren.has(node.parentId)) {
-          parentToChildren.set(node.parentId, new Set());
-        }
-        parentToChildren.get(node.parentId)!.add(node.id);
-      }
-    }
-
-    // Step 3: Aggregate up the tree
-    const sortedNodes = this.sortNodesByDepth(nodes, childToParent, 'desc');
-
-    for (const node of sortedNodes) {
-      const children = parentToChildren.get(node.id);
-      if (!children || children.size === 0) continue;
-
-      if (!nodeMetrics.has(node.id)) {
-        nodeMetrics.set(node.id, this.initializeMetrics(node.id));
-      }
-
-      const parentMetrics = nodeMetrics.get(node.id)!;
-
-      for (const childId of children) {
-        const childMetrics = nodeMetrics.get(childId);
-        if (childMetrics) {
-          this.aggregateChildMetrics(parentMetrics, childMetrics);
-        }
-      }
-    }
-
-    // Step 4: Finalize metrics
-    for (const metrics of nodeMetrics.values()) {
-      this.finalizeMetrics(metrics);
-    }
-
-    return nodeMetrics;
+    return combined as IntegratedMetric;
   }
 
   /**
-   * Initialize empty metrics for a node
+   * Calculate rollup metrics for date ranges
    */
-  private initializeMetrics(nodeId: string): AggregatedMetrics {
+  aggregateDateRange(
+    metrics: IntegratedMetric[],
+    startDate: Date,
+    endDate: Date
+  ): AggregatedMetrics {
+    const filtered = metrics.filter((m) => {
+      const date = new Date(m.metrics_date);
+      return date >= startDate && date <= endDate;
+    });
+
+    if (filtered.length === 0) {
+      return this.initMetrics('aggregate');
+    }
+
+    const aggregated = this.initMetrics('aggregate');
+
+    for (const metric of filtered) {
+      this.addMetrics(aggregated, metric);
+    }
+
+    this.calculateDerivedMetrics(aggregated);
+    return aggregated;
+  }
+
+  private initMetrics(nodeId: string): AggregatedMetrics {
     return {
-      nodeId,
+      node_id: nodeId,
       clicks: 0,
       impressions: 0,
-      ctr: 0,
-      avgPosition: 0,
-      urlCount: 0,
-      childMetrics: [],
+      revenue: 0,
+      sessions: 0,
+      transactions: 0,
+      avg_position: 0,
+      avg_conversion_rate: 0,
+      product_count: 0,
+      child_node_count: 0,
+      confidence: 0,
+      _positions: [],
+      _conversion_rates: [],
+      _confidences: [],
+    } as AggregatedMetrics & {
+      _positions: number[];
+      _conversion_rates: number[];
+      _confidences: number[];
     };
   }
 
-  /**
-   * Add product metrics to aggregated metrics
-   */
-  private addMetrics(target: AggregatedMetrics, source: ProductMetric) {
+  private addMetrics(target: any, source: IntegratedMetric) {
+    // Sum absolute metrics
+    target.clicks += source.gsc_clicks || 0;
+    target.impressions += source.gsc_impressions || 0;
+    target.revenue += source.ga4_revenue || 0;
+    target.sessions += source.ga4_sessions || 0;
+    target.transactions += source.ga4_transactions || 0;
+    target.product_count += 1;
+
+    // Collect values for averaging
+    if (source.gsc_position && source.gsc_position > 0) {
+      target._positions = target._positions || [];
+      target._positions.push(source.gsc_position);
+    }
+
+    if (source.ga4_conversion_rate !== undefined) {
+      target._conversion_rates = target._conversion_rates || [];
+      target._conversion_rates.push(source.ga4_conversion_rate);
+    }
+
+    // Track confidence scores
+    const confidences = [
+      source.gsc_match_confidence,
+      source.ga4_match_confidence,
+      source.market_match_confidence,
+    ].filter((c) => c !== undefined && c !== null);
+
+    if (confidences.length > 0) {
+      target._confidences = target._confidences || [];
+      target._confidences.push(...confidences);
+    }
+  }
+
+  private addAggregatedMetrics(target: any, source: AggregatedMetrics) {
+    // Sum metrics from child nodes
     target.clicks += source.clicks;
     target.impressions += source.impressions;
-    target.urlCount += 1;
+    target.revenue += source.revenue;
+    target.sessions += source.sessions;
+    target.transactions += source.transactions;
+    target.product_count += source.product_count;
+    target.child_node_count += 1;
 
-    // Store position for weighted average calculation
-    if (!target.childMetrics) {
-      target.childMetrics = [];
-    }
-    target.childMetrics.push({
-      nodeId: source.productId,
-      clicks: source.clicks,
-      impressions: source.impressions,
-      ctr: source.ctr,
-      avgPosition: source.position,
-      urlCount: 1,
-    });
-  }
-
-  /**
-   * Add search metrics to aggregated metrics
-   */
-  private addSearchMetrics(target: AggregatedMetrics, source: SearchMetric) {
-    target.clicks += source.clicks;
-    target.impressions += source.impressions;
-    target.urlCount += 1;
-
-    // Store for position calculation
-    if (!target.childMetrics) {
-      target.childMetrics = [];
-    }
-    target.childMetrics.push({
-      nodeId: source.url,
-      clicks: source.clicks,
-      impressions: source.impressions,
-      ctr: source.ctr,
-      avgPosition: source.position,
-      urlCount: 1,
-    });
-  }
-
-  /**
-   * Aggregate child metrics into parent
-   */
-  private aggregateChildMetrics(parent: AggregatedMetrics, child: AggregatedMetrics) {
-    parent.clicks += child.clicks;
-    parent.impressions += child.impressions;
-    parent.urlCount += child.urlCount;
-
-    // Store child metrics for position calculation
-    if (!parent.childMetrics) {
-      parent.childMetrics = [];
-    }
-    parent.childMetrics.push(child);
-  }
-
-  /**
-   * Finalize metrics calculation
-   */
-  private finalizeMetrics(metrics: AggregatedMetrics) {
-    // Calculate CTR
-    if (metrics.impressions > 0) {
-      metrics.ctr = metrics.clicks / metrics.impressions;
-    }
-
-    // Calculate weighted average position
-    if (metrics.childMetrics && metrics.childMetrics.length > 0) {
-      let totalWeight = 0;
-      let weightedSum = 0;
-
-      for (const child of metrics.childMetrics) {
-        // Use impressions as weight for position average
-        const weight = child.impressions || 0;
-        if (weight > 0 && child.avgPosition > 0) {
-          weightedSum += child.avgPosition * weight;
-          totalWeight += weight;
-        }
-      }
-
-      if (totalWeight > 0) {
-        metrics.avgPosition = weightedSum / totalWeight;
+    // Merge position and rate arrays for recalculation
+    if (source.avg_position > 0) {
+      target._positions = target._positions || [];
+      // Weight by impressions
+      const weight = source.impressions || 1;
+      for (let i = 0; i < weight; i += 1000) {
+        target._positions.push(source.avg_position);
       }
     }
 
-    // Round to reasonable precision
-    metrics.ctr = Math.round(metrics.ctr * 10000) / 10000;
-    metrics.avgPosition = Math.round(metrics.avgPosition * 10) / 10;
+    if (source.avg_conversion_rate > 0) {
+      target._conversion_rates = target._conversion_rates || [];
+      // Weight by sessions
+      const weight = source.sessions || 1;
+      for (let i = 0; i < weight; i += 100) {
+        target._conversion_rates.push(source.avg_conversion_rate);
+      }
+    }
+
+    // Merge confidence scores
+    if (source.confidence > 0) {
+      target._confidences = target._confidences || [];
+      target._confidences.push(source.confidence);
+    }
   }
 
-  /**
-   * Sort nodes by depth
-   */
-  private sortNodesByDepth(
-    nodes: TaxonomyNode[],
-    childToParent: Map<string, string>,
-    order: 'asc' | 'desc' = 'asc'
-  ): TaxonomyNode[] {
-    // Calculate depth for each node
-    const nodeDepths = new Map<string, number>();
+  private calculateDerivedMetrics(metrics: any) {
+    // Calculate average position (weighted by impressions)
+    if (metrics._positions && metrics._positions.length > 0) {
+      metrics.avg_position = this.average(metrics._positions);
+    }
 
-    const getDepth = (nodeId: string): number => {
-      if (nodeDepths.has(nodeId)) {
-        return nodeDepths.get(nodeId)!;
-      }
+    // Calculate average conversion rate (weighted by sessions)
+    if (metrics._conversion_rates && metrics._conversion_rates.length > 0) {
+      metrics.avg_conversion_rate = this.average(metrics._conversion_rates);
+    } else if (metrics.sessions > 0) {
+      metrics.avg_conversion_rate = metrics.transactions / metrics.sessions;
+    }
 
-      const parentId = childToParent.get(nodeId);
-      const depth = parentId ? getDepth(parentId) + 1 : 0;
-      nodeDepths.set(nodeId, depth);
-      return depth;
+    // Calculate average confidence
+    if (metrics._confidences && metrics._confidences.length > 0) {
+      metrics.confidence = this.average(metrics._confidences);
+    }
+
+    // Clean up temporary arrays
+    delete metrics._positions;
+    delete metrics._conversion_rates;
+    delete metrics._confidences;
+  }
+
+  private average(values: number[]): number {
+    if (values.length === 0) return 0;
+    const sum = values.reduce((a, b) => a + b, 0);
+    return sum / values.length;
+  }
+
+  private sortNodesByDepth(nodes: TaxonomyNode[], order: 'asc' | 'desc'): TaxonomyNode[] {
+    const getDepth = (node: TaxonomyNode): number => {
+      if (!node.parent_id) return 0;
+      const parent = nodes.find((n) => n.id === node.parent_id);
+      return parent ? getDepth(parent) + 1 : 0;
     };
 
-    // Calculate all depths
-    for (const node of nodes) {
-      getDepth(node.id);
-    }
-
-    // Sort by depth
     return [...nodes].sort((a, b) => {
-      const depthA = nodeDepths.get(a.id) || 0;
-      const depthB = nodeDepths.get(b.id) || 0;
+      const depthA = getDepth(a);
+      const depthB = getDepth(b);
       return order === 'asc' ? depthA - depthB : depthB - depthA;
     });
   }
 
-  /**
-   * Calculate aggregate statistics
-   */
-  getAggregateStatistics(metrics: Map<string, AggregatedMetrics>): {
-    totalNodes: number;
-    totalClicks: number;
-    totalImpressions: number;
-    avgCTR: number;
-    avgPosition: number;
-    topPerformers: AggregatedMetrics[];
-    needsAttention: AggregatedMetrics[];
-  } {
-    let totalClicks = 0;
-    let totalImpressions = 0;
-    const allMetrics = Array.from(metrics.values());
-
-    for (const metric of allMetrics) {
-      totalClicks += metric.clicks;
-      totalImpressions += metric.impressions;
-    }
-
-    // Sort by clicks for top performers
-    const topPerformers = [...allMetrics]
-      .sort((a, b) => b.clicks - a.clicks)
-      .slice(0, 10);
-
-    // Find nodes that need attention (high impressions, low CTR)
-    const needsAttention = allMetrics
-      .filter(m => m.impressions > 100 && m.ctr < 0.02)
-      .sort((a, b) => b.impressions - a.impressions)
-      .slice(0, 10);
-
-    return {
-      totalNodes: metrics.size,
-      totalClicks,
-      totalImpressions,
-      avgCTR: totalImpressions > 0 ? totalClicks / totalImpressions : 0,
-      avgPosition: this.calculateOverallAvgPosition(allMetrics),
-      topPerformers,
-      needsAttention,
-    };
+  private findProductById(productId: string): Product | null {
+    // This would need to be implemented based on your data access pattern
+    // For now, returning null as a placeholder
+    return null;
   }
 
   /**
-   * Calculate overall average position
+   * Calculate opportunity scores based on aggregated metrics
    */
-  private calculateOverallAvgPosition(metrics: AggregatedMetrics[]): number {
-    let totalWeight = 0;
-    let weightedSum = 0;
+  calculateOpportunityScore(metrics: AggregatedMetrics): number {
+    let score = 0;
 
-    for (const metric of metrics) {
-      if (metric.impressions > 0 && metric.avgPosition > 0) {
-        weightedSum += metric.avgPosition * metric.impressions;
-        totalWeight += metric.impressions;
-      }
+    // High impressions but low clicks = opportunity
+    if (metrics.impressions > 1000 && metrics.clicks < metrics.impressions * 0.02) {
+      score += 30;
     }
 
-    return totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 10) / 10 : 0;
-  }
-
-  /**
-   * Aggregate GA4 analytics metrics to categories (bottom-up)
-   */
-  aggregateAnalyticsMetrics(
-    nodes: TaxonomyNode[],
-    analyticsMetrics: MappedAnalyticsMetric[]
-  ): Map<string, AggregatedAnalyticsMetrics> {
-    const nodeMetrics = new Map<string, AggregatedAnalyticsMetrics>();
-
-    // Step 1: Initialize nodes with direct metrics
-    for (const metric of analyticsMetrics) {
-      if (!metric.nodeId) continue;
-
-      if (!nodeMetrics.has(metric.nodeId)) {
-        nodeMetrics.set(metric.nodeId, this.initializeAnalyticsMetrics(metric.nodeId));
-      }
-
-      const catMetrics = nodeMetrics.get(metric.nodeId)!;
-      this.addAnalyticsMetrics(catMetrics, metric);
+    // Good clicks but low conversions = opportunity
+    if (metrics.clicks > 100 && metrics.avg_conversion_rate < 0.01) {
+      score += 25;
     }
 
-    // Step 2: Build parent-child relationships
-    const childToParent = new Map<string, string>();
-    const parentToChildren = new Map<string, Set<string>>();
-
-    for (const node of nodes) {
-      if (node.parentId) {
-        childToParent.set(node.id, node.parentId);
-
-        if (!parentToChildren.has(node.parentId)) {
-          parentToChildren.set(node.parentId, new Set());
-        }
-        parentToChildren.get(node.parentId)!.add(node.id);
-      }
+    // Poor position with traffic = opportunity
+    if (metrics.avg_position > 10 && metrics.impressions > 500) {
+      score += 20;
     }
 
-    // Step 3: Aggregate up the tree (bottom-up)
-    const sortedNodes = this.sortNodesByDepth(nodes, childToParent, 'desc');
-
-    for (const node of sortedNodes) {
-      const children = parentToChildren.get(node.id);
-      if (!children || children.size === 0) continue;
-
-      if (!nodeMetrics.has(node.id)) {
-        nodeMetrics.set(node.id, this.initializeAnalyticsMetrics(node.id));
-      }
-
-      const parentMetrics = nodeMetrics.get(node.id)!;
-
-      for (const childId of children) {
-        const childMetrics = nodeMetrics.get(childId);
-        if (childMetrics) {
-          this.aggregateChildAnalyticsMetrics(parentMetrics, childMetrics);
-        }
-      }
+    // Revenue potential (high-value category with low performance)
+    if (metrics.product_count > 10 && metrics.revenue < metrics.product_count * 100) {
+      score += 25;
     }
 
-    // Step 4: Calculate final rates and averages
-    for (const metrics of nodeMetrics.values()) {
-      this.finalizeAnalyticsMetrics(metrics);
-    }
-
-    return nodeMetrics;
-  }
-
-  /**
-   * Initialize empty analytics metrics for a node
-   */
-  private initializeAnalyticsMetrics(nodeId: string): AggregatedAnalyticsMetrics {
-    return {
-      nodeId,
-      revenue: 0,
-      transactions: 0,
-      sessions: 0,
-      users: 0,
-      conversionRate: 0,
-      avgOrderValue: 0,
-      engagementRate: 0,
-      bounceRate: 0,
-      pageViews: 0,
-      productCount: 0,
-      childMetrics: [],
-    };
-  }
-
-  /**
-   * Add analytics metrics to aggregated metrics
-   */
-  private addAnalyticsMetrics(target: AggregatedAnalyticsMetrics, source: MappedAnalyticsMetric) {
-    target.revenue += source.revenue;
-    target.transactions += source.transactions;
-    target.sessions += source.sessions;
-    target.users += source.users;
-    target.pageViews += source.pageViews;
-    target.productCount += 1;
-
-    // Store for weighted average calculation
-    if (!target.childMetrics) {
-      target.childMetrics = [];
-    }
-    target.childMetrics.push({
-      nodeId: source.pagePath,
-      revenue: source.revenue,
-      transactions: source.transactions,
-      sessions: source.sessions,
-      users: source.users,
-      conversionRate: source.conversionRate,
-      avgOrderValue: source.avgOrderValue,
-      engagementRate: source.engagementRate,
-      bounceRate: source.bounceRate,
-      pageViews: source.pageViews,
-      productCount: 1,
-    });
-  }
-
-  /**
-   * Aggregate child analytics metrics into parent
-   */
-  private aggregateChildAnalyticsMetrics(parent: AggregatedAnalyticsMetrics, child: AggregatedAnalyticsMetrics) {
-    parent.revenue += child.revenue;
-    parent.transactions += child.transactions;
-    parent.sessions += child.sessions;
-    parent.users += child.users;
-    parent.pageViews += child.pageViews;
-    parent.productCount += child.productCount;
-
-    // Store child metrics for rate calculations
-    if (!parent.childMetrics) {
-      parent.childMetrics = [];
-    }
-    parent.childMetrics.push(child);
-  }
-
-  /**
-   * Finalize analytics metrics calculation
-   */
-  private finalizeAnalyticsMetrics(metrics: AggregatedAnalyticsMetrics) {
-    // Calculate conversion rate
-    if (metrics.sessions > 0) {
-      metrics.conversionRate = metrics.transactions / metrics.sessions;
-    }
-
-    // Calculate average order value
-    if (metrics.transactions > 0) {
-      metrics.avgOrderValue = metrics.revenue / metrics.transactions;
-    }
-
-    // Calculate weighted average engagement rate
-    if (metrics.childMetrics && metrics.childMetrics.length > 0) {
-      let totalWeight = 0;
-      let weightedEngagement = 0;
-      let weightedBounce = 0;
-
-      for (const child of metrics.childMetrics) {
-        // Use sessions as weight for engagement metrics
-        const weight = child.sessions || 0;
-        if (weight > 0) {
-          weightedEngagement += child.engagementRate * weight;
-          weightedBounce += child.bounceRate * weight;
-          totalWeight += weight;
-        }
-      }
-
-      if (totalWeight > 0) {
-        metrics.engagementRate = weightedEngagement / totalWeight;
-        metrics.bounceRate = weightedBounce / totalWeight;
-      }
-    }
-
-    // Round to reasonable precision
-    metrics.conversionRate = Math.round(metrics.conversionRate * 10000) / 10000;
-    metrics.avgOrderValue = Math.round(metrics.avgOrderValue * 100) / 100;
-    metrics.engagementRate = Math.round(metrics.engagementRate * 10000) / 10000;
-    metrics.bounceRate = Math.round(metrics.bounceRate * 10000) / 10000;
-  }
-
-  /**
-   * Calculate revenue statistics
-   */
-  getRevenueStatistics(metrics: Map<string, AggregatedAnalyticsMetrics>): {
-    totalRevenue: number;
-    totalTransactions: number;
-    avgOrderValue: number;
-    topRevenueNodes: AggregatedAnalyticsMetrics[];
-    highConversionNodes: AggregatedAnalyticsMetrics[];
-    lowConversionNodes: AggregatedAnalyticsMetrics[];
-  } {
-    let totalRevenue = 0;
-    let totalTransactions = 0;
-    const allMetrics = Array.from(metrics.values());
-
-    for (const metric of allMetrics) {
-      totalRevenue += metric.revenue;
-      totalTransactions += metric.transactions;
-    }
-
-    // Sort by revenue for top performers
-    const topRevenueNodes = [...allMetrics]
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
-
-    // Find high conversion nodes (>5% conversion with decent traffic)
-    const highConversionNodes = allMetrics
-      .filter(m => m.sessions > 100 && m.conversionRate > 0.05)
-      .sort((a, b) => b.conversionRate - a.conversionRate)
-      .slice(0, 10);
-
-    // Find low conversion nodes (needs optimization)
-    const lowConversionNodes = allMetrics
-      .filter(m => m.sessions > 100 && m.conversionRate < 0.01)
-      .sort((a, b) => b.sessions - a.sessions)
-      .slice(0, 10);
-
-    return {
-      totalRevenue,
-      totalTransactions,
-      avgOrderValue: totalTransactions > 0 ? totalRevenue / totalTransactions : 0,
-      topRevenueNodes,
-      highConversionNodes,
-      lowConversionNodes,
-    };
-  }
-
-  /**
-   * Export metrics to CSV format
-   */
-  exportToCSV(metrics: Map<string, AggregatedMetrics>, nodes: TaxonomyNode[]): string {
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
-    const rows: string[] = [];
-
-    // Header
-    rows.push('Node ID,Node Title,Path,Clicks,Impressions,CTR,Avg Position,URL Count');
-
-    // Data rows
-    for (const [nodeId, metric] of metrics) {
-      const node = nodeMap.get(nodeId);
-      const title = node?.title || nodeId;
-      const path = node?.path || '';
-
-      rows.push([
-        nodeId,
-        `"${title}"`,
-        `"${path}"`,
-        metric.clicks.toString(),
-        metric.impressions.toString(),
-        metric.ctr.toFixed(4),
-        metric.avgPosition.toFixed(1),
-        metric.urlCount.toString(),
-      ].join(','));
-    }
-
-    return rows.join('\n');
-  }
-
-  /**
-   * Export analytics metrics to CSV
-   */
-  exportAnalyticsToCSV(metrics: Map<string, AggregatedAnalyticsMetrics>, nodes: TaxonomyNode[]): string {
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
-    const rows: string[] = [];
-
-    // Header
-    rows.push('Node ID,Node Title,Path,Revenue,Transactions,Sessions,Conversion Rate,AOV,Engagement Rate,Product Count');
-
-    // Data rows
-    for (const [nodeId, metric] of metrics) {
-      const node = nodeMap.get(nodeId);
-      const title = node?.title || nodeId;
-      const path = node?.path || '';
-
-      rows.push([
-        nodeId,
-        `"${title}"`,
-        `"${path}"`,
-        metric.revenue.toFixed(2),
-        metric.transactions.toString(),
-        metric.sessions.toString(),
-        metric.conversionRate.toFixed(4),
-        metric.avgOrderValue.toFixed(2),
-        metric.engagementRate.toFixed(4),
-        metric.productCount.toString(),
-      ].join(','));
-    }
-
-    return rows.join('\n');
+    return Math.min(score, 100);
   }
 }

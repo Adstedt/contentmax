@@ -98,10 +98,20 @@ export async function GET(request: NextRequest) {
       service_type: serviceType,
     });
 
-    // Redirect to success page
-    return NextResponse.redirect(
-      new URL(`/dashboard/integrations/${connectionId}?success=true`, request.url)
-    );
+    // Redirect to property configuration page for GA4 and GSC
+    // For other services, go directly to success page
+    if (serviceType === 'google_analytics' || serviceType === 'google_search_console') {
+      return NextResponse.redirect(
+        new URL(
+          `/dashboard/integrations/connect/${serviceType}/configure?connection_id=${connectionId}`,
+          request.url
+        )
+      );
+    } else {
+      return NextResponse.redirect(
+        new URL(`/dashboard/integrations/${connectionId}?success=true`, request.url)
+      );
+    }
   } catch (error) {
     logger.error('OAuth callback error', error);
     return NextResponse.redirect(

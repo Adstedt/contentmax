@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -102,24 +102,23 @@ export function IntegrationsTab() {
 
   const loadConnections = async () => {
     try {
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) return;
 
-      const { data: user } = await supabase
-        .from('users')
-        .select('org_id')
-        .eq('id', session.session.user.id)
-        .single();
-
-      if (!user?.org_id) return;
-
-      const { data } = await supabase
+      // Query connections directly by user_id
+      const { data, error } = await supabase
         .from('data_source_connections')
         .select('*')
-        .eq('org_id', user.org_id)
+        .eq('user_id', session.session.user.id)
         .order('created_at', { ascending: false });
 
-      setConnections(data || []);
+      if (error) {
+        console.error('Error fetching connections:', error);
+      } else {
+        console.log('Loaded connections:', data);
+        setConnections(data || []);
+      }
     } catch (error) {
       console.error('Error loading connections:', error);
     } finally {
@@ -153,6 +152,7 @@ export function IntegrationsTab() {
     if (!confirm('Are you sure you want to delete this connection?')) return;
 
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('data_source_connections')
         .delete()

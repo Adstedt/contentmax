@@ -23,7 +23,7 @@ import {
   Search,
   ShoppingBag,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 interface Connection {
   id: string;
@@ -65,6 +65,7 @@ export default function ConnectionDetailPage() {
 
   const loadConnection = async () => {
     try {
+      const supabase = createClient();
       const { data } = await supabase
         .from('data_source_connections')
         .select('*')
@@ -81,6 +82,7 @@ export default function ConnectionDetailPage() {
 
   const loadUsageLogs = async () => {
     try {
+      const supabase = createClient();
       const { data } = await supabase
         .from('connection_usage_logs')
         .select('*')
@@ -118,6 +120,7 @@ export default function ConnectionDetailPage() {
     }
 
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('data_source_connections')
         .delete()
@@ -125,7 +128,7 @@ export default function ConnectionDetailPage() {
 
       if (error) throw error;
 
-      router.push('/dashboard/integrations');
+      router.push('/dashboard/settings?tab=integrations');
     } catch (error) {
       // Delete error - user can retry
     }
@@ -153,7 +156,7 @@ export default function ConnectionDetailPage() {
       case 'expired':
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       default:
-        return <Clock className="h-5 w-5 text-gray-400" />;
+        return <Clock className="h-5 w-5 text-[#666]" />;
     }
   };
 
@@ -174,7 +177,7 @@ export default function ConnectionDetailPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a]">
         <div className="container mx-auto py-8 px-4">
-          <div className="text-center text-gray-400">Loading connection...</div>
+          <div className="text-center text-[#666]">Loading connection...</div>
         </div>
       </div>
     );
@@ -189,9 +192,9 @@ export default function ConnectionDetailPage() {
             <AlertDescription>Connection not found</AlertDescription>
           </Alert>
           <Button
-            className="mt-4 border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+            className="mt-4 border-[#2a2a2a] text-[#666] hover:text-white hover:border-[#333]"
             variant="outline"
-            onClick={() => router.push('/dashboard/integrations')}
+            onClick={() => router.push('/dashboard/settings?tab=integrations')}
           >
             Back to Integrations
           </Button>
@@ -208,8 +211,8 @@ export default function ConnectionDetailPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white"
-              onClick={() => router.push('/dashboard/integrations')}
+              className="text-[#666] hover:text-white"
+              onClick={() => router.push('/dashboard/settings?tab=integrations')}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
@@ -222,7 +225,7 @@ export default function ConnectionDetailPage() {
                 <h1 className="text-2xl font-bold text-white">{connection.connection_name}</h1>
                 <div className="flex items-center gap-2 mt-1">
                   {getStatusBadge(connection.connection_status)}
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-[#666]">
                     Created {new Date(connection.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -231,8 +234,7 @@ export default function ConnectionDetailPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              variant="outline"
-              className="border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+              className="bg-[#10a37f] hover:bg-[#0d8d6c] text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSync}
               disabled={syncing || connection.connection_status !== 'active'}
             >
@@ -240,8 +242,8 @@ export default function ConnectionDetailPage() {
               {syncing ? 'Syncing...' : 'Sync Now'}
             </Button>
             <Button
-              variant="destructive"
-              className="bg-red-600 hover:bg-red-700 text-white border-0"
+              variant="outline"
+              className="border-red-500/30 text-red-500 hover:text-red-400 hover:border-red-500/50"
               onClick={handleDelete}
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -260,22 +262,22 @@ export default function ConnectionDetailPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 bg-[#1a1a1a] border border-gray-800">
+          <TabsList className="mb-6 bg-transparent border-b border-[#2a2a2a] rounded-none p-0">
             <TabsTrigger
               value="overview"
-              className="data-[state=active]:bg-[#10b981] data-[state=active]:text-white"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-[#10a37f] data-[state=active]:text-white text-[#666] hover:text-white pb-2 px-4 bg-transparent rounded-none"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="activity"
-              className="data-[state=active]:bg-[#10b981] data-[state=active]:text-white"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-[#10a37f] data-[state=active]:text-white text-[#666] hover:text-white pb-2 px-4 bg-transparent rounded-none"
             >
               Activity
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="data-[state=active]:bg-[#10b981] data-[state=active]:text-white"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-[#10a37f] data-[state=active]:text-white text-[#666] hover:text-white pb-2 px-4 bg-transparent rounded-none"
             >
               Settings
             </TabsTrigger>
@@ -283,14 +285,14 @@ export default function ConnectionDetailPage() {
 
           <TabsContent value="overview">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="bg-[#1a1a1a] border-gray-800">
+              <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
                 <CardHeader>
                   <CardTitle className="text-white">Connection Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Status</span>
+                      <span className="text-sm text-[#666]">Status</span>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(connection.connection_status)}
                         <span className="font-medium capitalize text-white">
@@ -299,7 +301,7 @@ export default function ConnectionDetailPage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Last Sync</span>
+                      <span className="text-sm text-[#666]">Last Sync</span>
                       <span className="font-medium text-white">
                         {connection.last_sync_at
                           ? new Date(connection.last_sync_at).toLocaleString()
@@ -307,7 +309,7 @@ export default function ConnectionDetailPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Service</span>
+                      <span className="text-sm text-[#666]">Service</span>
                       <span className="font-medium text-white">
                         {connection.service_type
                           .replace(/_/g, ' ')
@@ -318,20 +320,20 @@ export default function ConnectionDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-[#1a1a1a] border-gray-800">
+              <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
                 <CardHeader>
                   <CardTitle className="text-white">Usage Statistics</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Total Syncs</span>
+                      <span className="text-sm text-[#666]">Total Syncs</span>
                       <span className="font-medium text-white">
                         {usageLogs.filter((log) => log.action === 'sync').length}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Success Rate</span>
+                      <span className="text-sm text-[#666]">Success Rate</span>
                       <span className="font-medium text-white">
                         {usageLogs.length > 0
                           ? `${Math.round(
@@ -343,7 +345,7 @@ export default function ConnectionDetailPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Records Processed</span>
+                      <span className="text-sm text-[#666]">Records Processed</span>
                       <span className="font-medium text-white">
                         {usageLogs
                           .reduce((sum, log) => sum + (log.records_processed || 0), 0)
@@ -354,13 +356,226 @@ export default function ConnectionDetailPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* GA4 Specific Information */}
+            {connection.service_type === 'google_analytics' && (
+              <Card className="bg-[#1a1a1a] border-[#2a2a2a] mt-6">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <BarChart className="h-5 w-5 text-[#10a37f]" />
+                    Google Analytics 4 Properties
+                  </CardTitle>
+                  <CardDescription className="text-[#999]">
+                    Connected GA4 properties and data streams
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {connection.config?.properties ? (
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          {connection.config.properties.map((property: any, index: number) => (
+                            <div
+                              key={index}
+                              className="p-4 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a]"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium text-white">
+                                  {property.displayName || 'GA4 Property'}
+                                </h4>
+                                {property.selected && (
+                                  <Badge className="bg-[#10a37f] text-white">Active</Badge>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-[#666]">Property ID:</span>
+                                  <p className="text-white font-mono mt-1">
+                                    {property.name || connection.account_id}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-[#666]">Industry:</span>
+                                  <p className="text-white mt-1">
+                                    {property.industryCategory || 'Not specified'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-[#666]">Time Zone:</span>
+                                  <p className="text-white mt-1">{property.timeZone || 'UTC'}</p>
+                                </div>
+                                <div>
+                                  <span className="text-[#666]">Currency:</span>
+                                  <p className="text-white mt-1">
+                                    {property.currencyCode || 'USD'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/integrations/connect/google_analytics/configure?connection_id=${connectionId}`
+                            )
+                          }
+                          className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#2a2a2a]"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Change Property Selection
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <Alert className="bg-[#0a0a0a] border-[#2a2a2a]">
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                          <AlertDescription className="text-[#999]">
+                            <strong className="text-white">Property Selection Required</strong>
+                            <p className="mt-1">
+                              No specific GA4 property has been selected. Click the button below to
+                              select a property.
+                            </p>
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/integrations/connect/google_analytics/configure?connection_id=${connectionId}`
+                            )
+                          }
+                          className="w-full bg-[#10a37f] hover:bg-[#0d8d6c] text-white border-0"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Select GA4 Property
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-[#2a2a2a]">
+                      <p className="text-sm text-[#666] mb-2">Available Metrics</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          'Sessions',
+                          'Users',
+                          'Page Views',
+                          'Bounce Rate',
+                          'Avg. Session Duration',
+                          'Conversions',
+                        ].map((metric) => (
+                          <Badge
+                            key={metric}
+                            variant="outline"
+                            className="border-[#2a2a2a] text-[#999]"
+                          >
+                            {metric}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* GSC Specific Information */}
+            {connection.service_type === 'google_search_console' && (
+              <Card className="bg-[#1a1a1a] border-[#2a2a2a] mt-6">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Search className="h-5 w-5 text-[#10a37f]" />
+                    Google Search Console Properties
+                  </CardTitle>
+                  <CardDescription className="text-[#999]">
+                    Connected website properties and search data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {connection.config?.siteUrl || connection.account_id ? (
+                      <div className="space-y-4">
+                        <div className="p-4 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a]">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium text-white">Active Property</h4>
+                            <Badge className="bg-[#10a37f] text-white">Connected</Badge>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-[#666]">Site URL:</span>
+                            <p className="text-white font-mono mt-1">
+                              {connection.config?.siteUrl || connection.account_id}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/integrations/connect/google_search_console/configure?connection_id=${connectionId}`
+                            )
+                          }
+                          className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#2a2a2a]"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Change Property Selection
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <Alert className="bg-[#0a0a0a] border-[#2a2a2a]">
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                          <AlertDescription className="text-[#999]">
+                            <strong className="text-white">Property Selection Required</strong>
+                            <p className="mt-1">
+                              No specific website property has been selected. Click the button below
+                              to select a property.
+                            </p>
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/integrations/connect/google_search_console/configure?connection_id=${connectionId}`
+                            )
+                          }
+                          className="w-full bg-[#10a37f] hover:bg-[#0d8d6c] text-white border-0"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Select Website Property
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-[#2a2a2a]">
+                      <p className="text-sm text-[#666] mb-2">Available Metrics</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          'Impressions',
+                          'Clicks',
+                          'CTR',
+                          'Position',
+                          'Search Queries',
+                          'Page Performance',
+                        ].map((metric) => (
+                          <Badge
+                            key={metric}
+                            variant="outline"
+                            className="border-[#2a2a2a] text-[#999]"
+                          >
+                            {metric}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="activity">
-            <Card>
+            <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
               <CardHeader>
                 <CardTitle className="text-white">Recent Activity</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-[#999]">
                   Last 50 operations performed with this connection
                 </CardDescription>
               </CardHeader>
@@ -370,25 +585,25 @@ export default function ConnectionDetailPage() {
                     usageLogs.map((log) => (
                       <div
                         key={log.id}
-                        className="flex items-center justify-between p-3 border border-gray-800 rounded-lg bg-[#0a0a0a]"
+                        className="flex items-center justify-between p-3 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a]"
                       >
                         <div className="flex items-center gap-3">
-                          <Activity className="h-4 w-4 text-gray-400" />
+                          <Activity className="h-4 w-4 text-[#666]" />
                           <div>
                             <p className="font-medium text-sm text-white">{log.action}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-[#666]">
                               {new Date(log.created_at).toLocaleString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           {log.records_processed && (
-                            <span className="text-sm text-gray-400">
+                            <span className="text-sm text-[#666]">
                               {log.records_processed} records
                             </span>
                           )}
                           {log.duration_ms && (
-                            <span className="text-sm text-gray-400">
+                            <span className="text-sm text-[#666]">
                               {(log.duration_ms / 1000).toFixed(2)}s
                             </span>
                           )}
@@ -407,7 +622,7 @@ export default function ConnectionDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-center text-gray-500 py-8">No activity yet</p>
+                    <p className="text-center text-[#666] py-8">No activity yet</p>
                   )}
                 </div>
               </CardContent>
@@ -416,44 +631,60 @@ export default function ConnectionDetailPage() {
 
           <TabsContent value="settings">
             <div className="grid gap-6">
-              <Card className="bg-[#1a1a1a] border-gray-800">
+              <Card className="bg-[#1a1a1a] border-[#2a2a2a]">
                 <CardHeader>
                   <CardTitle className="text-white">Connection Configuration</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardDescription className="text-[#999]">
                     Manage your connection settings and permissions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <Alert className="bg-[#0a0a0a] border-gray-700">
+                    <Alert className="bg-[#0a0a0a] border-[#2a2a2a]">
                       <Shield className="h-4 w-4 text-[#10b981]" />
-                      <AlertDescription className="text-gray-400">
+                      <AlertDescription className="text-[#666]">
                         Credentials are encrypted and stored securely. OAuth tokens are refreshed
                         automatically when needed.
                       </AlertDescription>
                     </Alert>
-                    <div className="flex items-center justify-between p-4 border border-gray-800 rounded-lg bg-[#0a0a0a]">
+                    <div className="flex items-center justify-between p-4 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a]">
                       <div>
                         <p className="font-medium text-white">Reconnect Account</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[#666]">
                           Re-authenticate if your connection has expired
                         </p>
                       </div>
                       <Button
-                        variant="outline"
-                        className="border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+                        className="bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#2a2a2a]"
+                        onClick={() => {
+                          if (
+                            connection.service_type === 'google_analytics' ||
+                            connection.service_type === 'google_search_console'
+                          ) {
+                            router.push(
+                              `/dashboard/integrations/connect/${connection.service_type}/configure?connection_id=${connectionId}`
+                            );
+                          } else {
+                            router.push(
+                              `/dashboard/integrations/connect/${connection.service_type}`
+                            );
+                          }
+                        }}
                       >
                         Reconnect
                       </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 border border-gray-800 rounded-lg bg-[#0a0a0a]">
+                    <div className="flex items-center justify-between p-4 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a]">
                       <div>
                         <p className="font-medium text-white">Revoke Access</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[#666]">
                           Disconnect and remove stored credentials
                         </p>
                       </div>
-                      <Button variant="outline" className="text-red-600 hover:text-red-700">
+                      <Button
+                        variant="outline"
+                        className="border-red-500/30 text-red-500 hover:text-red-400 hover:border-red-500/50"
+                      >
                         Revoke
                       </Button>
                     </div>
@@ -461,22 +692,26 @@ export default function ConnectionDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-[#1a1a1a] border-red-900/30">
+              <Card className="bg-[#1a1a1a] border-red-500/20">
                 <CardHeader>
-                  <CardTitle className="text-red-400">Danger Zone</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-red-500">Danger Zone</CardTitle>
+                  <CardDescription className="text-[#999]">
                     Irreversible actions for this connection
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 border border-red-900/30 rounded-lg bg-red-900/10">
+                  <div className="flex items-center justify-between p-4 border border-red-500/20 rounded-lg bg-red-500/5">
                     <div>
-                      <p className="font-medium text-red-400">Delete Connection</p>
-                      <p className="text-sm text-red-300">
+                      <p className="font-medium text-white">Delete Connection</p>
+                      <p className="text-sm text-[#999]">
                         Permanently remove this connection and all associated data
                       </p>
                     </div>
-                    <Button variant="destructive" onClick={handleDelete}>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/30 text-red-500 hover:text-red-400 hover:border-red-500/50"
+                      onClick={handleDelete}
+                    >
                       Delete Connection
                     </Button>
                   </div>

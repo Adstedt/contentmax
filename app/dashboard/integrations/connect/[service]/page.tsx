@@ -16,7 +16,7 @@ import {
   Shield,
   AlertCircle,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ConnectServicePage() {
   const params = useParams();
@@ -98,6 +98,7 @@ export default function ConnectServicePage() {
 
     try {
       // Get current user and org
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) {
         throw new Error('Not authenticated');
@@ -109,15 +110,14 @@ export default function ConnectServicePage() {
         .eq('id', session.session.user.id)
         .single();
 
-      if (!user?.org_id) {
-        throw new Error('Organization not found');
-      }
+      // If user doesn't have org_id, use their user_id as a fallback
+      const orgId = user?.org_id || session.session.user.id;
 
       // Create connection record
       const { data: connection, error: connectionError } = await supabase
         .from('data_source_connections')
         .insert({
-          org_id: user.org_id,
+          org_id: orgId,
           user_id: session.session.user.id,
           service_type: serviceType,
           connection_name: connectionName,
@@ -137,11 +137,16 @@ export default function ConnectServicePage() {
         })
       ).toString('base64');
 
+      // Check for Google Client ID
+      if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+        throw new Error('Google OAuth is not configured. Please contact support.');
+      }
+
       const redirectUri = `${window.location.origin}/api/auth/google/callback`;
       const scopes = getScopes(serviceType);
 
       const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      authUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!);
+      authUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
       authUrl.searchParams.set('redirect_uri', redirectUri);
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('scope', scopes.join(' '));
@@ -152,6 +157,7 @@ export default function ConnectServicePage() {
       // Redirect to OAuth
       window.location.href = authUrl.toString();
     } catch (err) {
+      console.error('Connection error:', err);
       setError(err instanceof Error ? err.message : 'Failed to initiate connection');
       setLoading(false);
     }
