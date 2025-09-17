@@ -42,11 +42,7 @@ export class GA4Mapper {
 
     for (const metric of metrics) {
       // Try URL-based matching first
-      const urlMatch = this.urlMatcher.matchUrl(
-        metric.pagePath,
-        nodes,
-        products
-      );
+      const urlMatch = this.urlMatcher.matchUrl(metric.pagePath, nodes, products);
 
       if (urlMatch) {
         if (urlMatch.type === 'node') {
@@ -58,7 +54,7 @@ export class GA4Mapper {
           });
         } else if (urlMatch.type === 'product') {
           // Find the node for this product
-          const product = products.find(p => p.id === urlMatch.id);
+          const product = products.find((p) => p.id === urlMatch.id);
           if (product?.node_id) {
             mappedMetrics.push({
               ...metric,
@@ -119,17 +115,13 @@ export class GA4Mapper {
 
     for (const metric of metrics) {
       // Try to match by product ID
-      let product = products.find(p =>
-        p.id === metric.itemId ||
-        p.gtin === metric.itemId ||
-        p.mpn === metric.itemId
+      let product = products.find(
+        (p) => p.id === metric.itemId || p.gtin === metric.itemId || p.mpn === metric.itemId
       );
 
       if (!product && metric.itemName) {
         // Try to match by name
-        product = products.find(p =>
-          p.title?.toLowerCase() === metric.itemName.toLowerCase()
-        );
+        product = products.find((p) => p.title?.toLowerCase() === metric.itemName.toLowerCase());
       }
 
       if (product) {
@@ -178,14 +170,14 @@ export class GA4Mapper {
     // Check cache first
     const cached = this.categoryMappings.get(category);
     if (cached) {
-      return nodes.find(n => n.id === cached.nodeId) || null;
+      return nodes.find((n) => n.id === cached.nodeId) || null;
     }
 
     // Normalize category string
     const normalized = this.normalizeCategory(category);
 
     // Strategy 1: Exact path match
-    let match = nodes.find(node => {
+    let match = nodes.find((node) => {
       const nodePath = this.normalizePath(node.path || '');
       return nodePath === normalized;
     });
@@ -196,7 +188,7 @@ export class GA4Mapper {
     }
 
     // Strategy 2: Exact title match
-    match = nodes.find(node => {
+    match = nodes.find((node) => {
       const nodeTitle = this.normalizeTitle(node.title || '');
       return nodeTitle === normalized;
     });
@@ -207,7 +199,7 @@ export class GA4Mapper {
     }
 
     // Strategy 3: Partial path match
-    match = nodes.find(node => {
+    match = nodes.find((node) => {
       const nodePath = this.normalizePath(node.path || '');
       return nodePath.includes(normalized) || normalized.includes(nodePath);
     });
@@ -218,11 +210,11 @@ export class GA4Mapper {
     }
 
     // Strategy 4: Split category and match parts
-    const categoryParts = normalized.split(/[\s>\/\-_]+/);
+    const categoryParts = normalized.split(/[\s>/\-_]+/);
     if (categoryParts.length > 1) {
       // Try to find nodes that match the last part (most specific)
       const lastPart = categoryParts[categoryParts.length - 1];
-      match = nodes.find(node => {
+      match = nodes.find((node) => {
         const nodeTitle = this.normalizeTitle(node.title || '');
         return nodeTitle.includes(lastPart) || lastPart.includes(nodeTitle);
       });
@@ -243,7 +235,7 @@ export class GA4Mapper {
     const hierarchy = new Map<string, string[]>();
 
     for (const category of categories) {
-      const parts = category.split(/[\s>\/]+/).filter(p => p.length > 0);
+      const parts = category.split(/[\s>/]+/).filter((p) => p.length > 0);
 
       for (let i = 0; i < parts.length; i++) {
         const current = parts.slice(0, i + 1).join(' > ');
@@ -276,7 +268,7 @@ export class GA4Mapper {
     unmappedUrls: string[];
   } {
     const total = mappedMetrics.length;
-    const mapped = mappedMetrics.filter(m => m.nodeId || m.productId).length;
+    const mapped = mappedMetrics.filter((m) => m.nodeId || m.productId).length;
     const totalConfidence = mappedMetrics.reduce((sum, m) => sum + m.confidence, 0);
     const strategies: Record<string, number> = {};
     const unmapped: string[] = [];
@@ -306,7 +298,7 @@ export class GA4Mapper {
   private normalizeCategory(category: string): string {
     return category
       .toLowerCase()
-      .replace(/[^a-z0-9\s\-_>\/]/g, '')
+      .replace(/[^a-z0-9\s\-_>/]/g, '')
       .replace(/\s+/g, '-')
       .replace(/^-+|-+$/g, '');
   }
@@ -318,7 +310,7 @@ export class GA4Mapper {
     return path
       .toLowerCase()
       .replace(/^\/+|\/+$/g, '')
-      .replace(/[^a-z0-9\-_\/]/g, '-')
+      .replace(/[^a-z0-9\-_/]/g, '-')
       .replace(/-+/g, '-');
   }
 

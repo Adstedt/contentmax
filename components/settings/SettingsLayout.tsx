@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Database, Users, CreditCard } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { User, Database, Users, CreditCard, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProfileTab } from './tabs/ProfileTab';
 import { DataSourcesTab } from './tabs/DataSourcesTab';
+import { IntegrationsTab } from './tabs/IntegrationsTab';
 import { TeamTab } from './tabs/TeamTab';
 import { BillingTab } from './tabs/BillingTab';
 
@@ -18,12 +20,23 @@ interface SettingsTab {
 const tabs: SettingsTab[] = [
   { id: 'profile', label: 'Profile', icon: User, content: ProfileTab },
   { id: 'data-sources', label: 'Data Sources', icon: Database, content: DataSourcesTab },
+  { id: 'integrations', label: 'Integrations', icon: Link2, content: IntegrationsTab },
   { id: 'team', label: 'Team', icon: Users, content: TeamTab },
   { id: 'billing', label: 'Billing', icon: CreditCard, content: BillingTab },
 ];
 
 export function SettingsLayout() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const defaultTab = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : 'profile';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  // Handle tab query parameter changes
+  useEffect(() => {
+    if (tabParam && tabs.some((t) => t.id === tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -56,7 +69,7 @@ export function SettingsLayout() {
         </div>
 
         {/* Tabs Navigation */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="border-b border-[#2a2a2a]">
             <nav className="-mb-px flex flex-wrap gap-x-8" aria-label="Settings tabs">
               {tabs.map((tab) => {
@@ -93,12 +106,7 @@ export function SettingsLayout() {
         </div>
 
         {/* Tab Content */}
-        <div
-          className="bg-[#0a0a0a] rounded-lg"
-          role="tabpanel"
-          id={`tabpanel-${activeTab}`}
-          aria-labelledby={`tab-${activeTab}`}
-        >
+        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
           <ActiveContent />
         </div>
       </div>

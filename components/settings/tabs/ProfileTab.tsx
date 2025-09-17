@@ -193,14 +193,17 @@ export function ProfileTab() {
   const roleStyle = roleConfig[userRole];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Profile Information</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Profile Information</h2>
+          <p className="text-[#999] text-sm mt-1">Update your personal details and preferences</p>
+        </div>
         {!isEditing ? (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white rounded-md transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white"
           >
             Edit Profile
           </button>
@@ -212,7 +215,7 @@ export function ProfileTab() {
                 setIsEditing(false);
                 reset();
               }}
-              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white rounded-md transition-colors flex items-center gap-2"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white"
             >
               <X className="h-4 w-4" />
               Cancel
@@ -220,7 +223,7 @@ export function ProfileTab() {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 bg-[#10a37f] hover:bg-[#0e8a65] disabled:opacity-50 text-white rounded-md transition-colors flex items-center gap-2"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-[#10a37f] hover:bg-[#0e8a65] disabled:opacity-50 text-white"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

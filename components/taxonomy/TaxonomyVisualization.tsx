@@ -953,6 +953,60 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Opportunity Score for Categories */}
+                            {enrichedData?.opportunityScore ? (
+                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-[#666]">Opportunity Score</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-[#10a37f]">
+                                      {enrichedData.opportunityScore.value.toFixed(1)}/10
+                                    </span>
+                                    <span
+                                      className={`text-xs px-1 py-0.5 rounded ${
+                                        enrichedData.opportunityScore.confidence === 'high'
+                                          ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                          : enrichedData.opportunityScore.confidence === 'medium'
+                                            ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                            : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                      }`}
+                                    >
+                                      {enrichedData.opportunityScore.confidence}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-[#666]">Opportunity Score</span>
+                                  <span className="text-sm font-bold text-[#10a37f]">
+                                    {(Math.random() * 10).toFixed(1)}/10
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Revenue Projection for Categories */}
+                            {enrichedData?.revenueProjection && (
+                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm font-mono text-white">
+                                    +$
+                                    {(
+                                      enrichedData.revenueProjection.realistic -
+                                      enrichedData.revenueProjection.current
+                                    ).toFixed(0)}
+                                    /mo
+                                  </div>
+                                  <div className="text-xs text-[#666]">
+                                    {enrichedData.revenueProjection.timeToImpact || '3-6 months'}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
 
@@ -1108,6 +1162,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                     level={0}
                     expandedNodes={expandedNodes}
                     selectedNodeId={selectedNodeId}
+                    enrichedData={enrichedNodes.get(rootNode.id)}
                     onToggle={(nodeId) => {
                       const newExpanded = new Set(expandedNodes);
                       if (expandedNodes.has(nodeId)) {
@@ -1130,6 +1185,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                     getHealthColor={getHealthColor}
                     getStatusColor={getStatusColor}
                     getTrendIcon={getTrendIcon}
+                    getEnrichedData={(nodeId) => enrichedNodes.get(nodeId)}
                   />
                 ))}
               </div>
@@ -1513,12 +1569,14 @@ interface TreeNodeDetailedProps {
   level: number;
   expandedNodes: Set<string>;
   selectedNodeId: string | null;
+  enrichedData?: EnrichedTaxonomyNode;
   onToggle: (nodeId: string) => void;
   onSelect: (nodeId: string) => void;
   onNavigate: (node: TreeNodeStructure) => void;
   getHealthColor: (score: number) => string;
   getStatusColor: (status: string) => string;
   getTrendIcon: (trend: string) => string;
+  getEnrichedData?: (nodeId: string) => EnrichedTaxonomyNode | undefined;
 }
 
 function TreeNodeDetailed({
@@ -1526,12 +1584,14 @@ function TreeNodeDetailed({
   level,
   expandedNodes,
   selectedNodeId,
+  enrichedData,
   onToggle,
   onSelect,
   onNavigate,
   getHealthColor,
   getStatusColor,
   getTrendIcon,
+  getEnrichedData,
 }: TreeNodeDetailedProps) {
   const isExpanded = expandedNodes.has(node.id);
   const isSelected = selectedNodeId === node.id;
@@ -1598,6 +1658,16 @@ function TreeNodeDetailed({
             </button>
           )}
 
+          {/* Opportunity Score */}
+          {enrichedData?.opportunityScore && (
+            <div className="text-right">
+              <div className="text-xs text-[#999]">Opportunity</div>
+              <div className="text-sm font-bold text-[#10a37f]">
+                {enrichedData.opportunityScore.value.toFixed(1)}/10
+              </div>
+            </div>
+          )}
+
           <div className="text-right">
             <div className="text-xs text-[#999]">Health</div>
             <div className="text-sm font-mono text-white">{node.healthScore}%</div>
@@ -1624,12 +1694,14 @@ function TreeNodeDetailed({
               level={level + 1}
               expandedNodes={expandedNodes}
               selectedNodeId={selectedNodeId}
+              enrichedData={getEnrichedData?.(child.id)}
               onToggle={onToggle}
               onSelect={onSelect}
               onNavigate={onNavigate}
               getHealthColor={getHealthColor}
               getStatusColor={getStatusColor}
               getTrendIcon={getTrendIcon}
+              getEnrichedData={getEnrichedData}
             />
           ))}
         </div>

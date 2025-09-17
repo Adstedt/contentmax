@@ -213,9 +213,12 @@ export function DataSourcesTab() {
   }
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Data Sources</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Data Sources</h2>
+          <p className="text-[#999] text-sm mt-1">Manage your imported product feeds and data</p>
+        </div>
         <div className="flex items-center gap-2">
           {/* Clear All Data Button - Only show if there are data sources */}
           {dataSources.length > 0 && (
@@ -224,14 +227,14 @@ export function DataSourcesTab() {
                 setSelectedSourceForClear(null);
                 setShowClearModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-md transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30"
               title="Clear all imported data"
             >
               <AlertTriangle className="h-4 w-4" />
               Clear All Data
             </button>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#10a37f] hover:bg-[#0e8a65] text-white rounded-md transition-colors">
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-[#10a37f] hover:bg-[#0e8a65] text-white">
             <Plus className="h-4 w-4" />
             Add Data Source
           </button>
@@ -308,7 +311,7 @@ export function DataSourcesTab() {
                       <button
                         onClick={() => handleToggleStatus(source)}
                         disabled={isUpdating === source.id}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] disabled:opacity-50 text-white rounded text-sm transition-colors"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded transition-colors font-medium text-xs bg-[#2a2a2a] hover:bg-[#3a3a3a] disabled:opacity-50 text-white"
                       >
                         {isUpdating === source.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -344,7 +347,7 @@ export function DataSourcesTab() {
                         setSelectedSourceForClear(source);
                         setShowClearModal(true);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 rounded text-sm transition-colors"
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded transition-colors font-medium text-xs bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30"
                       title="Clear all data for this feed"
                     >
                       <AlertTriangle className="h-3.5 w-3.5" />

@@ -4,10 +4,13 @@ import { CreditCard, Check, AlertCircle, TrendingUp, Calendar, Download } from '
 
 export function BillingTab() {
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Billing & Subscription</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white rounded-md transition-colors">
+        <div>
+          <h2 className="text-xl font-semibold">Billing & Subscription</h2>
+          <p className="text-[#999] text-sm mt-1">Manage your plan and payment methods</p>
+        </div>
+        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors font-medium text-sm bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white">
           <Download className="h-4 w-4" />
           Download Invoice
         </button>

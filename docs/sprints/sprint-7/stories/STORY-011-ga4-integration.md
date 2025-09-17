@@ -1,6 +1,6 @@
 # STORY-011: Google Analytics 4 Integration
 
-**Status:** Ready for Development
+**Status:** Done
 **Sprint:** Sprint 7
 **Points:** 3
 **Priority:** P0
@@ -15,6 +15,7 @@
 ## Acceptance Criteria
 
 ### Must Have
+
 1. Connect to GA4 Data API using existing OAuth
 2. Map product/category pages to taxonomy nodes
 3. Store engagement metrics (sessions, users, engagement rate)
@@ -23,12 +24,14 @@
 6. Aggregate metrics by category hierarchy
 
 ### Should Have
+
 7. Product-level revenue tracking
 8. Average order value by category
 9. User behavior flow through categories
 10. Custom date ranges
 
 ### Could Have
+
 11. Real-time data updates
 12. Audience segmentation
 13. Custom event tracking
@@ -108,7 +111,9 @@
 ## Dev Notes
 
 ### Project Structure Context
+
 Based on `/docs/architecture/source-tree.md`:
+
 ```
 contentmax/
 ├── app/
@@ -149,6 +154,7 @@ contentmax/
 ### Technical Implementation Details
 
 1. **GA4 API Service Implementation**
+
 ```typescript
 // lib/services/ga4-service.ts
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
@@ -165,7 +171,7 @@ export class GA4Service {
   async initialize() {
     const credentials = await getGoogleCredentials();
     this.analyticsDataClient = new BetaAnalyticsDataClient({
-      credentials
+      credentials,
     });
   }
 
@@ -173,42 +179,42 @@ export class GA4Service {
     const [response] = await this.analyticsDataClient.runReport({
       property: `properties/${this.propertyId}`,
       dateRanges: [{ startDate, endDate }],
-      dimensions: [
-        { name: 'pagePath' },
-        { name: 'itemCategory' }
-      ],
+      dimensions: [{ name: 'pagePath' }, { name: 'itemCategory' }],
       metrics: [
         { name: 'sessions' },
         { name: 'totalRevenue' },
         { name: 'transactions' },
         { name: 'ecommercePurchases' },
         { name: 'engagementRate' },
-        { name: 'averagePurchaseRevenue' }
+        { name: 'averagePurchaseRevenue' },
       ],
-      limit: 10000
+      limit: 10000,
     });
 
     return this.transformResponse(response);
   }
 
   private transformResponse(response: any) {
-    return response.rows?.map((row: any) => ({
-      pagePath: row.dimensionValues[0]?.value,
-      category: row.dimensionValues[1]?.value,
-      metrics: {
-        sessions: parseInt(row.metricValues[0]?.value || '0'),
-        revenue: parseFloat(row.metricValues[1]?.value || '0'),
-        transactions: parseInt(row.metricValues[2]?.value || '0'),
-        purchases: parseInt(row.metricValues[3]?.value || '0'),
-        engagementRate: parseFloat(row.metricValues[4]?.value || '0'),
-        aov: parseFloat(row.metricValues[5]?.value || '0')
-      }
-    })) || [];
+    return (
+      response.rows?.map((row: any) => ({
+        pagePath: row.dimensionValues[0]?.value,
+        category: row.dimensionValues[1]?.value,
+        metrics: {
+          sessions: parseInt(row.metricValues[0]?.value || '0'),
+          revenue: parseFloat(row.metricValues[1]?.value || '0'),
+          transactions: parseInt(row.metricValues[2]?.value || '0'),
+          purchases: parseInt(row.metricValues[3]?.value || '0'),
+          engagementRate: parseFloat(row.metricValues[4]?.value || '0'),
+          aov: parseFloat(row.metricValues[5]?.value || '0'),
+        },
+      })) || []
+    );
   }
 }
 ```
 
 2. **Database Schema**
+
 ```sql
 -- supabase/migrations/[timestamp]_add_analytics_metrics.sql
 CREATE TABLE IF NOT EXISTS analytics_metrics (
@@ -252,6 +258,7 @@ CREATE POLICY "Users can update own analytics metrics"
 ```
 
 3. **Category Mapping Logic**
+
 ```typescript
 // lib/integration/ga4-mapper.ts
 import { URLMatcher } from './url-matcher';
@@ -264,24 +271,18 @@ export class GA4Mapper {
     this.urlMatcher = new URLMatcher();
   }
 
-  async mapGA4ToTaxonomy(
-    ga4Data: any[],
-    nodes: TaxonomyNode[]
-  ): Promise<MappedMetrics[]> {
+  async mapGA4ToTaxonomy(ga4Data: any[], nodes: TaxonomyNode[]): Promise<MappedMetrics[]> {
     const mappings: MappedMetrics[] = [];
 
     for (const row of ga4Data) {
       // Try URL-based matching first
-      const urlMatch = this.urlMatcher.matchUrlToNode(
-        row.pagePath,
-        nodes
-      );
+      const urlMatch = this.urlMatcher.matchUrlToNode(row.pagePath, nodes);
 
       if (urlMatch.nodeId && urlMatch.confidence > 0.6) {
         mappings.push({
           nodeId: urlMatch.nodeId,
           confidence: urlMatch.confidence,
-          metrics: row.metrics
+          metrics: row.metrics,
         });
         continue;
       }
@@ -293,7 +294,7 @@ export class GA4Mapper {
           mappings.push({
             nodeId: categoryMatch.id,
             confidence: 0.7,
-            metrics: row.metrics
+            metrics: row.metrics,
           });
         }
       }
@@ -307,22 +308,26 @@ export class GA4Mapper {
     const normalized = category.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
     // Find matching node by path or title
-    return nodes.find(node => {
-      const nodePath = node.path?.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const nodeTitle = node.title?.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      return nodePath === normalized || nodeTitle === normalized;
-    }) || null;
+    return (
+      nodes.find((node) => {
+        const nodePath = node.path?.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const nodeTitle = node.title?.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        return nodePath === normalized || nodeTitle === normalized;
+      }) || null
+    );
   }
 }
 ```
 
 ### Configuration Requirements
+
 - Environment variable: `GA4_PROPERTY_ID` (e.g., "123456789")
 - Google OAuth scopes: 'https://www.googleapis.com/auth/analytics.readonly'
 - GA4 e-commerce tracking must be enabled
 - Enhanced e-commerce events configured
 
 ### Error Handling Strategy
+
 - Property not found: Guide user to settings to configure
 - Permission denied: Request user to grant analytics access
 - Rate limits: Implement exponential backoff
@@ -331,12 +336,14 @@ export class GA4Mapper {
 ## Testing
 
 ### Testing Standards (from `/docs/architecture/coding-standards.md`)
+
 - Test framework: Vitest for unit/integration tests
 - Test coverage: Minimum 80% for new code
 - Mock GA4 API responses for unit tests
 - Use test fixtures for consistent test data
 
 ### Test Scenarios
+
 1. **GA4 Connection Tests**
    - Valid property ID returns data
    - Invalid property ID handled gracefully
@@ -363,22 +370,24 @@ export class GA4Mapper {
 
 ## Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2025-01-16 | 1.0 | Initial story creation | Sarah (PO) |
-| 2025-01-16 | 1.1 | Updated to Ready for Development status | Sarah (PO) |
+| Date       | Version | Description                             | Author     |
+| ---------- | ------- | --------------------------------------- | ---------- |
+| 2025-01-16 | 1.0     | Initial story creation                  | Sarah (PO) |
+| 2025-01-16 | 1.1     | Updated to Ready for Development status | Sarah (PO) |
 
 ## Dev Agent Record
 
 **Agent Model Used:** claude-3-5-sonnet-20241022
 
 **Debug Log References:**
+
 - [x] GA4 API connection established
 - [x] Property data fetched successfully
 - [x] Mapping accuracy verified
 - [x] Metrics displaying correctly in visualization
 
 **Completion Notes:**
+
 - GA4 Data API needs to be manually enabled in Google Cloud Console
 - OAuth scope for Analytics already present in configuration
 - Created comprehensive database schema with RLS policies
@@ -391,6 +400,7 @@ export class GA4Mapper {
 - Comprehensive test suite created covering unit, integration, and API tests
 
 **File List:**
+
 - /app/dashboard/settings/integrations/page.tsx
 - /supabase/migrations/20250117_add_user_settings.sql
 - /supabase/migrations/20250117_add_analytics_metrics.sql
@@ -408,29 +418,33 @@ export class GA4Mapper {
 ## QA Results
 
 ### Review Date: 2025-01-17
+
 **Reviewer:** Quinn (Test Architect)
 **Gate Decision:** **PASS** ✅
 
 ### Executive Summary
+
 STORY-011 (GA4 Integration) demonstrates excellent implementation quality with comprehensive feature coverage, robust error handling, and thorough testing. The implementation successfully meets all acceptance criteria and follows architectural standards.
 
 ### Requirements Traceability
-| AC | Requirement | Implementation | Test Coverage | Status |
-|----|------------|----------------|---------------|---------|
-| 1 | Connect to GA4 Data API | ✅ GA4Service with OAuth | ✅ Integration tests | PASS |
-| 2 | Map pages to taxonomy | ✅ GA4Mapper with multi-strategy | ✅ Unit tests | PASS |
-| 3 | Store engagement metrics | ✅ analytics_metrics table | ✅ Migration tested | PASS |
-| 4 | Store e-commerce metrics | ✅ Comprehensive schema | ✅ Data validation | PASS |
-| 5 | Display in visualization | ✅ NodeTooltip updated | ✅ Hook tests | PASS |
-| 6 | Aggregate by hierarchy | ✅ Bottom-up aggregation | ✅ Unit tests | PASS |
-| 7 | Product-level tracking | ✅ Product API endpoint | ✅ API tests | PASS |
-| 8 | Average order value | ✅ Calculated in aggregation | ✅ Test coverage | PASS |
-| 9 | User behavior flow | ⚠️ Partial - basic flow only | N/A | PARTIAL |
-| 10 | Custom date ranges | ✅ Configurable ranges | ✅ Tested | PASS |
+
+| AC  | Requirement              | Implementation                   | Test Coverage        | Status  |
+| --- | ------------------------ | -------------------------------- | -------------------- | ------- |
+| 1   | Connect to GA4 Data API  | ✅ GA4Service with OAuth         | ✅ Integration tests | PASS    |
+| 2   | Map pages to taxonomy    | ✅ GA4Mapper with multi-strategy | ✅ Unit tests        | PASS    |
+| 3   | Store engagement metrics | ✅ analytics_metrics table       | ✅ Migration tested  | PASS    |
+| 4   | Store e-commerce metrics | ✅ Comprehensive schema          | ✅ Data validation   | PASS    |
+| 5   | Display in visualization | ✅ NodeTooltip updated           | ✅ Hook tests        | PASS    |
+| 6   | Aggregate by hierarchy   | ✅ Bottom-up aggregation         | ✅ Unit tests        | PASS    |
+| 7   | Product-level tracking   | ✅ Product API endpoint          | ✅ API tests         | PASS    |
+| 8   | Average order value      | ✅ Calculated in aggregation     | ✅ Test coverage     | PASS    |
+| 9   | User behavior flow       | ⚠️ Partial - basic flow only     | N/A                  | PARTIAL |
+| 10  | Custom date ranges       | ✅ Configurable ranges           | ✅ Tested            | PASS    |
 
 ### Code Quality Assessment
 
 #### Strengths
+
 1. **Architecture Excellence**
    - Clean separation of concerns with dedicated service layer
    - Multi-strategy URL matching with confidence scoring
@@ -452,6 +466,7 @@ STORY-011 (GA4 Integration) demonstrates excellent implementation quality with c
    - Batch operations for metrics storage
 
 #### Test Coverage Analysis
+
 - **Unit Tests:** GA4Mapper (315 lines) - Excellent coverage of mapping logic
 - **Integration Tests:** GA4Service (300 lines) - Comprehensive API interaction tests
 - **API Tests:** Sync endpoint (291 lines) - Thorough auth and rate limit testing
@@ -460,11 +475,13 @@ STORY-011 (GA4 Integration) demonstrates excellent implementation quality with c
 ### Risk Assessment
 
 #### Low Risk Areas ✅
+
 - Authentication and authorization (properly secured)
 - Data persistence (RLS policies in place)
 - API rate limiting (429 handling implemented)
 
 #### Medium Risk Areas ⚠️
+
 1. **GA4 Property Access**
    - Risk: Manual configuration required
    - Mitigation: Clear error messages guide users
@@ -478,47 +495,54 @@ STORY-011 (GA4 Integration) demonstrates excellent implementation quality with c
    - Mitigation: Consider pagination for future enhancement
 
 #### High Risk Areas 🔴
+
 - None identified
 
 ### Non-Functional Requirements
 
-| NFR | Requirement | Status | Notes |
-|-----|------------|--------|-------|
-| Security | OAuth, RLS, Auth | ✅ PASS | Properly implemented |
-| Performance | Response times | ✅ PASS | Rate limiting prevents overload |
-| Scalability | Multi-tenant | ✅ PASS | RLS ensures data isolation |
-| Maintainability | Code structure | ✅ PASS | Well-organized, documented |
-| Testability | Test coverage | ✅ PASS | Comprehensive test suite |
-| Observability | Error logging | ✅ PASS | Console logging in place |
+| NFR             | Requirement      | Status  | Notes                           |
+| --------------- | ---------------- | ------- | ------------------------------- |
+| Security        | OAuth, RLS, Auth | ✅ PASS | Properly implemented            |
+| Performance     | Response times   | ✅ PASS | Rate limiting prevents overload |
+| Scalability     | Multi-tenant     | ✅ PASS | RLS ensures data isolation      |
+| Maintainability | Code structure   | ✅ PASS | Well-organized, documented      |
+| Testability     | Test coverage    | ✅ PASS | Comprehensive test suite        |
+| Observability   | Error logging    | ✅ PASS | Console logging in place        |
 
 ### Recommendations
 
 #### Must Fix (None)
+
 - No critical issues requiring immediate fix
 
 #### Should Consider
+
 1. Add retry mechanism with exponential backoff for transient failures
 2. Implement caching layer for frequently accessed metrics
 3. Add monitoring/alerting for sync failures
 
 #### Nice to Have
+
 1. User behavior flow visualization (AC9 partial implementation)
 2. Real-time data updates via webhooks (AC11)
 3. Audience segmentation features (AC12)
 4. Enhanced logging with structured format
 
 ### Testing Recommendations
+
 1. **Load Testing:** Test with maximum GA4 data volumes
 2. **Edge Cases:** Test with malformed property IDs
 3. **Integration:** End-to-end testing with real GA4 property
 4. **Monitoring:** Add synthetic monitoring for API health
 
 ### Technical Debt
+
 - Minor: Consider extracting magic numbers (rate limit duration) to config
 - Minor: Add request/response logging middleware
 - Minor: Implement circuit breaker pattern for external API calls
 
 ### Compliance Check
+
 - ✅ Follows project coding standards
 - ✅ TypeScript types properly defined
 - ✅ Database migrations reversible
@@ -526,7 +550,9 @@ STORY-011 (GA4 Integration) demonstrates excellent implementation quality with c
 - ✅ Error handling comprehensive
 
 ### Gate Decision Rationale
+
 **PASS** - The implementation demonstrates high quality with:
+
 - All must-have requirements completed
 - Comprehensive test coverage
 - Robust error handling
@@ -536,6 +562,7 @@ STORY-011 (GA4 Integration) demonstrates excellent implementation quality with c
 The few partial implementations (user flow) and nice-to-have features do not impact core functionality. The story delivers significant business value and is production-ready.
 
 ### Sign-off
+
 - **Quality Gate:** PASS ✅
 - **Risk Level:** Low
 - **Production Ready:** Yes
@@ -543,4 +570,5 @@ The few partial implementations (user flow) and nice-to-have features do not imp
 - **Recommended Actions:** Deploy with monitoring
 
 ---
-*Review completed by Quinn (Test Architect) on 2025-01-17*
+
+_Review completed by Quinn (Test Architect) on 2025-01-17_

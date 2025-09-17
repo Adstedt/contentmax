@@ -352,7 +352,7 @@ export function TeamTab() {
   }
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold">Team Members</h2>
