@@ -12,7 +12,10 @@ export class GoogleAnalyticsService {
   private oauth2Client: OAuth2Client;
   private integrationManager: IntegrationManager;
 
-  private static readonly SCOPES = ['https://www.googleapis.com/auth/analytics.readonly'];
+  private static readonly SCOPES = [
+    'https://www.googleapis.com/auth/analytics.readonly',
+    'https://www.googleapis.com/auth/analytics.manage.users.readonly',
+  ];
 
   constructor(
     clientId: string,
@@ -68,7 +71,7 @@ export class GoogleAnalyticsService {
         });
 
         const analytics = google.analyticsadmin({
-          version: 'v1alpha',
+          version: 'v1beta',
           auth: this.oauth2Client,
         });
 
@@ -97,11 +100,24 @@ export class GoogleAnalyticsService {
     });
 
     const analytics = google.analyticsadmin({
-      version: 'v1alpha',
+      version: 'v1beta',
       auth: this.oauth2Client,
     });
 
-    const response = await analytics.properties.list();
+    // First get accounts, then list properties with filter
+    const accountsResponse = await analytics.accounts.list();
+    const accounts = accountsResponse.data.accounts || [];
+
+    if (accounts.length === 0) {
+      return [];
+    }
+
+    // GA4 Admin API requires a filter parameter
+    const filter = accounts.map((acc) => `parent:${acc.name}`).join(' OR ');
+
+    const response = await analytics.properties.list({
+      filter,
+    });
 
     return response.data.properties || [];
   }

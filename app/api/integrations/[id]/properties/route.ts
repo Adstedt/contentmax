@@ -4,7 +4,7 @@ import { IntegrationManager } from '@/lib/integration/integration-manager';
 import { GoogleAnalyticsService } from '@/lib/integration/services/google-analytics-service';
 import { GoogleSearchConsoleService } from '@/lib/integration/services/google-search-console-service';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerSupabaseClient();
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const { data: connection, error: connectionError } = await supabase
       .from('data_source_connections')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', (await params).id)
       .eq('user_id', user.id)
       .single();
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       process.env.ENCRYPTION_KEY!
     );
 
-    const tokens = await integrationManager.getDecryptedTokens(params.id);
+    const tokens = await integrationManager.getDecryptedTokens((await params).id);
 
     if (!tokens?.access_token) {
       return NextResponse.json({ error: 'No valid tokens found' }, { status: 400 });
@@ -49,43 +49,49 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     switch (connection.service_type) {
       case 'google_analytics':
         try {
-          const ga4Service = new GoogleAnalyticsService(
-            process.env.GOOGLE_CLIENT_ID!,
-            process.env.GOOGLE_CLIENT_SECRET!,
-            process.env.ENCRYPTION_KEY!
-          );
+          // Note: We don't actually need the service instance, just making direct API calls
 
-          // Make direct API call to GA4 Admin API
+          // Make direct API call to GA4 Admin API v1beta
           const response = await fetch('https://analyticsadmin.googleapis.com/v1beta/accounts', {
             headers: {
               Authorization: `Bearer ${tokens.access_token}`,
             },
           });
 
+          console.log('GA4 Accounts response status:', response.status);
+
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error('GA4 API error:', errorText);
             throw new Error(`GA4 API error: ${response.statusText}`);
           }
 
           const accountsData = await response.json();
+          console.log('GA4 Accounts data:', accountsData);
           const accounts = accountsData.accounts || [];
 
-          // For each account, get properties
-          for (const account of accounts) {
-            const propsResponse = await fetch(
-              `https://analyticsadmin.googleapis.com/v1beta/${account.name}/properties`,
-              {
-                headers: {
-                  Authorization: `Bearer ${tokens.access_token}`,
-                },
-              }
-            );
-
-            if (propsResponse.ok) {
-              const propsData = await propsResponse.json();
-              if (propsData.properties) {
-                properties.push(...propsData.properties);
-              }
+          // Get all properties (GA4 Admin API requires a filter parameter)
+          // Use a filter that matches all properties (parent filter for all accounts)
+          const filter =
+            accounts.map((acc) => `parent:${acc.name}`).join(' OR ') || 'parent:accounts/*';
+          const propsResponse = await fetch(
+            `https://analyticsadmin.googleapis.com/v1beta/properties?filter=${encodeURIComponent(filter)}`,
+            {
+              headers: {
+                Authorization: `Bearer ${tokens.access_token}`,
+              },
             }
+          );
+
+          console.log('Properties response status:', propsResponse.status);
+
+          if (propsResponse.ok) {
+            const propsData = await propsResponse.json();
+            console.log('Properties data:', propsData);
+            properties = propsData.properties || [];
+          } else {
+            const errorText = await propsResponse.text();
+            console.error('Properties fetch error:', errorText);
           }
         } catch (error) {
           console.error('Error fetching GA4 properties:', error);

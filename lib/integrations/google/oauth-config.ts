@@ -27,6 +27,7 @@ export const GOOGLE_OAUTH_SCOPES = {
   MERCHANT_CENTER: 'https://www.googleapis.com/auth/content',
   SEARCH_CONSOLE: 'https://www.googleapis.com/auth/webmasters.readonly',
   ANALYTICS: 'https://www.googleapis.com/auth/analytics.readonly',
+  ANALYTICS_MANAGE_USERS: 'https://www.googleapis.com/auth/analytics.manage.users.readonly',
 } as const;
 
 // All scopes needed for the application
@@ -37,6 +38,7 @@ export const ALL_SCOPES = [
   GOOGLE_OAUTH_SCOPES.MERCHANT_CENTER,
   GOOGLE_OAUTH_SCOPES.SEARCH_CONSOLE,
   GOOGLE_OAUTH_SCOPES.ANALYTICS,
+  GOOGLE_OAUTH_SCOPES.ANALYTICS_MANAGE_USERS,
 ];
 
 // OAuth endpoints
@@ -52,6 +54,7 @@ export const GOOGLE_API_ENDPOINTS = {
   MERCHANT: 'https://shoppingcontent.googleapis.com/content/v2.1',
   SEARCH_CONSOLE: 'https://searchconsole.googleapis.com/v1',
   ANALYTICS: 'https://analyticsdata.googleapis.com/v1beta',
+  ANALYTICS_ADMIN: 'https://analyticsadmin.googleapis.com/v1beta',
 } as const;
 
 export interface GoogleOAuthConfig {

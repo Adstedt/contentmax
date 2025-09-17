@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { IntegrationManager } from '@/lib/integration/integration-manager';
 import { GoogleAnalyticsService } from '@/lib/integration/services/google-analytics-service';
 import { GoogleSearchConsoleService } from '@/lib/integration/services/google-search-console-service';
 import { GoogleMerchantCenterService } from '@/lib/integration/services/google-merchant-center-service';
 import { logger } from '@/lib/integration/logger';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 const integrationManager = new IntegrationManager(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,19 +12,32 @@ const integrationManager = new IntegrationManager(
   process.env.ENCRYPTION_KEY!
 );
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const connectionId = params.id;
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Get connection ID from params
+  const connectionId = (await params).id;
 
   try {
-    // Verify user has access to this connection
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    // Create server Supabase client and check authentication
+    const supabase = await createServerSupabaseClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get connection details
-    const connection = await integrationManager.getConnection(connectionId);
-    if (!connection) {
+    // Get connection details and verify ownership
+    const { data: connection, error: connectionError } = await supabase
+      .from('data_source_connections')
+      .select('*')
+      .eq('id', connectionId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (connectionError || !connection) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
     }
 

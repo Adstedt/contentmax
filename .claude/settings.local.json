@@ -120,7 +120,9 @@
       "Read(//c/Users/audri/Desktop/dev/screenshots/**)",
       "Bash(jq:*)",
       "Bash(npm run test:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.google.com)"
     ],
     "deny": [],
     "ask": []
