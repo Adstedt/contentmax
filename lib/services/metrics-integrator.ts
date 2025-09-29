@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/client';
-import { UrlMatcher } from '@/lib/integration/url-matcher';
-import { GtinMatcher } from '@/lib/integration/gtin-matcher';
-import { MetricsAggregator } from '@/lib/integration/metrics-aggregator';
-import { ConfidenceScorer } from '@/lib/integration/confidence-scorer';
+import { createClient } from '@/lib/external/supabase/client';
+import { UrlMatcher } from '@/lib/external/url-matcher';
+import { GtinMatcher } from '@/lib/external/gtin-matcher';
+import { MetricsAggregator } from '@/lib/external/metrics-aggregator';
+import { ConfidenceScorer } from '@/lib/external/confidence-scorer';
 import {
   TaxonomyNode,
   Product,

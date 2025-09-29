@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { GA4Client } from '@/lib/integrations/analytics';
-import { URLMatcher } from '@/lib/matching/url-matcher';
+import { GA4Client } from '@/lib/external/analytics';
+import { URLMatcher } from '@/lib/core/analysis/url-matcher';
 import { MetricsSyncTracker, SyncConfig, syncJobManager } from './sync-tracker';
 import { GA4Config, GA4BatchRequest } from '@/types/ga4.types';
 

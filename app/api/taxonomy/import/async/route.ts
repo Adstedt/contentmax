@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { FeedFetcher } from '@/lib/taxonomy/feed-fetcher';
-import { FeedTaxonomyBuilder } from '@/lib/taxonomy/feed-taxonomy-builder';
-import { CategoryMerger } from '@/lib/taxonomy/category-merger';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
+import { FeedFetcher } from '@/lib/core/taxonomy/feed-fetcher';
+import { FeedTaxonomyBuilder } from '@/lib/core/taxonomy/feed-taxonomy-builder';
+import { CategoryMerger } from '@/lib/core/taxonomy/category-merger';
 import { z } from 'zod';
 
 // Store import jobs in memory (in production, use Redis or database)

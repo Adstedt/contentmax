@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { URLMatcher } from '@/lib/matching/url-matcher';
-import { createClient } from '@/lib/supabase/server';
+import { URLMatcher } from '@/lib/core/analysis/url-matcher';
+import { createClient } from '@/lib/external/supabase/server';
 
 const URLMatchRequestSchema = z.object({
   sourceUrls: z.array(z.string()).min(1).max(10000),

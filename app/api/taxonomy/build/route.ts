@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FeedTaxonomyBuilder } from '@/lib/taxonomy/feed-taxonomy-builder';
-import { CategoryMerger } from '@/lib/taxonomy/category-merger';
+import { FeedTaxonomyBuilder } from '@/lib/core/taxonomy/feed-taxonomy-builder';
+import { CategoryMerger } from '@/lib/core/taxonomy/category-merger';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 

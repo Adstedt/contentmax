@@ -6,7 +6,7 @@
 
 import { google, searchconsole_v1 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/external/supabase/client';
 
 export interface SearchMetric {
   url: string;

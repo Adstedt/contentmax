@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ProductData, ParsedFeed, CategoryInfo } from '@/lib/parsers/product-feed-parser';
+import { ProductData, ParsedFeed, CategoryInfo } from '@/lib/data/import/product-feed-parser';
 
 export interface SyncResult {
   inserted: number;

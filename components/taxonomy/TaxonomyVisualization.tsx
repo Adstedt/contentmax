@@ -4,10 +4,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { SearchIcon, FilterIcon, HomeIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-react';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
 import { ForceGraph } from '@/components/taxonomy/D3Visualization';
-import { TaxonomyEnrichmentPipeline, type EnrichedTaxonomyNode } from '@/lib/taxonomy/enrich-data';
+import { TaxonomyEnrichmentPipeline, type EnrichedTaxonomyNode } from '@/lib/core/taxonomy/enrich-data';
 import ProductsList from './ProductsList';
 import SimpleProductCard, { type Product } from './SimpleProductCard';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 
 interface TaxonomyVisualizationProps {
   data: {

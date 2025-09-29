@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
 
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const { feedId } = await request.json();
 
     // Start transaction-like behavior by deleting in correct order
     const deletionSteps = [
-      { name: 'search queries', query: supabase.from('search_queries').delete().eq('user_id', user.id) },
-      { name: 'search metrics', query: supabase.from('search_metrics').delete().eq('user_id', user.id) },
-      { name: 'product categories', query: supabase.from('product_categories').delete().eq('user_id', user.id) },
+      {
+        name: 'category products',
+        query: supabase.from('category_products').delete().eq('user_id', user.id),
+      },
       { name: 'products', query: supabase.from('products').delete().eq('user_id', user.id) },
-      { name: 'taxonomy nodes', query: supabase.from('taxonomy_nodes').delete().eq('user_id', user.id) },
+      {
+        name: 'taxonomy nodes',
+        query: supabase.from('taxonomy_nodes').delete().eq('user_id', user.id),
+      },
     ];
 
     const results = [];
@@ -31,19 +35,20 @@ export async function DELETE(request: NextRequest) {
     for (const step of deletionSteps) {
       const { error, count } = await step.query;
 
-      if (error && error.code !== 'PGRST116') { // Ignore "no rows deleted" error
+      if (error && error.code !== 'PGRST116') {
+        // Ignore "no rows deleted" error
         console.error(`Error deleting ${step.name}:`, error);
         hasError = true;
         results.push({
           step: step.name,
           success: false,
-          error: error.message
+          error: error.message,
         });
       } else {
         results.push({
           step: step.name,
           success: true,
-          deleted: count || 0
+          deleted: count || 0,
         });
       }
     }
@@ -51,22 +56,22 @@ export async function DELETE(request: NextRequest) {
     // If a specific feed ID was provided, also remove the connection
     if (feedId) {
       const { error: feedError } = await supabase
-        .from('data_source_connections')
+        .from('feed_config')
         .delete()
         .eq('id', feedId)
-        .eq('workspace_id', user.id); // Additional safety check
+        .eq('user_id', user.id); // Additional safety check
 
       if (feedError) {
         console.error('Error removing feed connection:', feedError);
         results.push({
           step: 'feed connection',
           success: false,
-          error: feedError.message
+          error: feedError.message,
         });
       } else {
         results.push({
           step: 'feed connection',
-          success: true
+          success: true,
         });
       }
     }
@@ -75,7 +80,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Some data could not be cleared',
-          details: results
+          details: results,
         },
         { status: 500 }
       );
@@ -84,15 +89,11 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'All feed data cleared successfully',
-      details: results
+      details: results,
     });
-
   } catch (error) {
     console.error('Failed to clear feed data:', error);
-    return NextResponse.json(
-      { error: 'Failed to clear feed data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to clear feed data' }, { status: 500 });
   }
 }
 
@@ -101,26 +102,19 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Get counts of data that would be deleted
     const [products, taxonomyNodes, searchMetrics] = await Promise.all([
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id),
+      supabase.from('products').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase
         .from('taxonomy_nodes')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id),
-      supabase
-        .from('search_metrics')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id),
     ]);
@@ -130,15 +124,11 @@ export async function GET(request: NextRequest) {
         products: products.count || 0,
         taxonomyNodes: taxonomyNodes.count || 0,
         searchMetrics: searchMetrics.count || 0,
-        total: (products.count || 0) + (taxonomyNodes.count || 0) + (searchMetrics.count || 0)
-      }
+        total: (products.count || 0) + (taxonomyNodes.count || 0) + (searchMetrics.count || 0),
+      },
     });
-
   } catch (error) {
     console.error('Failed to get deletion statistics:', error);
-    return NextResponse.json(
-      { error: 'Failed to get deletion statistics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get deletion statistics' }, { status: 500 });
   }
 }

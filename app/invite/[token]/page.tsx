@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { Loader2, CheckCircle, XCircle, Users } from 'lucide-react';
 
 export default function AcceptInvitationPage({ params }: { params: { token: string } }) {

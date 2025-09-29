@@ -5,7 +5,7 @@ import { User, Mail, Phone, Globe, Key, Save, X, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { toast } from 'sonner';
 
 const profileSchema = z.object({

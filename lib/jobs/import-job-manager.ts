@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { RetryManager } from '@/lib/resilience/retry-manager';
 import { CircuitBreaker } from '@/lib/resilience/circuit-breaker';
 

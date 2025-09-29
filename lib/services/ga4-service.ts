@@ -6,7 +6,7 @@
 
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { OAuth2Client } from 'google-auth-library';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/external/supabase/client';
 
 export interface AnalyticsMetric {
   pagePath: string;

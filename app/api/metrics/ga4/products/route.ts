@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
 
     // Import GA4 service dynamically to avoid server-side issues
     const { GA4Service } = await import('@/lib/services/ga4-service');
-    const { GA4Mapper } = await import('@/lib/integration/ga4-mapper');
+    const { GA4Mapper } = await import('@/lib/external/ga4-mapper');
 
     // Initialize GA4 service
     const ga4Service = new GA4Service(propertyId);

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { IntegrationManager } from '@/lib/integration/integration-manager';
-import { GoogleAnalyticsService } from '@/lib/integration/services/google-analytics-service';
-import { GoogleSearchConsoleService } from '@/lib/integration/services/google-search-console-service';
-import { GoogleMerchantCenterService } from '@/lib/integration/services/google-merchant-center-service';
-import { logger } from '@/lib/integration/logger';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
+import { IntegrationManager } from '@/lib/external/integration-manager';
+import { GoogleAnalyticsService } from '@/lib/external/google-analytics-service';
+import { GoogleSearchConsoleService } from '@/lib/external/google-search-console-service';
+import { GoogleMerchantCenterService } from '@/lib/external/google-merchant-center-service';
+import { logger } from '@/lib/external/logger';
 
 const integrationManager = new IntegrationManager(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Get connection details and verify ownership
     const { data: connection, error: connectionError } = await supabase
-      .from('data_source_connections')
+      .from('feed_config')
       .select('*')
       .eq('id', connectionId)
       .eq('user_id', user.id)
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let result;
 
     try {
-      switch (connection.service_type) {
+      switch (connection.feed_type) {
         case 'google_analytics': {
           const gaService = new GoogleAnalyticsService(
             process.env.GOOGLE_CLIENT_ID!,
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         default:
           return NextResponse.json(
-            { error: `Unsupported service type: ${connection.service_type}` },
+            { error: `Unsupported service type: ${connection.feed_type}` },
             { status: 400 }
           );
       }

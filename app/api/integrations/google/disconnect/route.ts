@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleOAuthClient } from '@/lib/integrations/google-oauth';
-import { createClient } from '@/lib/supabase/server';
-import { getGSCCache } from '@/lib/integrations/gsc-cache';
+import { GoogleOAuthClient } from '@/lib/external/google-oauth';
+import { createClient } from '@/lib/external/supabase/server';
+import { getGSCCache } from '@/lib/external/gsc-cache';
 
 export async function POST(request: NextRequest) {
   try {

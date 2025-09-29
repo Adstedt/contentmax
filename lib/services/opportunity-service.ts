@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/client';
-import { TrafficCalculator } from '@/lib/scoring/traffic-calculator';
-import { OpportunityRevenueCalculator } from '@/lib/scoring/opportunity-revenue-calculator';
-import { PricingCalculator, type PricingData } from '@/lib/scoring/pricing-calculator';
-import { OpportunityCategorizer } from '@/lib/scoring/opportunity-categorizer';
+import { createClient } from '@/lib/external/supabase/client';
+import { TrafficCalculator } from '@/lib/core/analysis/traffic-calculator';
+import { OpportunityRevenueCalculator } from '@/lib/core/analysis/opportunity-revenue-calculator';
+import { PricingCalculator, type PricingData } from '@/lib/core/analysis/pricing-calculator';
+import { OpportunityCategorizer } from '@/lib/core/analysis/opportunity-categorizer';
 import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization';
 import type {
   SearchMetrics,
