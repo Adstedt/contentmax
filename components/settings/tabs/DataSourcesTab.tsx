@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Database,
   CheckCircle,
@@ -57,43 +57,35 @@ export function DataSourcesTab() {
   const supabase = createClient();
   const router = useRouter();
 
-  useEffect(() => {
-    loadDataSources();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const loadDataSources = async () => {
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No user found');
+        console.warn('No user found');
         return;
       }
-      console.log('Loading data sources for user:', user.id);
+      console.info('Loading data sources for user:', user.id);
 
-      // First check if we have any imported data (products/taxonomy)
-      const {
-        data: products,
-        error: productsError,
-        count: productsCount,
-      } = await supabase
+      // OPTIMIZATION: Remove expensive count queries
+      // Instead, just check if any data exists with limit 1
+      const { data: hasProducts } = await supabase
         .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
 
-      const {
-        data: taxonomy,
-        error: taxonomyError,
-        count: taxonomyCount,
-      } = await supabase
+      const { data: hasTaxonomy } = await supabase
         .from('taxonomy_nodes')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
 
-      console.log('Products count:', productsCount, 'Error:', productsError);
-      console.log('Taxonomy count:', taxonomyCount, 'Error:', taxonomyError);
+      const productsCount = hasProducts && hasProducts.length > 0 ? 1 : 0;
+      const taxonomyCount = hasTaxonomy && hasTaxonomy.length > 0 ? 1 : 0;
+
+      console.info('Has products:', productsCount > 0, 'Has taxonomy:', taxonomyCount > 0);
 
       // If we have data, create a mock data source for display
       if ((productsCount || 0) > 0 || (taxonomyCount || 0) > 0) {
@@ -121,10 +113,10 @@ export function DataSourcesTab() {
           created_by: user.id,
         };
 
-        console.log('Creating mock data source:', mockDataSource);
+        console.info('Creating mock data source:', mockDataSource);
         setDataSources([mockDataSource]);
       } else {
-        console.log('No data found, showing empty state');
+        console.info('No data found, showing empty state');
         setDataSources([]);
       }
     } catch (error) {
@@ -134,6 +126,11 @@ export function DataSourcesTab() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDataSources();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleToggleStatus = async (source: DataSource) => {
     setIsUpdating(source.id);
@@ -189,7 +186,8 @@ export function DataSourcesTab() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  // Memoize date formatting function to prevent recalculation
+  const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
     const now = new Date();
@@ -202,7 +200,7 @@ export function DataSourcesTab() {
     if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
     if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
     return date.toLocaleDateString();
-  };
+  }, []);
 
   if (isLoading) {
     return (

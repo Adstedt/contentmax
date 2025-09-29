@@ -3,9 +3,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { SearchIcon, FilterIcon, HomeIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-react';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
-import { ForceGraph } from '@/components/taxonomy/D3Visualization';
-import { TaxonomyEnrichmentPipeline, type EnrichedTaxonomyNode } from '@/lib/core/taxonomy/enrich-data';
-import ProductsList from './ProductsList';
+import {
+  TaxonomyEnrichmentPipeline,
+  type EnrichedTaxonomyNode,
+} from '@/lib/core/taxonomy/enrich-data';
 import SimpleProductCard, { type Product } from './SimpleProductCard';
 import { createClient } from '@/lib/external/supabase/client';
 
@@ -42,7 +43,9 @@ interface TreeNodeStructure extends Omit<CategoryCard, 'children'> {
   children: TreeNodeStructure[];
 }
 
-export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
+export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
+  data,
+}: TaxonomyVisualizationProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -53,40 +56,81 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [enrichedNodes, setEnrichedNodes] = useState<Map<string, EnrichedTaxonomyNode>>(new Map());
-  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+  const [, setEnrichmentLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Enrich nodes with Sprint 4 features
+  // Pipeline instance ref to avoid recreating
+  const enrichmentPipeline = React.useRef(new TaxonomyEnrichmentPipeline());
+  const enrichmentQueue = React.useRef<Set<string>>(new Set());
+  const enrichmentTimeout = React.useRef<NodeJS.Timeout>();
+
+  // Enrich only visible nodes on-demand for better performance
+  const enrichVisibleNodes = React.useCallback(
+    async (nodeIds: string[]) => {
+      if (nodeIds.length === 0) return;
+
+      // Filter out already enriched nodes
+      const nodesToEnrich = nodeIds.filter((id) => !enrichedNodes.has(id));
+      if (nodesToEnrich.length === 0) return;
+
+      // Add to queue
+      nodesToEnrich.forEach((id) => enrichmentQueue.current.add(id));
+
+      // Debounce enrichment to batch requests
+      if (enrichmentTimeout.current) {
+        clearTimeout(enrichmentTimeout.current);
+      }
+
+      enrichmentTimeout.current = setTimeout(async () => {
+        const idsToProcess = Array.from(enrichmentQueue.current).slice(0, 10);
+        enrichmentQueue.current.clear();
+
+        if (idsToProcess.length === 0) return;
+
+        setEnrichmentLoading(true);
+        try {
+          // Find nodes to enrich
+          const nodesToEnrich = data.nodes.filter((node) => idsToProcess.includes(node.id));
+
+          if (nodesToEnrich.length === 0) return;
+
+          // Enrich in small batches for better performance
+          const enriched = await enrichmentPipeline.current.enrichNodes(nodesToEnrich, {
+            includeScoring: true,
+            includeRevenue: true,
+            includeRecommendations: false, // Skip for performance
+            includeShoppingData: false, // Skip for performance
+            batchSize: 5,
+          });
+
+          // Update enriched nodes map
+          setEnrichedNodes((prev) => {
+            const newMap = new Map(prev);
+            enriched.forEach((node) => {
+              newMap.set(node.id, node);
+            });
+            return newMap;
+          });
+        } catch (error) {
+          console.error('Error enriching visible nodes:', error);
+        } finally {
+          setEnrichmentLoading(false);
+        }
+      }, 300); // 300ms debounce
+    },
+    [data.nodes, enrichedNodes]
+  );
+
+  // Cleanup timeout on unmount
   useEffect(() => {
-    const enrichNodes = async () => {
-      setEnrichmentLoading(true);
-      const pipeline = new TaxonomyEnrichmentPipeline();
-
-      try {
-        const enriched = await pipeline.enrichNodes(data.nodes, {
-          includeScoring: true,
-          includeRevenue: true,
-          includeRecommendations: true,
-          includeShoppingData: true,
-          batchSize: 50,
-        });
-
-        const enrichmentMap = new Map<string, EnrichedTaxonomyNode>();
-        enriched.forEach((node) => {
-          enrichmentMap.set(node.id, node);
-        });
-        setEnrichedNodes(enrichmentMap);
-      } catch (error) {
-        console.error('Error enriching nodes:', error);
-      } finally {
-        setEnrichmentLoading(false);
+    return () => {
+      if (enrichmentTimeout.current) {
+        clearTimeout(enrichmentTimeout.current);
       }
     };
-
-    enrichNodes();
-  }, [data.nodes]);
+  }, []);
 
   // Transform taxonomy data into business-focused format
   const categoryCards = useMemo<CategoryCard[]>(() => {
@@ -211,7 +255,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
     if (currentLevelCards.length > 0) {
       setProducts([]);
     }
-  }, [breadcrumbs]); // Reset when breadcrumbs change
+  }, [currentLevelCards]);
 
   // Health indicator colors
   const getHealthColor = (score: number) => {
@@ -256,11 +300,14 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
     }
 
     setSelectedNodeId(card.id);
+
+    // Enrich the selected card immediately for detailed view
+    enrichVisibleNodes([card.id]);
   };
 
   // Handle card navigation (double-click or dedicated button)
   const handleCardNavigate = async (card: CategoryCard) => {
-    console.log('Navigating to card:', card.title, 'Children:', card.children.length);
+    console.info('Navigating to card:', card.title, 'Children:', card.children.length);
 
     // First clear any existing products
     setProducts([]);
@@ -278,7 +325,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
       // If this category has no children (leaf category), fetch products
       if (childCards.length === 0) {
-        console.log('This is a leaf category, fetching products for:', card.id);
+        console.info('This is a leaf category, fetching products for:', card.id);
         setProductsLoading(true);
         try {
           const supabase = createClient();
@@ -291,7 +338,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
           if (catError) throw catError;
 
-          console.log('Product categories found:', productCategories?.length || 0);
+          console.info('Product categories found:', productCategories?.length || 0);
 
           if (productCategories && productCategories.length > 0) {
             // Then fetch the actual products
@@ -304,10 +351,10 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
             if (prodError) throw prodError;
 
-            console.log('Products fetched:', productsData?.length || 0);
+            console.info('Products fetched:', productsData?.length || 0);
             setProducts(productsData || []);
           } else {
-            console.log('No products in this category');
+            console.info('No products in this category');
             setProducts([]);
           }
         } catch (error) {
@@ -327,14 +374,36 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
       newExpanded.delete(cardId);
     } else {
       newExpanded.add(cardId);
+      // Enrich subcategories when expanding
+      const subcategories = getSubcategories(cardId);
+      enrichVisibleNodes(subcategories.slice(0, 5).map((sub) => sub.id));
     }
     setExpandedCards(newExpanded);
   };
 
   // Get subcategory cards for a parent
-  const getSubcategories = (parentId: string): CategoryCard[] => {
-    return categoryCards.filter((card) => card.parent === parentId);
-  };
+  const getSubcategories = React.useCallback(
+    (parentId: string): CategoryCard[] => {
+      return categoryCards.filter((card) => card.parent === parentId);
+    },
+    [categoryCards]
+  );
+
+  // Enrich visible cards when view changes
+  useEffect(() => {
+    if (viewMode === 'cards' && currentLevelCards.length > 0) {
+      // Get IDs of visible cards (limit to first 20 for performance)
+      const visibleIds = currentLevelCards.slice(0, 20).map((card) => card.id);
+
+      // Also enrich expanded subcategories
+      expandedCards.forEach((cardId) => {
+        const subcategories = getSubcategories(cardId);
+        visibleIds.push(...subcategories.slice(0, 5).map((sub) => sub.id));
+      });
+
+      enrichVisibleNodes(visibleIds);
+    }
+  }, [currentLevelCards, viewMode, expandedCards, enrichVisibleNodes, getSubcategories]);
 
   const handleBreadcrumbClick = (index: number) => {
     setBreadcrumbs(breadcrumbs.slice(0, index + 1));
@@ -601,7 +670,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                         const hasChildren = categoryCards.some((c) => c.parent === nodeId);
                         if (!hasChildren) {
                           // This is a leaf category, fetch products
-                          console.log(
+                          console.info(
                             'Tree navigation to leaf category, fetching products for:',
                             nodeId
                           );
@@ -617,7 +686,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
                             if (catError) throw catError;
 
-                            console.log(
+                            console.info(
                               'Product categories found:',
                               productCategories?.length || 0
                             );
@@ -633,7 +702,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
 
                               if (prodError) throw prodError;
 
-                              console.log('Products fetched:', productsData?.length || 0);
+                              console.info('Products fetched:', productsData?.length || 0);
                               setProducts(productsData || []);
                             }
                           } catch (error) {
@@ -1362,7 +1431,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
                           <div
                             key={childId}
                             className="flex items-center justify-between p-2 bg-[#1a1a1a] rounded cursor-pointer hover:bg-[#222]"
-                            onClick={() => handleCardSelect(child)}
+                            onClick={() => setSelectedNodeId(child.id)}
                           >
                             <span className="text-sm text-white truncate">{child.title}</span>
                             <div
@@ -1489,7 +1558,7 @@ export function TaxonomyVisualization({ data }: TaxonomyVisualizationProps) {
       </div>
     </>
   );
-}
+});
 
 // Tree Node Component for sidebar
 interface TreeNodeProps {

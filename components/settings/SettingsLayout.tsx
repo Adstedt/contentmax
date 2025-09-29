@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { User, Database, Users, CreditCard, Link2 } from 'lucide-react';
+import { User, Database, Users, CreditCard, Link2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ProfileTab } from './tabs/ProfileTab';
-import { DataSourcesTab } from './tabs/DataSourcesTab';
-import { IntegrationsTab } from './tabs/IntegrationsTab';
-import { TeamTab } from './tabs/TeamTab';
-import { BillingTab } from './tabs/BillingTab';
+
+// Lazy load all tabs for better initial performance
+const ProfileTab = lazy(() => import('./tabs/ProfileTab').then((m) => ({ default: m.ProfileTab })));
+const DataSourcesTab = lazy(() =>
+  import('./tabs/DataSourcesTab').then((m) => ({ default: m.DataSourcesTab }))
+);
+const IntegrationsTab = lazy(() =>
+  import('./tabs/IntegrationsTab').then((m) => ({ default: m.IntegrationsTab }))
+);
+const TeamTab = lazy(() => import('./tabs/TeamTab').then((m) => ({ default: m.TeamTab })));
+const BillingTab = lazy(() => import('./tabs/BillingTab').then((m) => ({ default: m.BillingTab })));
 
 interface SettingsTab {
   id: string;
@@ -105,9 +111,17 @@ export function SettingsLayout() {
           </div>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content with Suspense for lazy loading */}
         <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-          <ActiveContent />
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-[#10a37f]" />
+              </div>
+            }
+          >
+            <ActiveContent />
+          </Suspense>
         </div>
       </div>
     </div>

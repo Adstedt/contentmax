@@ -5,13 +5,13 @@ import { OpportunityRevenueCalculator } from '@/lib/core/analysis/opportunity-re
 import { OpportunityCategorizer } from '@/lib/core/analysis/opportunity-categorizer';
 
 // Use real implementations from Sprint 7
-const opportunityService = new OpportunityService();
+const _opportunityService = new OpportunityService();
 const revenueCalculator = new OpportunityRevenueCalculator();
 const categorizer = new OpportunityCategorizer();
 
 // Adapter classes for backward compatibility
 class OpportunityScorer {
-  async calculateScore(metrics: any) {
+  async calculateScore(metrics: any): Promise<any> {
     try {
       // For now, return a simple calculated score since the service method is not compatible
       const trafficScore = Math.min(100, (metrics.traffic || 100) / 100);
@@ -346,19 +346,39 @@ export class TaxonomyEnrichmentPipeline {
    * Calculate opportunity score for a node
    */
   private async calculateOpportunityScore(node: TaxonomyNode) {
-    // Mock implementation - replace with actual Sprint 4 integration
+    // Use node ID to generate consistent "random" values - prevents flickering
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    };
+
+    const nodeHash = hashCode(node.id);
+    const seededRandom = (seed: number, max: number = 1) => {
+      const x = Math.sin(seed) * 10000;
+      return (x - Math.floor(x)) * max;
+    };
+
+    // Generate consistent mock metrics based on node ID
     const mockMetrics = {
-      ctr: Math.random() * 0.1,
-      position: Math.floor(Math.random() * 20) + 1,
-      impressions: Math.floor(Math.random() * 10000),
-      clicks: Math.floor(Math.random() * 500),
-      searchVolume: Math.floor(Math.random() * 5000),
+      ctr: seededRandom(nodeHash, 0.1),
+      position: Math.floor(seededRandom(nodeHash + 1, 20)) + 1,
+      impressions: Math.floor(seededRandom(nodeHash + 2, 10000)),
+      clicks: Math.floor(seededRandom(nodeHash + 3, 500)),
+      searchVolume: Math.floor(seededRandom(nodeHash + 4, 5000)),
+      traffic: node.traffic || Math.floor(seededRandom(nodeHash + 5, 1000)),
+      revenue: node.revenue || Math.floor(seededRandom(nodeHash + 6, 5000)),
+      price: Math.floor(seededRandom(nodeHash + 7, 100)) + 20,
     };
 
     const score = await this.scorer.calculateScore(mockMetrics);
 
     return {
-      value: score.value,
+      value: Math.round(score.value * 10) / 10, // Round to 1 decimal place
       confidence: score.confidence as 'low' | 'medium' | 'high',
       trend: this.calculateTrend(node),
       factors: score.factors,
