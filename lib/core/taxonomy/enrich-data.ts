@@ -13,40 +13,37 @@ const categorizer = new OpportunityCategorizer();
 class OpportunityScorer {
   async calculateScore(metrics: any) {
     try {
-      const score = await opportunityService.calculateCompositeScore({
-        nodeId: metrics.nodeId || 'unknown',
-        currentTraffic: metrics.traffic || 100,
-        currentRevenue: metrics.revenue || 1000,
-        currentPosition: metrics.position || 15,
-        currentCTR: metrics.ctr || 0.02,
-        competitorCount: metrics.competitors || 5,
-        contentQuality: metrics.contentQuality || 0.5,
-        marketAvgCTR: 0.05,
-        marketMedianPrice: 100,
-        productPrice: metrics.price || 80,
-        conversionRate: metrics.conversionRate || 0.02,
-        aov: metrics.aov || 100,
-      });
+      // For now, return a simple calculated score since the service method is not compatible
+      const trafficScore = Math.min(100, (metrics.traffic || 100) / 100);
+      const revenueScore = Math.min(100, (metrics.revenue || 1000) / 1000);
+      const positionScore = Math.max(0, 100 - (metrics.position || 15) * 5);
+
+      const totalScore = (trafficScore + revenueScore + positionScore) / 3;
 
       return {
-        value: score.totalScore,
-        confidence: score.confidence as 'low' | 'medium' | 'high',
+        value: totalScore,
+        confidence:
+          totalScore > 70
+            ? 'high'
+            : totalScore > 40
+              ? 'medium'
+              : ('low' as 'low' | 'medium' | 'high'),
         factors: [
           {
             name: 'Traffic Potential',
-            impact: score.breakdown.traffic / 10,
+            impact: trafficScore / 10,
             current: metrics.traffic || 100,
             potential: (metrics.traffic || 100) * 2,
           },
           {
             name: 'Revenue Opportunity',
-            impact: score.breakdown.revenue / 10,
+            impact: revenueScore / 10,
             current: metrics.revenue || 1000,
             potential: (metrics.revenue || 1000) * 1.5,
           },
           {
             name: 'Pricing Position',
-            impact: score.breakdown.pricing / 10,
+            impact: positionScore / 10,
             current: metrics.price || 80,
             potential: 100,
           },

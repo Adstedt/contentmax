@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { IntegrationManager } from '@/lib/external/integration-manager';
-import { GoogleAnalyticsService } from '@/lib/external/services/google-analytics-service';
-import { GoogleSearchConsoleService } from '@/lib/external/services/google-search-console-service';
+import { GoogleAnalyticsService } from '@/lib/external/google-analytics-service';
+import { GoogleSearchConsoleService } from '@/lib/external/google-search-console-service';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Get connection details
     const { data: connection, error: connectionError } = await supabase
-      .from('data_source_connections')
+      .from('feed_config')
       .select('*')
       .eq('id', (await params).id)
       .eq('user_id', user.id)
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let properties = [];
 
     // Fetch properties based on service type
-    switch (connection.service_type) {
+    switch (connection.feed_type) {
       case 'google_analytics':
         try {
           // Note: We don't actually need the service instance, just making direct API calls
@@ -129,8 +129,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({
       properties,
-      connectionName: connection.connection_name,
-      serviceType: connection.service_type,
+      connectionName: connection.feed_name,
+      serviceType: connection.feed_type,
     });
   } catch (error) {
     console.error('Error in properties API:', error);

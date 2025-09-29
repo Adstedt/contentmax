@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { IntegrationManager } from '@/lib/external/integration-manager';
-import { GoogleAnalyticsService } from '@/lib/external/services/google-analytics-service';
-import { GoogleSearchConsoleService } from '@/lib/external/services/google-search-console-service';
-import { GoogleMerchantCenterService } from '@/lib/external/services/google-merchant-center-service';
+import { GoogleAnalyticsService } from '@/lib/external/google-analytics-service';
+import { GoogleSearchConsoleService } from '@/lib/external/google-search-console-service';
+import { GoogleMerchantCenterService } from '@/lib/external/google-merchant-center-service';
 import { logger } from '@/lib/external/logger';
 
 const supabase = createClient(

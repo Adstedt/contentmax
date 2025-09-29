@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Check database connectivity
     try {
       const supabase = await createServerSupabaseClient();
-      const { error } = await supabase.from('import_jobs').select('count').limit(1).single();
+      const { error } = await supabase.from('import_history').select('count').limit(1).single();
 
       checks.checks.database = {
         status: error ? 'unhealthy' : 'healthy',

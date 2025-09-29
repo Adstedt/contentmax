@@ -122,9 +122,14 @@
       "Bash(npm run test:*)",
       "Bash(find:*)",
       "WebSearch",
-      "WebFetch(domain:developers.google.com)"
+      "WebFetch(domain:developers.google.com)",
+      "Bash(set SUPABASE_ACCESS_TOKEN=sbp_5b81aedf3972d89a4d3416d9ea5d1731e390f5d5)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["supabase"]
 }
