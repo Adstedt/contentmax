@@ -8,6 +8,7 @@ import {
   type EnrichedTaxonomyNode,
 } from '@/lib/core/taxonomy/enrich-data';
 import SimpleProductCard, { type Product } from './SimpleProductCard';
+import ProductDetailModal from './ProductDetailModal';
 import { createClient } from '@/lib/external/supabase/client';
 
 interface TaxonomyVisualizationProps {
@@ -1201,6 +1202,7 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
                       product={product}
                       onSelect={(p) => setSelectedProduct(p)}
                       isSelected={selectedProduct?.id === product.id}
+                      onProductClick={(p) => setSelectedProduct(p)}
                     />
                   ))}
 
@@ -1556,6 +1558,13 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
           <div>Last Updated: Just now</div>
         </div>
       </div>
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </>
   );
 });

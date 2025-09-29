@@ -16,12 +16,14 @@ interface SimpleProductCardProps {
   product: Product;
   onSelect?: (product: Product) => void;
   isSelected?: boolean;
+  onProductClick?: (product: Product) => void;
 }
 
 export default function SimpleProductCard({
   product,
   onSelect,
   isSelected = false,
+  onProductClick,
 }: SimpleProductCardProps) {
   const isInStock = product.availability === 'in stock';
 
@@ -34,7 +36,10 @@ export default function SimpleProductCard({
         hover:shadow-xl hover:scale-[1.02] hover:border-blue-500/50
         ${isSelected ? 'border-blue-500 shadow-lg shadow-blue-500/20' : 'border-[#2a2a2a]'}
       `}
-      onClick={() => onSelect?.(product)}
+      onClick={() => {
+        onSelect?.(product);
+        onProductClick?.(product);
+      }}
     >
       {/* Product Image */}
       {product.image_link && (
