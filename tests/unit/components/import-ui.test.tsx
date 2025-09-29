@@ -19,7 +19,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock Supabase client
-jest.mock('@/lib/supabase/client', () => ({
+jest.mock('@/lib/external/supabase/client', () => ({
   createClient: () => ({
     channel: () => ({
       on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),

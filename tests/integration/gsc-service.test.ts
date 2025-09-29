@@ -24,7 +24,7 @@ jest.mock('google-auth-library', () => ({
 }));
 
 // Mock supabase
-jest.mock('@/lib/supabase/client', () => ({
+jest.mock('@/lib/external/supabase/client', () => ({
   supabase: {
     from: jest.fn(() => ({
       upsert: jest.fn(() => Promise.resolve({ error: null })),
@@ -219,7 +219,7 @@ describe('GSCService', () => {
       ];
 
       const mockUpsert = jest.fn().mockResolvedValue({ error: null });
-      const { supabase } = await import('@/lib/supabase/client');
+      const { supabase } = await import('@/lib/external/supabase/client');
 
       jest.mocked(supabase.from).mockReturnValue({
         upsert: mockUpsert,

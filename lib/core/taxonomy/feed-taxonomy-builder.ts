@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 
 export interface ProductCategory {
   product_type?: string; // "Electronics > Phones > Smartphones"

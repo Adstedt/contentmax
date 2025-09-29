@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { OpportunityCategorizer } from '@/lib/scoring/opportunity-categorizer';
+import { OpportunityCategorizer } from '@/lib/core/analysis/opportunity-categorizer';
 
 describe('OpportunityCategorizer', () => {
   let categorizer: OpportunityCategorizer;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { getServerSession } from '@/lib/auth/session';
 import { z } from 'zod';
 

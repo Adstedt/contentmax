@@ -1,4 +1,4 @@
-import { GtinMatcher } from '@/lib/integration/gtin-matcher';
+import { GtinMatcher } from '@/lib/external/gtin-matcher';
 import { Product } from '@/types/integration';
 
 describe('GtinMatcher', () => {

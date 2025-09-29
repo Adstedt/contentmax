@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { SitemapDrivenScraper } from '@/lib/scraping/sitemap-driven-scraper';
 import { ContentScraper } from '@/lib/scraping/content-scraper';
 import { ContentGapAnalyzer } from '@/lib/scraping/gap-analyzer';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { SitemapParseResult } from '@/types/sitemap.types';
 import { ScrapedContent } from '@/types/scraper.types';
 

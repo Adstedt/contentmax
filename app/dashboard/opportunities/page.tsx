@@ -12,7 +12,7 @@ import {
   type SortOrder,
 } from '@/components/taxonomy/FilterControls';
 import { OpportunityService } from '@/lib/services/opportunity-service';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/external/supabase/client';
 import {
   TrendingUp,
   DollarSign,

@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
-import { GoogleMerchantClient, MerchantConfig } from '@/lib/integrations/google-merchant';
-import { ProductFeedParser } from '@/lib/parsers/product-feed-parser';
+import { createClient } from '@/lib/external/supabase/server';
+import { GoogleMerchantClient, MerchantConfig } from '@/lib/external/google-merchant';
+import { ProductFeedParser } from '@/lib/data/import/product-feed-parser';
 import { ProductSyncServiceImpl } from '@/lib/services/product-sync-service';
 
 export interface FeedConfig {

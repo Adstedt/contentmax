@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import type { TaxonomyNode, TaxonomyLink } from '@/components/taxonomy/D3Visualization';
 
 export async function GET(request: NextRequest) {

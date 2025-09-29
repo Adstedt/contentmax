@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { URLMatcher } from '@/lib/matching/url-matcher';
+import { URLMatcher } from '@/lib/core/analysis/url-matcher';
 import { URLMatchOptions, BatchMatchRequest } from '@/types/url-matcher.types';
 
 describe('URLMatcher', () => {

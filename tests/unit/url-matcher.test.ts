@@ -1,5 +1,5 @@
 // Jest test for URL Matcher
-import { URLMatcher } from '@/lib/integration/url-matcher';
+import { URLMatcher } from '@/lib/external/url-matcher';
 import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization';
 
 describe('URLMatcher', () => {

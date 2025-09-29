@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForTokens, getUserInfo } from '@/lib/integrations/google/oauth-config';
-import { createClient } from '@/lib/supabase/server';
+import { exchangeCodeForTokens, getUserInfo } from '@/lib/external/google/oauth-config';
+import { createClient } from '@/lib/external/supabase/server';
 
 /**
  * GET /api/integrations/google/callback

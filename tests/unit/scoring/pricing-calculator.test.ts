@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { PricingCalculator, type PricingData } from '@/lib/scoring/pricing-calculator';
+import { PricingCalculator, type PricingData } from '@/lib/core/analysis/pricing-calculator';
 
 describe('PricingCalculator', () => {
   let calculator: PricingCalculator;

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { IntegrationManager } from '@/lib/integration/integration-manager';
-import { GoogleAnalyticsService } from '@/lib/integration/services/google-analytics-service';
-import { GoogleSearchConsoleService } from '@/lib/integration/services/google-search-console-service';
-import { GoogleMerchantCenterService } from '@/lib/integration/services/google-merchant-center-service';
-import { logger } from '@/lib/integration/logger';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
+import { IntegrationManager } from '@/lib/external/integration-manager';
+import { GoogleAnalyticsService } from '@/lib/external/services/google-analytics-service';
+import { GoogleSearchConsoleService } from '@/lib/external/services/google-search-console-service';
+import { GoogleMerchantCenterService } from '@/lib/external/services/google-merchant-center-service';
+import { logger } from '@/lib/external/logger';
 
 const integrationManager = new IntegrationManager(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

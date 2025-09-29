@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { MetricsSyncJob } from '@/lib/jobs/metrics-sync';
 import { MetricsSyncTracker } from '@/lib/jobs/sync-tracker';
-import { URLMatcher } from '@/lib/matching/url-matcher';
+import { URLMatcher } from '@/lib/core/analysis/url-matcher';
 
 // Mock dependencies
-jest.mock('@/lib/integrations/analytics');
-jest.mock('@/lib/supabase/server');
+jest.mock('@/lib/external/analytics');
+jest.mock('@/lib/external/supabase/server');
 
 describe('MetricsSyncJob', () => {
   let mockSupabase: any;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { SearchConsoleClient } from '@/lib/integrations/search-console';
-import { createClient } from '@/lib/supabase/server';
+import { SearchConsoleClient } from '@/lib/external/search-console';
+import { createClient } from '@/lib/external/supabase/server';
 import { GSCError } from '@/types/google.types';
 
 const FetchDataSchema = z.object({

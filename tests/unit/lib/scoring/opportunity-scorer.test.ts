@@ -3,7 +3,7 @@ import {
   OpportunityScorer,
   ScoringFactors,
   OpportunityScore,
-} from '@/lib/scoring/opportunity-scorer';
+} from '@/lib/core/analysis/opportunity-scorer';
 import type { Database } from '@/types/database.types';
 
 // Mock Supabase

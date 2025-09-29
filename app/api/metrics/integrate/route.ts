@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { MetricsIntegrator } from '@/lib/services/metrics-integrator';
 
 export async function POST(request: NextRequest) {

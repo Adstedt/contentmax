@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { GoogleMerchantClient } from '@/lib/integrations/google-merchant';
-import { ProductFeedParser } from '@/lib/parsers/product-feed-parser';
+import { createClient } from '@/lib/external/supabase/server';
+import { GoogleMerchantClient } from '@/lib/external/google-merchant';
+import { ProductFeedParser } from '@/lib/data/import/product-feed-parser';
 import { ProductSyncServiceImpl } from '@/lib/services/product-sync-service';
 import { feedScheduler } from '@/lib/jobs/product-feed-job';
 import { z } from 'zod';

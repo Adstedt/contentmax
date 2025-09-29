@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CategoryInsights, CategoryRecommendation } from '@/lib/recommendations/category-optimizer';
+import { CategoryInsights, CategoryRecommendation } from '@/lib/core/analysis/category-optimizer';
 import { 
   Search, 
   TrendingUp, 

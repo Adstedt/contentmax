@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/external/supabase/server';
 import { runMetricsSync } from '@/lib/jobs/metrics-sync';
 
 // This endpoint is designed to be called by Vercel Cron

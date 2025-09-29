@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
-import { BatchImporter } from '@/lib/import/batch-importer';
-import { ImportProgressTracker, progressManager } from '@/lib/import/progress-tracker';
+import { createClient } from '@/lib/external/supabase/server';
+import { BatchImporter } from '@/lib/data/import/batch-importer';
+import { ImportProgressTracker, progressManager } from '@/lib/data/import/progress-tracker';
 
 const BatchImportSchema = z.object({
   urls: z.array(z.object({

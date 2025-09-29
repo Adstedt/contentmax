@@ -5,7 +5,7 @@
  * search visibility, click-through rates, and conversion performance.
  */
 
-import { PerformanceMetrics } from '@/lib/taxonomy/performance-aggregator';
+import { PerformanceMetrics } from '@/lib/core/taxonomy/performance-aggregator';
 
 export interface CategoryMetadata {
   title: string;

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { SitemapParser } from '@/lib/ingestion/sitemap-parser';
-import { categorizeUrl, categorizeUrlWithConfidence } from '@/lib/ingestion/url-categorizer';
+import { SitemapParser } from '@/lib/data/import/sitemap-parser';
+import { categorizeUrl, categorizeUrlWithConfidence } from '@/lib/data/import/url-categorizer';
 import { ContentCategory } from '@/types/sitemap.types';
 
 describe('SitemapParser', () => {

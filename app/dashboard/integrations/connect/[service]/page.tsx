@@ -16,7 +16,7 @@ import {
   Shield,
   AlertCircle,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 
 export default function ConnectServicePage() {
   const params = useParams();

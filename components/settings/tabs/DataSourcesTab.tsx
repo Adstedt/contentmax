@@ -14,7 +14,7 @@ import {
   TrendingUp,
   AlertTriangle,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { FeedClearingModal } from '@/components/settings/FeedClearingModal';

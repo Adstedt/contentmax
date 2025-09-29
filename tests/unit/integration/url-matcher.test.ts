@@ -1,4 +1,4 @@
-import { UrlMatcher } from '@/lib/integration/url-matcher';
+import { UrlMatcher } from '@/lib/external/url-matcher';
 import { TaxonomyNode, Product } from '@/types/integration';
 
 describe('UrlMatcher', () => {

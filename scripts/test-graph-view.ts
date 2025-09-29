@@ -1,5 +1,5 @@
 // Simple script to verify graph view is connected to database
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 
 async function testGraphView() {
   console.log('Testing Graph View Connection to Database...\n');

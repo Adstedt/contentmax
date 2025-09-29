@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization';
 import { OpportunityService } from '@/lib/services/opportunity-service';
-import { OpportunityRevenueCalculator } from '@/lib/scoring/opportunity-revenue-calculator';
-import { OpportunityCategorizer } from '@/lib/scoring/opportunity-categorizer';
+import { OpportunityRevenueCalculator } from '@/lib/core/analysis/opportunity-revenue-calculator';
+import { OpportunityCategorizer } from '@/lib/core/analysis/opportunity-categorizer';
 
 // Use real implementations from Sprint 7
 const opportunityService = new OpportunityService();

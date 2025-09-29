@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { Header } from '@/components/layout/Header';
 import { TaxonomyClient } from './TaxonomyClient';
 import { FeatureErrorBoundary } from '@/components/shared/feature-error-boundary';

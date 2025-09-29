@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { runMetricsSync } from '@/lib/jobs/metrics-sync';
 import { syncJobManager } from '@/lib/jobs/sync-tracker';
 

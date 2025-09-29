@@ -1,5 +1,5 @@
 // Jest test for GA4 Mapper
-import { GA4Mapper } from '@/lib/integration/ga4-mapper';
+import { GA4Mapper } from '@/lib/external/ga4-mapper';
 import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization';
 import type { AnalyticsMetric, ProductMetric } from '@/lib/services/ga4-service';
 

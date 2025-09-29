@@ -3,7 +3,7 @@
  * Ties together feed data with performance metrics
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 
 export interface EnrichedProduct {
   // From Feed

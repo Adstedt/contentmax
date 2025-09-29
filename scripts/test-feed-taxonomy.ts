@@ -1,5 +1,5 @@
-import { FeedTaxonomyBuilder } from '@/lib/taxonomy/feed-taxonomy-builder';
-import { CategoryMerger } from '@/lib/taxonomy/category-merger';
+import { FeedTaxonomyBuilder } from '@/lib/core/taxonomy/feed-taxonomy-builder';
+import { CategoryMerger } from '@/lib/core/taxonomy/category-merger';
 import fs from 'fs';
 import path from 'path';
 

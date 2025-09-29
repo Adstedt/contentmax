@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { ProductFeedParser, ProductData } from '@/lib/parsers/product-feed-parser';
-import { GoogleMerchantClient } from '@/lib/integrations/google-merchant';
+import { ProductFeedParser, ProductData } from '@/lib/data/import/product-feed-parser';
+import { GoogleMerchantClient } from '@/lib/external/google-merchant';
 import { ProductSyncServiceImpl } from '@/lib/services/product-sync-service';
 
 describe('Product Feed Integration', () => {

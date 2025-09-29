@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createClient } from '@/lib/supabase/server';
-import { BatchImporter } from '@/lib/import/batch-importer';
-import { ImportProgressTracker } from '@/lib/import/progress-tracker';
+import { createClient } from '@/lib/external/supabase/server';
+import { BatchImporter } from '@/lib/data/import/batch-importer';
+import { ImportProgressTracker } from '@/lib/data/import/progress-tracker';
 
-jest.mock('@/lib/supabase/server');
+jest.mock('@/lib/external/supabase/server');
 
 describe('Batch Import API', () => {
   let mockSupabase: any;

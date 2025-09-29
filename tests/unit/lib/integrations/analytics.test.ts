@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { GA4Client } from '@/lib/integrations/analytics';
+import { GA4Client } from '@/lib/external/analytics';
 import { GA4Config, GA4BatchRequest } from '@/types/ga4.types';
 
 // Mock the Google Analytics Data client

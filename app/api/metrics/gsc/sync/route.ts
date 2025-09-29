@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { GSCService } from '@/lib/services/gsc-service';
-import { URLMatcher } from '@/lib/integration/url-matcher';
-import { MetricsAggregator } from '@/lib/integration/metrics-aggregator';
+import { URLMatcher } from '@/lib/external/url-matcher';
+import { MetricsAggregator } from '@/lib/external/metrics-aggregator';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds for API routes

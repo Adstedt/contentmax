@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { ImportJobManager } from '@/lib/jobs/import-job-manager';
 import { AlertManager } from '@/lib/monitoring/alerting';
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { FeedTaxonomyBuilder, ProductCategory, TaxonomyNode } from '@/lib/taxonomy/feed-taxonomy-builder';
-import { CategoryMerger } from '@/lib/taxonomy/category-merger';
+import { FeedTaxonomyBuilder, ProductCategory, TaxonomyNode } from '@/lib/core/taxonomy/feed-taxonomy-builder';
+import { CategoryMerger } from '@/lib/core/taxonomy/category-merger';
 
 // Mock Supabase client
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock('@/lib/external/supabase/server', () => ({
   createServerSupabaseClient: jest.fn(() => ({
     from: jest.fn(() => ({
       upsert: jest.fn(() => ({

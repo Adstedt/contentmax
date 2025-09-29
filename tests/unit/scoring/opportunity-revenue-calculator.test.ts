@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { OpportunityRevenueCalculator } from '@/lib/scoring/opportunity-revenue-calculator';
+import { OpportunityRevenueCalculator } from '@/lib/core/analysis/opportunity-revenue-calculator';
 import type { AnalyticsMetrics } from '@/components/taxonomy/D3Visualization/NodeTooltip';
 
 describe('OpportunityRevenueCalculator', () => {

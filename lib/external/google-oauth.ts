@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 import { OAuth2Tokens, GoogleIntegration, GSCError, GSCErrorCode } from '@/types/google.types';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 
 export class GoogleOAuthClient {
   private oauth2Client: OAuth2Client;

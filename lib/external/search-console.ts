@@ -386,7 +386,7 @@ export class SearchConsoleClient {
     siteUrl: string,
     data: GSCPerformanceData
   ): Promise<void> {
-    const { createClient } = await import('@/lib/supabase/server');
+    const { createClient } = await import('@/lib/external/supabase/server');
     const supabase = await createClient();
 
     // Store daily metrics

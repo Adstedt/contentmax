@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import * as Sentry from '@sentry/nextjs';
 
 export interface Alert {

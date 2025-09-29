@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
-import { GA4Client } from '@/lib/integrations/analytics';
+import { createClient } from '@/lib/external/supabase/server';
+import { GA4Client } from '@/lib/external/analytics';
 import { GA4Config } from '@/types/ga4.types';
 
 const GA4MetricsRequestSchema = z.object({

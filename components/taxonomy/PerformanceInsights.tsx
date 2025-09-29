@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, AlertCircle, DollarSign, Eye, MousePointer, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CategoryOptimizer } from '@/lib/recommendations/category-optimizer';
+import { CategoryOptimizer } from '@/lib/core/analysis/category-optimizer';
 import { CategoryRecommendations } from './CategoryRecommendations';
 
 interface PerformanceMetrics {

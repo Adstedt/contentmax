@@ -21,7 +21,7 @@ import {
   DollarSign,
   Activity,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { toast } from 'sonner';
 
 interface GA4Property {

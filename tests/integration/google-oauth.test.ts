@@ -13,7 +13,7 @@ import {
   getMissingConfig,
   GOOGLE_OAUTH_SCOPES,
   ALL_SCOPES,
-} from '@/lib/integrations/google/oauth-config';
+} from '@/lib/external/google/oauth-config';
 
 describe('Google OAuth Configuration', () => {
   const originalEnv = process.env;

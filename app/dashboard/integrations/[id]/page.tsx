@@ -23,7 +23,7 @@ import {
   Search,
   ShoppingBag,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 
 interface Connection {
   id: string;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { google } from 'googleapis';
-import { decrypt } from '@/lib/integrations/google/encryption';
+import { decrypt } from '@/lib/external/google/encryption';
 
 export async function POST(request: NextRequest) {
   try {

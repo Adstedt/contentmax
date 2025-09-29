@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { google } from 'googleapis';
-import { refreshAccessToken } from '@/lib/integrations/google/oauth-config';
+import { refreshAccessToken } from '@/lib/external/google/oauth-config';
 
 /**
  * GET /api/integrations/google/merchant/performance

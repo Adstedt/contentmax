@@ -123,7 +123,7 @@ export function FileUploadHandler({ onFileProcessed, onValidation }: FileUploadH
   };
 
   const processCSV = async (file: File): Promise<ProcessedFileData> => {
-    const { FileParser } = await import('@/lib/import/file-parser');
+    const { FileParser } = await import('@/lib/data/import/file-parser');
     const parsed = await FileParser.parseFile(file, { maxRows: 100 });
     
     return {
@@ -137,7 +137,7 @@ export function FileUploadHandler({ onFileProcessed, onValidation }: FileUploadH
   };
 
   const processExcel = async (file: File): Promise<ProcessedFileData> => {
-    const { FileParser } = await import('@/lib/import/file-parser');
+    const { FileParser } = await import('@/lib/data/import/file-parser');
     const parsed = await FileParser.parseFile(file, { maxRows: 100 });
     
     return {
@@ -151,7 +151,7 @@ export function FileUploadHandler({ onFileProcessed, onValidation }: FileUploadH
   };
 
   const processJSON = async (file: File): Promise<ProcessedFileData> => {
-    const { FileParser } = await import('@/lib/import/file-parser');
+    const { FileParser } = await import('@/lib/data/import/file-parser');
     const parsed = await FileParser.parseFile(file, { maxRows: 100 });
     
     return {

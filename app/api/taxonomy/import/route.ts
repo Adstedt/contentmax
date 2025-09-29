@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FeedTaxonomyBuilder } from '@/lib/taxonomy/feed-taxonomy-builder';
-import { CategoryMerger } from '@/lib/taxonomy/category-merger';
-import { FeedFetcher } from '@/lib/taxonomy/feed-fetcher';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { FeedTaxonomyBuilder } from '@/lib/core/taxonomy/feed-taxonomy-builder';
+import { CategoryMerger } from '@/lib/core/taxonomy/category-merger';
+import { FeedFetcher } from '@/lib/core/taxonomy/feed-fetcher';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { MetaTagFetcher } from '@/lib/services/meta-tag-fetcher';
 import { z } from 'zod';
 

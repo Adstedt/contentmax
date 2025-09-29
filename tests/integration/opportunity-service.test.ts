@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { OpportunityService } from '@/lib/services/opportunity-service';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import type { TaxonomyNode } from '@/components/taxonomy/D3Visualization/ForceGraph';
 
 // Mock Supabase client
-jest.mock('@/lib/supabase/client', () => ({
+jest.mock('@/lib/external/supabase/client', () => ({
   createClient: jest.fn(() => ({
     from: jest.fn(() => ({
       upsert: jest.fn(() => Promise.resolve({ data: [], error: null })),
@@ -19,7 +19,7 @@ jest.mock('@/lib/supabase/client', () => ({
 }));
 
 // Mock the fetch functions
-jest.mock('@/lib/integration/gsc-fetcher', () => ({
+jest.mock('@/lib/external/gsc-fetcher', () => ({
   fetchSearchMetrics: jest.fn(() =>
     Promise.resolve({
       clicks: 100,
@@ -30,7 +30,7 @@ jest.mock('@/lib/integration/gsc-fetcher', () => ({
   ),
 }));
 
-jest.mock('@/lib/integration/ga4-fetcher', () => ({
+jest.mock('@/lib/external/ga4-fetcher', () => ({
   fetchAnalyticsMetrics: jest.fn(() =>
     Promise.resolve({
       revenue: 5000,
@@ -95,8 +95,8 @@ describe('OpportunityService', () => {
       ];
 
       // Mock to return null metrics
-      const { fetchSearchMetrics } = await import('@/lib/integration/gsc-fetcher');
-      const { fetchAnalyticsMetrics } = await import('@/lib/integration/ga4-fetcher');
+      const { fetchSearchMetrics } = await import('@/lib/external/gsc-fetcher');
+      const { fetchAnalyticsMetrics } = await import('@/lib/external/ga4-fetcher');
 
       jest.mocked(fetchSearchMetrics).mockResolvedValueOnce(null);
       jest.mocked(fetchAnalyticsMetrics).mockResolvedValueOnce(null);
@@ -121,7 +121,7 @@ describe('OpportunityService', () => {
       ];
 
       // Mock high opportunity metrics
-      const { fetchSearchMetrics } = await import('@/lib/integration/gsc-fetcher');
+      const { fetchSearchMetrics } = await import('@/lib/external/gsc-fetcher');
       jest.mocked(fetchSearchMetrics).mockResolvedValueOnce({
         clicks: 10,
         impressions: 10000,
@@ -268,7 +268,7 @@ describe('OpportunityService', () => {
       ];
 
       // Mock network failure
-      const { fetchSearchMetrics } = await import('@/lib/integration/gsc-fetcher');
+      const { fetchSearchMetrics } = await import('@/lib/external/gsc-fetcher');
       jest.mocked(fetchSearchMetrics).mockRejectedValueOnce(new Error('Network error'));
 
       const scores = await service.calculateOpportunityScores(nodes, mockUserId);

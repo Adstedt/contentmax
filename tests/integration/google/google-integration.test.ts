@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { GoogleOAuthClient } from '@/lib/integrations/google-oauth';
-import { SearchConsoleClient } from '@/lib/integrations/search-console';
-import { GSCDataCache } from '@/lib/integrations/gsc-cache';
+import { GoogleOAuthClient } from '@/lib/external/google-oauth';
+import { SearchConsoleClient } from '@/lib/external/search-console';
+import { GSCDataCache } from '@/lib/external/gsc-cache';
 import { GSCError, GSCErrorCode } from '@/types/google.types';
 import crypto from 'crypto';
 
@@ -68,7 +68,7 @@ jest.mock('googleapis', () => ({
 }));
 
 // Mock Supabase client
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock('@/lib/external/supabase/server', () => ({
   createClient: jest.fn().mockResolvedValue({
     auth: {
       getUser: jest.fn().mockResolvedValue({

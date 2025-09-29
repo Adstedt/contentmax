@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { SitemapFetcher } from '@/lib/ingestion/sitemap-fetcher';
-import { createClient } from '@/lib/supabase/server';
+import { SitemapFetcher } from '@/lib/data/import/sitemap-fetcher';
+import { createClient } from '@/lib/external/supabase/server';
 import { ContentCategory } from '@/types/sitemap.types';
 
 const SitemapRequestSchema = z.object({

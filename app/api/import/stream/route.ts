@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { progressManager } from '@/lib/import/progress-tracker';
+import { createClient } from '@/lib/external/supabase/server';
+import { progressManager } from '@/lib/data/import/progress-tracker';
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();

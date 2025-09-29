@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { TrafficCalculator } from '@/lib/scoring/traffic-calculator';
+import { TrafficCalculator } from '@/lib/core/analysis/traffic-calculator';
 import type { SearchMetrics } from '@/components/taxonomy/D3Visualization/NodeTooltip';
 
 describe('TrafficCalculator', () => {

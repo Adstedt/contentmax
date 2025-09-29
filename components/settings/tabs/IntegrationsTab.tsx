@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/external/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 

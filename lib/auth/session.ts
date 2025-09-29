@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
 import { NextRequest } from 'next/server';
 
 export async function getSession(request?: NextRequest) {

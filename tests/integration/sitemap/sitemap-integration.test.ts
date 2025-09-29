@@ -1,11 +1,11 @@
 import { describe, it, expect } from '@jest/globals';
-import { SitemapParser } from '@/lib/ingestion/sitemap-parser';
-import { SitemapFetcher } from '@/lib/ingestion/sitemap-fetcher';
+import { SitemapParser } from '@/lib/data/import/sitemap-parser';
+import { SitemapFetcher } from '@/lib/data/import/sitemap-fetcher';
 import { 
   categorizeUrl, 
   categorizeUrlWithConfidence,
   getCategoryStatistics 
-} from '@/lib/ingestion/url-categorizer';
+} from '@/lib/data/import/url-categorizer';
 import { ContentCategory } from '@/types/sitemap.types';
 
 describe('Sitemap Parser Integration Tests', () => {

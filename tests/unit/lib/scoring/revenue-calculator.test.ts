@@ -3,7 +3,7 @@ import {
   RevenueCalculator,
   RevenueProjection,
   WhatIfScenario,
-} from '@/lib/scoring/revenue-calculator';
+} from '@/lib/core/analysis/revenue-calculator';
 import type { Database } from '@/types/database.types';
 
 // Mock Supabase

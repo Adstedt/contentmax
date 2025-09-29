@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RecommendationsEngine } from '@/lib/ai/recommendations-engine';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 
 // Test endpoint to demonstrate recommendations
 export async function GET(request: NextRequest) {

@@ -1,4 +1,4 @@
-import { IntegrationManager } from '@/lib/integration/integration-manager';
+import { IntegrationManager } from '@/lib/external/integration-manager';
 import { createClient } from '@supabase/supabase-js';
 
 // Mock Supabase

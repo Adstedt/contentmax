@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { GA4Service } from '@/lib/services/ga4-service';
-import { GA4Mapper } from '@/lib/integration/ga4-mapper';
-import { MetricsAggregator } from '@/lib/integration/metrics-aggregator';
+import { GA4Mapper } from '@/lib/external/ga4-mapper';
+import { MetricsAggregator } from '@/lib/external/metrics-aggregator';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds for API routes

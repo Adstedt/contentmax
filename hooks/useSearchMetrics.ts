@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/external/supabase/client';
 import type { SearchMetrics } from '@/components/taxonomy/D3Visualization/NodeTooltip';
 
 interface UseSearchMetricsOptions {

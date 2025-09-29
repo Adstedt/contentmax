@@ -10,8 +10,8 @@ jest.mock('next/headers', () => ({
 }));
 
 jest.mock('@/lib/services/ga4-service');
-jest.mock('@/lib/integration/ga4-mapper');
-jest.mock('@/lib/integration/metrics-aggregator');
+jest.mock('@/lib/external/ga4-mapper');
+jest.mock('@/lib/external/metrics-aggregator');
 
 describe('GA4 Sync API Routes', () => {
   let mockSupabase: any;
@@ -224,7 +224,7 @@ describe('GA4 Sync API Routes', () => {
       } as any));
 
       // Mock GA4Mapper
-      const { GA4Mapper } = await import('@/lib/integration/ga4-mapper');
+      const { GA4Mapper } = await import('@/lib/external/ga4-mapper');
       jest.mocked(GA4Mapper).mockImplementation(() => ({
         mapPageMetricsToTaxonomy: jest.fn().mockResolvedValue([]),
         getMappingStatistics: jest.fn().mockReturnValue({
@@ -236,7 +236,7 @@ describe('GA4 Sync API Routes', () => {
       } as any));
 
       // Mock MetricsAggregator
-      const { MetricsAggregator } = await import('@/lib/integration/metrics-aggregator');
+      const { MetricsAggregator } = await import('@/lib/external/metrics-aggregator');
       jest.mocked(MetricsAggregator).mockImplementation(() => ({
         aggregateAnalyticsMetrics: jest.fn().mockReturnValue(new Map()),
         getRevenueStatistics: jest.fn().mockReturnValue({

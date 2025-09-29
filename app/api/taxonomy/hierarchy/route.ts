@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/external/supabase/server';
 import { HierarchyBuilder } from '@/lib/processing/hierarchy-builder';
 import { HierarchyAnalyzer } from '@/lib/processing/hierarchy-analyzer';
 

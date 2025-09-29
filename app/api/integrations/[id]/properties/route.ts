@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { IntegrationManager } from '@/lib/integration/integration-manager';
-import { GoogleAnalyticsService } from '@/lib/integration/services/google-analytics-service';
-import { GoogleSearchConsoleService } from '@/lib/integration/services/google-search-console-service';
+import { createServerSupabaseClient } from '@/lib/external/supabase/server';
+import { IntegrationManager } from '@/lib/external/integration-manager';
+import { GoogleAnalyticsService } from '@/lib/external/services/google-analytics-service';
+import { GoogleSearchConsoleService } from '@/lib/external/services/google-search-console-service';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
