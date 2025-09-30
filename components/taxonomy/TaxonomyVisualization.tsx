@@ -61,6 +61,7 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [sidebarProduct, setSidebarProduct] = useState<Product | null>(null);
 
   // Product filtering and sorting state
   const [productSortBy, setProductSortBy] = useState<'name' | 'price-asc' | 'price-desc' | 'brand'>(
@@ -71,6 +72,25 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
     priceMax: '',
     brands: [] as string[],
     availability: 'all' as 'all' | 'in-stock' | 'out-of-stock',
+  });
+
+  // Category filtering and sorting state
+  const [categorySortBy, setCategorySortBy] = useState<
+    | 'name'
+    | 'sku-count-asc'
+    | 'sku-count-desc'
+    | 'health-asc'
+    | 'health-desc'
+    | 'revenue-asc'
+    | 'revenue-desc'
+    | 'traffic-asc'
+    | 'traffic-desc'
+  >('name');
+  const [categoryFilters, setCategoryFilters] = useState({
+    status: 'all' as FilterStatus,
+    healthMin: '',
+    healthMax: '',
+    skuMin: '',
   });
 
   // Pipeline instance ref to avoid recreating
@@ -258,6 +278,60 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
     }
   }, [filteredCards, breadcrumbs, viewMode]);
 
+  // Apply category filters and sorting
+  const filteredAndSortedCategories = useMemo(() => {
+    let filtered = [...currentLevelCards];
+
+    // Apply status filter
+    if (categoryFilters.status !== 'all') {
+      filtered = filtered.filter((card) => card.status === categoryFilters.status);
+    }
+
+    // Apply health score filter
+    if (categoryFilters.healthMin) {
+      const min = parseFloat(categoryFilters.healthMin);
+      filtered = filtered.filter((card) => card.healthScore >= min);
+    }
+    if (categoryFilters.healthMax) {
+      const max = parseFloat(categoryFilters.healthMax);
+      filtered = filtered.filter((card) => card.healthScore <= max);
+    }
+
+    // Apply SKU count filter
+    if (categoryFilters.skuMin) {
+      const min = parseInt(categoryFilters.skuMin);
+      filtered = filtered.filter((card) => card.skuCount >= min);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (categorySortBy) {
+        case 'name':
+          return a.title.localeCompare(b.title);
+        case 'sku-count-asc':
+          return a.skuCount - b.skuCount;
+        case 'sku-count-desc':
+          return b.skuCount - a.skuCount;
+        case 'health-asc':
+          return a.healthScore - b.healthScore;
+        case 'health-desc':
+          return b.healthScore - a.healthScore;
+        case 'revenue-asc':
+          return (a.revenue || 0) - (b.revenue || 0);
+        case 'revenue-desc':
+          return (b.revenue || 0) - (a.revenue || 0);
+        case 'traffic-asc':
+          return (a.traffic || 0) - (b.traffic || 0);
+        case 'traffic-desc':
+          return (b.traffic || 0) - (a.traffic || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [currentLevelCards, categoryFilters, categorySortBy]);
+
   // Get selected card details
   const selectedCard = selectedNodeId ? categoryCards.find((c) => c.id === selectedNodeId) : null;
 
@@ -312,6 +386,7 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
     }
 
     setSelectedNodeId(card.id);
+    setSidebarProduct(null); // Clear product sidebar when selecting a category
 
     // Enrich the selected card immediately for detailed view
     enrichVisibleNodes([card.id]);
@@ -327,6 +402,7 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
     // Always navigate by updating breadcrumbs
     setBreadcrumbs([...breadcrumbs, { id: card.id, title: card.title }]);
     setSelectedNodeId(null); // Clear selection when navigating
+    setSidebarProduct(null); // Clear product sidebar when navigating
 
     // After navigation, check if we should fetch products
     // We need a small delay to let the navigation complete
@@ -766,719 +842,896 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
           {/* Main Content Area */}
           <div className="flex-1 p-6 overflow-auto">
             {viewMode === 'cards' && (
-              <div
-                className={`grid gap-4 transition-all duration-300 ${
-                  zoomLevel <= 0.75
-                    ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
-                    : zoomLevel <= 1
-                      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
-                      : zoomLevel <= 1.5
-                        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-                        : zoomLevel <= 2
-                          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                          : 'grid-cols-1 md:grid-cols-2'
-                }`}
-                style={{
-                  transform: `scale(${zoomLevel})`,
-                  transformOrigin: 'top left',
-                }}
-              >
-                {/* Show category cards */}
-                {currentLevelCards.map((card, index) => {
-                  const isExpanded = expandedCards.has(card.id);
-                  const subcategories = getSubcategories(card.id);
-                  // Never treat taxonomy nodes as products - they're always categories
-                  // Products would be separate entities linked to categories
-                  const isProduct = false;
-                  const enrichedData = enrichedNodes.get(card.id);
+              <>
+                {/* Category Filter and Sort Bar */}
+                {filteredAndSortedCategories.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-[#0a0a0a]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg">
+                      {/* Left side - Filters */}
+                      <div className="flex flex-wrap gap-2 items-center flex-1">
+                        {/* Status Filter */}
+                        <select
+                          value={categoryFilters.status}
+                          onChange={(e) =>
+                            setCategoryFilters({
+                              ...categoryFilters,
+                              status: e.target.value as FilterStatus,
+                            })
+                          }
+                          className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                        >
+                          <option value="all">All Status</option>
+                          <option value="optimized">Optimized</option>
+                          <option value="outdated">Needs Attention</option>
+                          <option value="missing">Critical</option>
+                          <option value="noContent">No Content</option>
+                        </select>
 
-                  return (
-                    <div
-                      key={card.id}
-                      className={`bg-[#0a0a0a] border rounded-lg transition-all duration-300 ${
-                        selectedNodeId === card.id
-                          ? 'border-[#10a37f] shadow-lg shadow-[#10a37f]/20'
-                          : 'border-[#1a1a1a]'
-                      } ${isExpanded ? 'pb-2' : ''}`}
-                      style={{
-                        animationDelay: `${index * 50}ms`,
-                        animation: 'fadeInUp 0.4s ease-out',
-                      }}
-                    >
-                      {/* Main Card */}
-                      <div
-                        onClick={() => handleCardClick(card)}
-                        onDoubleClick={() => handleCardNavigate(card)}
-                        className={`p-4 cursor-pointer rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#10a37f]/20 hover:border-[#10a37f] hover:-translate-y-1 hover:scale-[1.02] ${
-                          selectedNodeId === card.id ? 'scale-[1.02]' : ''
-                        }`}
-                        title="Double-click to navigate into this category"
-                      >
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-white truncate pr-2">
-                              {card.title}
-                            </h3>
-                            {isProduct && (
-                              <div className="text-xs text-[#666] mt-1">
-                                Product • SKU: {card.id.substring(0, 8).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            {isProduct && (
-                              <span className="px-2 py-1 bg-[#10a37f]/20 text-[#10a37f] rounded">
-                                Product
-                              </span>
-                            )}
-                            <span>{getTrendIcon(card.trend)}</span>
-                          </div>
+                        {/* Health Score Range */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:border-[#3a3a3a] transition-colors">
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Health</span>
+                          <input
+                            type="number"
+                            placeholder="Min"
+                            value={categoryFilters.healthMin}
+                            onChange={(e) =>
+                              setCategoryFilters({
+                                ...categoryFilters,
+                                healthMin: e.target.value,
+                              })
+                            }
+                            className="w-12 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            min="0"
+                            max="100"
+                          />
+                          <span className="text-gray-600">–</span>
+                          <input
+                            type="number"
+                            placeholder="Max"
+                            value={categoryFilters.healthMax}
+                            onChange={(e) =>
+                              setCategoryFilters({
+                                ...categoryFilters,
+                                healthMax: e.target.value,
+                              })
+                            }
+                            className="w-12 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            min="0"
+                            max="100"
+                          />
+                          <span className="text-xs text-gray-500">%</span>
                         </div>
 
-                        {/* Health Score Bar */}
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-[#999]">
-                              {isProduct ? 'Content Health' : 'Health'}: {card.healthScore}%
-                            </span>
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: getStatusColor(card.status) }}
-                            />
-                          </div>
-                          <div className="w-full bg-[#1a1a1a] rounded-full h-2">
-                            <div
-                              className="h-2 rounded-full transition-all duration-300"
-                              style={{
-                                width: `${card.healthScore}%`,
-                                backgroundColor: getHealthColor(card.healthScore),
-                              }}
-                            />
-                          </div>
+                        {/* Minimum SKU Count */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:border-[#3a3a3a] transition-colors">
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Min SKUs</span>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={categoryFilters.skuMin}
+                            onChange={(e) =>
+                              setCategoryFilters({
+                                ...categoryFilters,
+                                skuMin: e.target.value,
+                              })
+                            }
+                            className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            min="0"
+                          />
                         </div>
 
-                        {/* Metrics - Different for Products vs Categories */}
-                        {isProduct ? (
-                          <>
-                            {/* Product-specific metrics */}
-                            <div className="grid grid-cols-2 gap-3 mb-3">
-                              <div>
-                                <div className="text-xs text-[#666] mb-1">Price</div>
-                                <div className="text-sm font-mono text-white">
-                                  {enrichedData?.shoppingData?.price
-                                    ? `$${enrichedData.shoppingData.price.toFixed(2)}`
-                                    : `$${(Math.random() * 500 + 50).toFixed(2)}`}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-[#666] mb-1">Stock</div>
-                                <div className="text-sm font-mono text-white">
-                                  {enrichedData?.shoppingData?.availability === 'in_stock' ? (
-                                    <span className="text-[#10a37f]">In Stock</span>
-                                  ) : enrichedData?.shoppingData?.availability ===
-                                    'out_of_stock' ? (
-                                    <span className="text-[#ef4444]">Out</span>
-                                  ) : enrichedData?.shoppingData?.availability === 'preorder' ? (
-                                    <span className="text-[#f59e0b]">Preorder</span>
-                                  ) : Math.random() > 0.3 ? (
-                                    <span className="text-[#10a37f]">In Stock</span>
-                                  ) : (
-                                    <span className="text-[#ef4444]">Out</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Additional product metrics */}
-                            <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-[#1a1a1a] rounded">
-                              <div className="text-center">
-                                <div className="text-xs text-[#666]">CTR</div>
-                                <div className="text-xs font-mono text-white">
-                                  {(Math.random() * 5).toFixed(1)}%
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-[#666]">Conv</div>
-                                <div className="text-xs font-mono text-white">
-                                  {(Math.random() * 3).toFixed(1)}%
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-[#666]">Rev</div>
-                                <div className="text-xs font-mono text-white">
-                                  ${card.revenue ? (card.revenue / 1000).toFixed(1) : '0'}K
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Content Quality Indicators */}
-                            <div className="mb-3">
-                              <div className="text-xs text-[#666] mb-2">Content Quality</div>
-                              <div className="flex gap-2 text-xs">
-                                <span
-                                  className={`px-2 py-1 rounded ${
-                                    enrichedData?.contentMetrics?.description?.quality === 'good' ||
-                                    enrichedData?.contentMetrics?.description?.quality ===
-                                      'excellent'
-                                      ? 'bg-[#10a37f]/20 text-[#10a37f]'
-                                      : enrichedData?.contentMetrics?.description?.quality ===
-                                          'fair'
-                                        ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                                        : 'bg-[#ef4444]/20 text-[#ef4444]'
-                                  }`}
-                                >
-                                  Desc:{' '}
-                                  {enrichedData?.contentMetrics?.description?.quality || 'Unknown'}
-                                </span>
-                                <span
-                                  className={`px-2 py-1 rounded ${
-                                    enrichedData?.contentMetrics?.images?.count &&
-                                    enrichedData.contentMetrics.images.count >= 6
-                                      ? 'bg-[#10a37f]/20 text-[#10a37f]'
-                                      : enrichedData?.contentMetrics?.images?.count &&
-                                          enrichedData.contentMetrics.images.count >= 4
-                                        ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                                        : 'bg-[#ef4444]/20 text-[#ef4444]'
-                                  }`}
-                                >
-                                  Images: {enrichedData?.contentMetrics?.images?.count || 0}/
-                                  {enrichedData?.contentMetrics?.images?.recommended || 8}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Sprint 4: Opportunity Score */}
-                            {enrichedData?.opportunityScore ? (
-                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-[#666]">Opportunity Score</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-[#10a37f]">
-                                      {enrichedData.opportunityScore.value.toFixed(1)}/10
-                                    </span>
-                                    <span
-                                      className={`text-xs px-1 py-0.5 rounded ${
-                                        enrichedData.opportunityScore.confidence === 'high'
-                                          ? 'bg-[#10a37f]/20 text-[#10a37f]'
-                                          : enrichedData.opportunityScore.confidence === 'medium'
-                                            ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                                            : 'bg-[#ef4444]/20 text-[#ef4444]'
-                                      }`}
-                                    >
-                                      {enrichedData.opportunityScore.confidence}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-[#666]">Opportunity Score</span>
-                                  <span className="text-sm font-bold text-[#10a37f]">
-                                    {(Math.random() * 10).toFixed(1)}/10
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Sprint 4: Revenue Projection */}
-                            {enrichedData?.revenueProjection ? (
-                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
-                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
-                                <div className="flex items-center justify-between">
-                                  <div className="text-sm font-mono text-white">
-                                    +$
-                                    {(
-                                      enrichedData.revenueProjection.realistic -
-                                      enrichedData.revenueProjection.current
-                                    ).toFixed(0)}
-                                    /mo
-                                  </div>
-                                  <div className="text-xs text-[#666]">
-                                    {enrichedData.revenueProjection.timeToImpact}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
-                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
-                                <div className="text-sm font-mono text-white">
-                                  +${(Math.random() * 5000).toFixed(0)}/mo
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {/* Category metrics (existing) */}
-                            <div className="grid grid-cols-2 gap-3 mb-3">
-                              <div>
-                                <div className="text-xs text-[#666] mb-1">
-                                  {card.children.length > 0
-                                    ? 'Subcategories'
-                                    : card.skuCount > 0
-                                      ? 'Products'
-                                      : 'Empty'}
-                                </div>
-                                <div className="text-sm font-mono text-white">
-                                  {card.children.length > 0
-                                    ? card.children.length
-                                    : card.skuCount || 0}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-[#666] mb-1">Revenue</div>
-                                <div className="text-sm font-mono text-white">
-                                  {card.revenue ? `$${(card.revenue / 1000).toFixed(1)}K` : 'N/A'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Opportunity Score for Categories */}
-                            {enrichedData?.opportunityScore ? (
-                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-[#666]">Opportunity Score</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-[#10a37f]">
-                                      {enrichedData.opportunityScore.value.toFixed(1)}/10
-                                    </span>
-                                    <span
-                                      className={`text-xs px-1 py-0.5 rounded ${
-                                        enrichedData.opportunityScore.confidence === 'high'
-                                          ? 'bg-[#10a37f]/20 text-[#10a37f]'
-                                          : enrichedData.opportunityScore.confidence === 'medium'
-                                            ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                                            : 'bg-[#ef4444]/20 text-[#ef4444]'
-                                      }`}
-                                    >
-                                      {enrichedData.opportunityScore.confidence}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-[#666]">Opportunity Score</span>
-                                  <span className="text-sm font-bold text-[#10a37f]">
-                                    {(Math.random() * 10).toFixed(1)}/10
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Revenue Projection for Categories */}
-                            {enrichedData?.revenueProjection && (
-                              <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
-                                <div className="text-xs text-[#f59e0b] mb-1">Revenue Potential</div>
-                                <div className="flex items-center justify-between">
-                                  <div className="text-sm font-mono text-white">
-                                    +$
-                                    {(
-                                      enrichedData.revenueProjection.realistic -
-                                      enrichedData.revenueProjection.current
-                                    ).toFixed(0)}
-                                    /mo
-                                  </div>
-                                  <div className="text-xs text-[#666]">
-                                    {enrichedData.revenueProjection.timeToImpact || '3-6 months'}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              card.status === 'optimized'
-                                ? 'bg-[#10a37f]/20 text-[#10a37f]'
-                                : card.status === 'outdated'
-                                  ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                                  : card.status === 'missing'
-                                    ? 'bg-[#ef4444]/20 text-[#ef4444]'
-                                    : 'bg-[#666]/20 text-[#999]'
-                            }`}
+                        {/* Clear Filters */}
+                        {(categoryFilters.status !== 'all' ||
+                          categoryFilters.healthMin ||
+                          categoryFilters.healthMax ||
+                          categoryFilters.skuMin) && (
+                          <button
+                            onClick={() =>
+                              setCategoryFilters({
+                                status: 'all',
+                                healthMin: '',
+                                healthMax: '',
+                                skuMin: '',
+                              })
+                            }
+                            className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-md transition-colors"
                           >
-                            {card.status === 'optimized'
-                              ? 'Optimized'
-                              : card.status === 'outdated'
-                                ? 'Needs Attention'
-                                : card.status === 'missing'
-                                  ? 'Critical'
-                                  : 'No Data'}
-                          </span>
+                            Clear
+                          </button>
+                        )}
+                      </div>
 
-                          <div className="flex items-center gap-2">
-                            {card.children.length > 0 && (
+                      {/* Right side - Sort and Results Count */}
+                      <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end">
+                        <div className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                          {filteredAndSortedCategories.length}{' '}
+                          {filteredAndSortedCategories.length === 1 ? 'category' : 'categories'}
+                        </div>
+                        <div className="h-4 w-px bg-[#2a2a2a] hidden sm:block"></div>
+                        <select
+                          value={categorySortBy}
+                          onChange={(e) =>
+                            setCategorySortBy(
+                              e.target.value as
+                                | 'name'
+                                | 'sku-count-asc'
+                                | 'sku-count-desc'
+                                | 'health-asc'
+                                | 'health-desc'
+                                | 'revenue-asc'
+                                | 'revenue-desc'
+                                | 'traffic-asc'
+                                | 'traffic-desc'
+                            )
+                          }
+                          className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                        >
+                          <option value="name">Name (A-Z)</option>
+                          <option value="sku-count-desc">SKU Count: High to Low</option>
+                          <option value="sku-count-asc">SKU Count: Low to High</option>
+                          <option value="health-desc">Health Score: High to Low</option>
+                          <option value="health-asc">Health Score: Low to High</option>
+                          <option value="revenue-desc">Revenue: High to Low</option>
+                          <option value="revenue-asc">Revenue: Low to High</option>
+                          <option value="traffic-desc">Traffic: High to Low</option>
+                          <option value="traffic-asc">Traffic: Low to High</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  className={`grid gap-4 transition-all duration-300 ${
+                    zoomLevel <= 0.75
+                      ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                      : zoomLevel <= 1
+                        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
+                        : zoomLevel <= 1.5
+                          ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                          : zoomLevel <= 2
+                            ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                            : 'grid-cols-1 md:grid-cols-2'
+                  }`}
+                  style={{
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'top left',
+                  }}
+                >
+                  {/* Show category cards */}
+                  {filteredAndSortedCategories.map((card, index) => {
+                    const isExpanded = expandedCards.has(card.id);
+                    const subcategories = getSubcategories(card.id);
+                    // Never treat taxonomy nodes as products - they're always categories
+                    // Products would be separate entities linked to categories
+                    const isProduct = false;
+                    const enrichedData = enrichedNodes.get(card.id);
+
+                    return (
+                      <div
+                        key={card.id}
+                        className={`bg-[#0a0a0a] border rounded-lg transition-all duration-300 ${
+                          selectedNodeId === card.id
+                            ? 'border-[#10a37f] shadow-lg shadow-[#10a37f]/20'
+                            : 'border-[#1a1a1a]'
+                        } ${isExpanded ? 'pb-2' : ''}`}
+                        style={{
+                          animationDelay: `${index * 50}ms`,
+                          animation: 'fadeInUp 0.4s ease-out',
+                        }}
+                      >
+                        {/* Main Card */}
+                        <div
+                          onClick={() => handleCardClick(card)}
+                          onDoubleClick={() => handleCardNavigate(card)}
+                          className={`p-4 cursor-pointer rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#10a37f]/20 hover:border-[#10a37f] hover:-translate-y-1 hover:scale-[1.02] ${
+                            selectedNodeId === card.id ? 'scale-[1.02]' : ''
+                          }`}
+                          title="Double-click to navigate into this category"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-medium text-white truncate pr-2">
+                                {card.title}
+                              </h3>
+                              {isProduct && (
+                                <div className="text-xs text-[#666] mt-1">
+                                  Product • SKU: {card.id.substring(0, 8).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs">
+                              {isProduct && (
+                                <span className="px-2 py-1 bg-[#10a37f]/20 text-[#10a37f] rounded">
+                                  Product
+                                </span>
+                              )}
+                              <span>{getTrendIcon(card.trend)}</span>
+                            </div>
+                          </div>
+
+                          {/* Health Score Bar */}
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-[#999]">
+                                {isProduct ? 'Content Health' : 'Health'}: {card.healthScore}%
+                              </span>
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: getStatusColor(card.status) }}
+                              />
+                            </div>
+                            <div className="w-full bg-[#1a1a1a] rounded-full h-2">
+                              <div
+                                className="h-2 rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${card.healthScore}%`,
+                                  backgroundColor: getHealthColor(card.healthScore),
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Metrics - Different for Products vs Categories */}
+                          {isProduct ? (
+                            <>
+                              {/* Product-specific metrics */}
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                  <div className="text-xs text-[#666] mb-1">Price</div>
+                                  <div className="text-sm font-mono text-white">
+                                    {enrichedData?.shoppingData?.price
+                                      ? `$${enrichedData.shoppingData.price.toFixed(2)}`
+                                      : `$${(Math.random() * 500 + 50).toFixed(2)}`}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-[#666] mb-1">Stock</div>
+                                  <div className="text-sm font-mono text-white">
+                                    {enrichedData?.shoppingData?.availability === 'in_stock' ? (
+                                      <span className="text-[#10a37f]">In Stock</span>
+                                    ) : enrichedData?.shoppingData?.availability ===
+                                      'out_of_stock' ? (
+                                      <span className="text-[#ef4444]">Out</span>
+                                    ) : enrichedData?.shoppingData?.availability === 'preorder' ? (
+                                      <span className="text-[#f59e0b]">Preorder</span>
+                                    ) : Math.random() > 0.3 ? (
+                                      <span className="text-[#10a37f]">In Stock</span>
+                                    ) : (
+                                      <span className="text-[#ef4444]">Out</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Additional product metrics */}
+                              <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-[#1a1a1a] rounded">
+                                <div className="text-center">
+                                  <div className="text-xs text-[#666]">CTR</div>
+                                  <div className="text-xs font-mono text-white">
+                                    {(Math.random() * 5).toFixed(1)}%
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-[#666]">Conv</div>
+                                  <div className="text-xs font-mono text-white">
+                                    {(Math.random() * 3).toFixed(1)}%
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-[#666]">Rev</div>
+                                  <div className="text-xs font-mono text-white">
+                                    ${card.revenue ? (card.revenue / 1000).toFixed(1) : '0'}K
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Content Quality Indicators */}
+                              <div className="mb-3">
+                                <div className="text-xs text-[#666] mb-2">Content Quality</div>
+                                <div className="flex gap-2 text-xs">
+                                  <span
+                                    className={`px-2 py-1 rounded ${
+                                      enrichedData?.contentMetrics?.description?.quality ===
+                                        'good' ||
+                                      enrichedData?.contentMetrics?.description?.quality ===
+                                        'excellent'
+                                        ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                        : enrichedData?.contentMetrics?.description?.quality ===
+                                            'fair'
+                                          ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                          : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                    }`}
+                                  >
+                                    Desc:{' '}
+                                    {enrichedData?.contentMetrics?.description?.quality ||
+                                      'Unknown'}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-1 rounded ${
+                                      enrichedData?.contentMetrics?.images?.count &&
+                                      enrichedData.contentMetrics.images.count >= 6
+                                        ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                        : enrichedData?.contentMetrics?.images?.count &&
+                                            enrichedData.contentMetrics.images.count >= 4
+                                          ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                          : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                    }`}
+                                  >
+                                    Images: {enrichedData?.contentMetrics?.images?.count || 0}/
+                                    {enrichedData?.contentMetrics?.images?.recommended || 8}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Sprint 4: Opportunity Score */}
+                              {enrichedData?.opportunityScore ? (
+                                <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-[#666]">Opportunity Score</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold text-[#10a37f]">
+                                        {enrichedData.opportunityScore.value.toFixed(1)}/10
+                                      </span>
+                                      <span
+                                        className={`text-xs px-1 py-0.5 rounded ${
+                                          enrichedData.opportunityScore.confidence === 'high'
+                                            ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                            : enrichedData.opportunityScore.confidence === 'medium'
+                                              ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                              : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                        }`}
+                                      >
+                                        {enrichedData.opportunityScore.confidence}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-[#666]">Opportunity Score</span>
+                                    <span className="text-sm font-bold text-[#10a37f]">
+                                      {(Math.random() * 10).toFixed(1)}/10
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Sprint 4: Revenue Projection */}
+                              {enrichedData?.revenueProjection ? (
+                                <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                  <div className="text-xs text-[#f59e0b] mb-1">
+                                    Revenue Potential
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-sm font-mono text-white">
+                                      +$
+                                      {(
+                                        enrichedData.revenueProjection.realistic -
+                                        enrichedData.revenueProjection.current
+                                      ).toFixed(0)}
+                                      /mo
+                                    </div>
+                                    <div className="text-xs text-[#666]">
+                                      {enrichedData.revenueProjection.timeToImpact}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                  <div className="text-xs text-[#f59e0b] mb-1">
+                                    Revenue Potential
+                                  </div>
+                                  <div className="text-sm font-mono text-white">
+                                    +${(Math.random() * 5000).toFixed(0)}/mo
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {/* Category metrics (existing) */}
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                  <div className="text-xs text-[#666] mb-1">
+                                    {card.children.length > 0
+                                      ? 'Subcategories'
+                                      : card.skuCount > 0
+                                        ? 'Products'
+                                        : 'Empty'}
+                                  </div>
+                                  <div className="text-sm font-mono text-white">
+                                    {card.children.length > 0
+                                      ? card.children.length
+                                      : card.skuCount || 0}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-[#666] mb-1">Revenue</div>
+                                  <div className="text-sm font-mono text-white">
+                                    {card.revenue ? `$${(card.revenue / 1000).toFixed(1)}K` : 'N/A'}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Opportunity Score for Categories */}
+                              {enrichedData?.opportunityScore ? (
+                                <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-[#666]">Opportunity Score</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold text-[#10a37f]">
+                                        {enrichedData.opportunityScore.value.toFixed(1)}/10
+                                      </span>
+                                      <span
+                                        className={`text-xs px-1 py-0.5 rounded ${
+                                          enrichedData.opportunityScore.confidence === 'high'
+                                            ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                            : enrichedData.opportunityScore.confidence === 'medium'
+                                              ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                              : 'bg-[#ef4444]/20 text-[#ef4444]'
+                                        }`}
+                                      >
+                                        {enrichedData.opportunityScore.confidence}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mb-3 p-2 bg-[#1a1a1a] rounded">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-[#666]">Opportunity Score</span>
+                                    <span className="text-sm font-bold text-[#10a37f]">
+                                      {(Math.random() * 10).toFixed(1)}/10
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Revenue Projection for Categories */}
+                              {enrichedData?.revenueProjection && (
+                                <div className="mb-3 p-2 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded">
+                                  <div className="text-xs text-[#f59e0b] mb-1">
+                                    Revenue Potential
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-sm font-mono text-white">
+                                      +$
+                                      {(
+                                        enrichedData.revenueProjection.realistic -
+                                        enrichedData.revenueProjection.current
+                                      ).toFixed(0)}
+                                      /mo
+                                    </div>
+                                    <div className="text-xs text-[#666]">
+                                      {enrichedData.revenueProjection.timeToImpact || '3-6 months'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                card.status === 'optimized'
+                                  ? 'bg-[#10a37f]/20 text-[#10a37f]'
+                                  : card.status === 'outdated'
+                                    ? 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                                    : card.status === 'missing'
+                                      ? 'bg-[#ef4444]/20 text-[#ef4444]'
+                                      : 'bg-[#666]/20 text-[#999]'
+                              }`}
+                            >
+                              {card.status === 'optimized'
+                                ? 'Optimized'
+                                : card.status === 'outdated'
+                                  ? 'Needs Attention'
+                                  : card.status === 'missing'
+                                    ? 'Critical'
+                                    : 'No Data'}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              {card.children.length > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCardExpand(card.id);
+                                  }}
+                                  className="flex items-center gap-1 text-xs text-[#666] hover:text-[#10a37f] transition-colors px-2 py-1 rounded hover:bg-[#10a37f]/10"
+                                  title={
+                                    isExpanded ? 'Collapse subcategories' : 'Show subcategories'
+                                  }
+                                >
+                                  <span>{card.children.length} items</span>
+                                  {isExpanded ? (
+                                    <ChevronDownIcon className="w-3 h-3" />
+                                  ) : (
+                                    <ChevronRightIcon className="w-3 h-3" />
+                                  )}
+                                </button>
+                              )}
+
+                              {/* Always show navigate button */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleCardExpand(card.id);
+                                  handleCardNavigate(card);
                                 }}
-                                className="flex items-center gap-1 text-xs text-[#666] hover:text-[#10a37f] transition-colors px-2 py-1 rounded hover:bg-[#10a37f]/10"
-                                title={isExpanded ? 'Collapse subcategories' : 'Show subcategories'}
-                              >
-                                <span>{card.children.length} items</span>
-                                {isExpanded ? (
-                                  <ChevronDownIcon className="w-3 h-3" />
-                                ) : (
-                                  <ChevronRightIcon className="w-3 h-3" />
-                                )}
-                              </button>
-                            )}
-
-                            {/* Always show navigate button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCardNavigate(card);
-                              }}
-                              className={`text-xs transition-colors px-2 py-1 rounded ${
-                                card.children.length === 0
-                                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300'
-                                  : 'text-[#666] hover:text-[#10a37f] hover:bg-[#10a37f]/10'
-                              }`}
-                              title={
-                                card.children.length === 0
-                                  ? 'View products in this category'
-                                  : 'Navigate to this category'
-                              }
-                            >
-                              {card.children.length === 0 ? 'View Products →' : 'Go →'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Subcategories - shown when expanded */}
-                      {isExpanded && subcategories.length > 0 && (
-                        <div className="px-4 pb-2">
-                          <div className="border-t border-[#1a1a1a] pt-3">
-                            <div className="text-xs text-[#666] mb-2 font-medium uppercase tracking-wider">
-                              Subcategories
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {subcategories.map((subcard) => (
-                                <button
-                                  key={subcard.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCardNavigate(subcard); // Navigate to subcategory
-                                  }}
-                                  className={`text-left p-2 rounded border transition-all duration-200 hover:border-[#10a37f] hover:bg-[#10a37f]/5 ${
-                                    selectedNodeId === subcard.id
-                                      ? 'border-[#10a37f] bg-[#10a37f]/10'
-                                      : 'border-[#1a1a1a] bg-[#0a0a0a]'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm text-white font-medium truncate">
-                                      {subcard.title}
-                                    </span>
-                                    <div
-                                      className="w-2 h-2 rounded-full flex-shrink-0"
-                                      style={{ backgroundColor: getStatusColor(subcard.status) }}
-                                    />
-                                  </div>
-                                  <div className="flex items-center justify-between text-xs text-[#666]">
-                                    <span>{subcard.skuCount.toLocaleString()} SKUs</span>
-                                    <span>{subcard.healthScore}%</span>
-                                  </div>
-                                  {subcard.children.length > 0 && (
-                                    <div className="flex items-center gap-1 mt-1 text-xs text-[#666]">
-                                      <span>{subcard.children.length} items</span>
-                                      <ChevronRightIcon className="w-3 h-3" />
-                                    </div>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Show products as cards after categories */}
-                {products.length > 0 &&
-                  (() => {
-                    // Get unique brands for filter
-                    const uniqueBrands = Array.from(
-                      new Set(products.map((p) => p.brand).filter(Boolean))
-                    ) as string[];
-
-                    // Apply filters
-                    let filteredProducts = products.filter((product) => {
-                      // Price filter
-                      if (productFilters.priceMin && product.price !== null) {
-                        if (product.price < parseFloat(productFilters.priceMin)) return false;
-                      }
-                      if (productFilters.priceMax && product.price !== null) {
-                        if (product.price > parseFloat(productFilters.priceMax)) return false;
-                      }
-
-                      // Brand filter
-                      if (productFilters.brands.length > 0 && product.brand) {
-                        if (!productFilters.brands.includes(product.brand)) return false;
-                      }
-
-                      // Availability filter
-                      if (productFilters.availability === 'in-stock') {
-                        if (product.availability !== 'in stock') return false;
-                      } else if (productFilters.availability === 'out-of-stock') {
-                        if (product.availability === 'in stock') return false;
-                      }
-
-                      return true;
-                    });
-
-                    // Apply sorting
-                    filteredProducts = [...filteredProducts].sort((a, b) => {
-                      switch (productSortBy) {
-                        case 'name':
-                          return a.title.localeCompare(b.title);
-                        case 'price-asc':
-                          if (a.price === null) return 1;
-                          if (b.price === null) return -1;
-                          return a.price - b.price;
-                        case 'price-desc':
-                          if (a.price === null) return 1;
-                          if (b.price === null) return -1;
-                          return b.price - a.price;
-                        case 'brand':
-                          if (!a.brand) return 1;
-                          if (!b.brand) return -1;
-                          return a.brand.localeCompare(b.brand);
-                        default:
-                          return 0;
-                      }
-                    });
-
-                    const hasActiveFilters =
-                      productFilters.priceMin ||
-                      productFilters.priceMax ||
-                      productFilters.brands.length > 0 ||
-                      productFilters.availability !== 'all';
-
-                    return (
-                      <>
-                        {/* Filter and Sort Bar */}
-                        <div className="col-span-full mb-6">
-                          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-[#0a0a0a]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg">
-                            {/* Left side - Filters */}
-                            <div className="flex flex-wrap gap-2 items-center flex-1">
-                              {/* Price Range */}
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:border-[#3a3a3a] transition-colors">
-                                <span className="text-xs text-gray-500 whitespace-nowrap">$</span>
-                                <input
-                                  type="number"
-                                  placeholder="Min"
-                                  value={productFilters.priceMin}
-                                  onChange={(e) =>
-                                    setProductFilters({
-                                      ...productFilters,
-                                      priceMin: e.target.value,
-                                    })
-                                  }
-                                  className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                                <span className="text-gray-600">–</span>
-                                <input
-                                  type="number"
-                                  placeholder="Max"
-                                  value={productFilters.priceMax}
-                                  onChange={(e) =>
-                                    setProductFilters({
-                                      ...productFilters,
-                                      priceMax: e.target.value,
-                                    })
-                                  }
-                                  className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                              </div>
-
-                              {/* Availability */}
-                              <select
-                                value={productFilters.availability}
-                                onChange={(e) =>
-                                  setProductFilters({
-                                    ...productFilters,
-                                    availability: e.target.value as
-                                      | 'all'
-                                      | 'in-stock'
-                                      | 'out-of-stock',
-                                  })
+                                className={`text-xs transition-colors px-2 py-1 rounded ${
+                                  card.children.length === 0
+                                    ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300'
+                                    : 'text-[#666] hover:text-[#10a37f] hover:bg-[#10a37f]/10'
+                                }`}
+                                title={
+                                  card.children.length === 0
+                                    ? 'View products in this category'
+                                    : 'Navigate to this category'
                                 }
-                                className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
                               >
-                                <option value="all">All Stock</option>
-                                <option value="in-stock">In Stock</option>
-                                <option value="out-of-stock">Out of Stock</option>
-                              </select>
+                                {card.children.length === 0 ? 'View Products →' : 'Go →'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
 
-                              {/* Brand Filter */}
-                              {uniqueBrands.length > 0 && (
-                                <div className="relative">
+                        {/* Subcategories - shown when expanded */}
+                        {isExpanded && subcategories.length > 0 && (
+                          <div className="px-4 pb-2">
+                            <div className="border-t border-[#1a1a1a] pt-3">
+                              <div className="text-xs text-[#666] mb-2 font-medium uppercase tracking-wider">
+                                Subcategories
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {subcategories.map((subcard) => (
                                   <button
-                                    onClick={() => {
-                                      const dropdown = document.getElementById('brand-dropdown');
-                                      dropdown?.classList.toggle('hidden');
+                                    key={subcard.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCardNavigate(subcard); // Navigate to subcategory
                                     }}
-                                    className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                                    className={`text-left p-2 rounded border transition-all duration-200 hover:border-[#10a37f] hover:bg-[#10a37f]/5 ${
+                                      selectedNodeId === subcard.id
+                                        ? 'border-[#10a37f] bg-[#10a37f]/10'
+                                        : 'border-[#1a1a1a] bg-[#0a0a0a]'
+                                    }`}
                                   >
-                                    <FilterIcon size={12} className="text-gray-400" />
-                                    <span>Brands</span>
-                                    {productFilters.brands.length > 0 && (
-                                      <span className="ml-0.5 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-medium">
-                                        {productFilters.brands.length}
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-sm text-white font-medium truncate">
+                                        {subcard.title}
                                       </span>
+                                      <div
+                                        className="w-2 h-2 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: getStatusColor(subcard.status) }}
+                                      />
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-[#666]">
+                                      <span>{subcard.skuCount.toLocaleString()} SKUs</span>
+                                      <span>{subcard.healthScore}%</span>
+                                    </div>
+                                    {subcard.children.length > 0 && (
+                                      <div className="flex items-center gap-1 mt-1 text-xs text-[#666]">
+                                        <span>{subcard.children.length} items</span>
+                                        <ChevronRightIcon className="w-3 h-3" />
+                                      </div>
                                     )}
                                   </button>
-                                  <div
-                                    id="brand-dropdown"
-                                    className="hidden absolute top-full left-0 mt-1 w-52 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="sticky top-0 bg-[#1a1a1a] border-b border-[#2a2a2a] px-3 py-2">
-                                      <div className="text-xs font-medium text-gray-400">
-                                        Select Brands
-                                      </div>
-                                    </div>
-                                    <div className="py-1">
-                                      {uniqueBrands.map((brand) => (
-                                        <label
-                                          key={brand}
-                                          className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#2a2a2a] cursor-pointer group"
-                                        >
-                                          <input
-                                            type="checkbox"
-                                            checked={productFilters.brands.includes(brand)}
-                                            onChange={(e) => {
-                                              if (e.target.checked) {
-                                                setProductFilters({
-                                                  ...productFilters,
-                                                  brands: [...productFilters.brands, brand],
-                                                });
-                                              } else {
-                                                setProductFilters({
-                                                  ...productFilters,
-                                                  brands: productFilters.brands.filter(
-                                                    (b) => b !== brand
-                                                  ),
-                                                });
-                                              }
-                                            }}
-                                            className="w-3.5 h-3.5 rounded border-gray-600 text-blue-500 focus:ring-1 focus:ring-blue-500 focus:ring-offset-0"
-                                          />
-                                          <span className="text-xs text-gray-300 group-hover:text-white transition-colors">
-                                            {brand}
-                                          </span>
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Active Filters Summary & Clear */}
-                              {hasActiveFilters && (
-                                <button
-                                  onClick={() =>
-                                    setProductFilters({
-                                      priceMin: '',
-                                      priceMax: '',
-                                      brands: [],
-                                      availability: 'all',
-                                    })
-                                  }
-                                  className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-md transition-colors"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Right side - Sort and Results Count */}
-                            <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end">
-                              <div className="text-xs text-gray-500 font-medium whitespace-nowrap">
-                                {filteredProducts.length}{' '}
-                                {filteredProducts.length === 1 ? 'product' : 'products'}
+                                ))}
                               </div>
-                              <div className="h-4 w-px bg-[#2a2a2a] hidden sm:block"></div>
-                              <select
-                                value={productSortBy}
-                                onChange={(e) =>
-                                  setProductSortBy(
-                                    e.target.value as 'name' | 'price-asc' | 'price-desc' | 'brand'
-                                  )
-                                }
-                                className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
-                              >
-                                <option value="name">Name (A-Z)</option>
-                                <option value="price-asc">Price: Low to High</option>
-                                <option value="price-desc">Price: High to Low</option>
-                                <option value="brand">Brand (A-Z)</option>
-                              </select>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Product Cards */}
-                        {filteredProducts.map((product) => (
-                          <SimpleProductCard
-                            key={product.id}
-                            product={product}
-                            onSelect={(p) => setSelectedProduct(p)}
-                            isSelected={selectedProduct?.id === product.id}
-                            onProductClick={(p) => setSelectedProduct(p)}
-                          />
-                        ))}
-
-                        {/* No results */}
-                        {filteredProducts.length === 0 && (
-                          <div className="col-span-full text-center py-12">
-                            <div className="text-[#666] mb-2">No products match your filters</div>
-                            <button
-                              onClick={() =>
-                                setProductFilters({
-                                  priceMin: '',
-                                  priceMax: '',
-                                  brands: [],
-                                  availability: 'all',
-                                })
-                              }
-                              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                              Clear all filters
-                            </button>
                           </div>
                         )}
-                      </>
+                      </div>
                     );
-                  })()}
+                  })}
 
-                {/* Loading state for products */}
-                {productsLoading && (
-                  <div className="col-span-full flex justify-center items-center py-12">
-                    <div className="text-gray-400">Loading products...</div>
-                  </div>
-                )}
+                  {/* Show products as cards after categories */}
+                  {products.length > 0 &&
+                    (() => {
+                      // Get unique brands for filter
+                      const uniqueBrands = Array.from(
+                        new Set(products.map((p) => p.brand).filter(Boolean))
+                      ) as string[];
 
-                {currentLevelCards.length === 0 && products.length === 0 && !productsLoading && (
-                  <div className="col-span-full text-center py-12">
-                    <div className="text-[#666] mb-2">No categories found</div>
-                    <div className="text-sm text-[#999]">
-                      Try adjusting your search or filter criteria
+                      // Apply filters
+                      let filteredProducts = products.filter((product) => {
+                        // Price filter
+                        if (productFilters.priceMin && product.price !== null) {
+                          if (product.price < parseFloat(productFilters.priceMin)) return false;
+                        }
+                        if (productFilters.priceMax && product.price !== null) {
+                          if (product.price > parseFloat(productFilters.priceMax)) return false;
+                        }
+
+                        // Brand filter
+                        if (productFilters.brands.length > 0 && product.brand) {
+                          if (!productFilters.brands.includes(product.brand)) return false;
+                        }
+
+                        // Availability filter
+                        if (productFilters.availability === 'in-stock') {
+                          if (product.availability !== 'in stock') return false;
+                        } else if (productFilters.availability === 'out-of-stock') {
+                          if (product.availability === 'in stock') return false;
+                        }
+
+                        return true;
+                      });
+
+                      // Apply sorting
+                      filteredProducts = [...filteredProducts].sort((a, b) => {
+                        switch (productSortBy) {
+                          case 'name':
+                            return a.title.localeCompare(b.title);
+                          case 'price-asc':
+                            if (a.price === null) return 1;
+                            if (b.price === null) return -1;
+                            return a.price - b.price;
+                          case 'price-desc':
+                            if (a.price === null) return 1;
+                            if (b.price === null) return -1;
+                            return b.price - a.price;
+                          case 'brand':
+                            if (!a.brand) return 1;
+                            if (!b.brand) return -1;
+                            return a.brand.localeCompare(b.brand);
+                          default:
+                            return 0;
+                        }
+                      });
+
+                      const hasActiveFilters =
+                        productFilters.priceMin ||
+                        productFilters.priceMax ||
+                        productFilters.brands.length > 0 ||
+                        productFilters.availability !== 'all';
+
+                      return (
+                        <>
+                          {/* Filter and Sort Bar */}
+                          <div className="col-span-full mb-6">
+                            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-[#0a0a0a]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg">
+                              {/* Left side - Filters */}
+                              <div className="flex flex-wrap gap-2 items-center flex-1">
+                                {/* Price Range */}
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:border-[#3a3a3a] transition-colors">
+                                  <span className="text-xs text-gray-500 whitespace-nowrap">$</span>
+                                  <input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={productFilters.priceMin}
+                                    onChange={(e) =>
+                                      setProductFilters({
+                                        ...productFilters,
+                                        priceMin: e.target.value,
+                                      })
+                                    }
+                                    className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                  <span className="text-gray-600">–</span>
+                                  <input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={productFilters.priceMax}
+                                    onChange={(e) =>
+                                      setProductFilters({
+                                        ...productFilters,
+                                        priceMax: e.target.value,
+                                      })
+                                    }
+                                    className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                </div>
+
+                                {/* Availability */}
+                                <select
+                                  value={productFilters.availability}
+                                  onChange={(e) =>
+                                    setProductFilters({
+                                      ...productFilters,
+                                      availability: e.target.value as
+                                        | 'all'
+                                        | 'in-stock'
+                                        | 'out-of-stock',
+                                    })
+                                  }
+                                  className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                                >
+                                  <option value="all">All Stock</option>
+                                  <option value="in-stock">In Stock</option>
+                                  <option value="out-of-stock">Out of Stock</option>
+                                </select>
+
+                                {/* Brand Filter */}
+                                {uniqueBrands.length > 0 && (
+                                  <div className="relative">
+                                    <button
+                                      onClick={() => {
+                                        const dropdown = document.getElementById('brand-dropdown');
+                                        dropdown?.classList.toggle('hidden');
+                                      }}
+                                      className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                      <FilterIcon size={12} className="text-gray-400" />
+                                      <span>Brands</span>
+                                      {productFilters.brands.length > 0 && (
+                                        <span className="ml-0.5 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-medium">
+                                          {productFilters.brands.length}
+                                        </span>
+                                      )}
+                                    </button>
+                                    <div
+                                      id="brand-dropdown"
+                                      className="hidden absolute top-full left-0 mt-1 w-52 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="sticky top-0 bg-[#1a1a1a] border-b border-[#2a2a2a] px-3 py-2">
+                                        <div className="text-xs font-medium text-gray-400">
+                                          Select Brands
+                                        </div>
+                                      </div>
+                                      <div className="py-1">
+                                        {uniqueBrands.map((brand) => (
+                                          <label
+                                            key={brand}
+                                            className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#2a2a2a] cursor-pointer group"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={productFilters.brands.includes(brand)}
+                                              onChange={(e) => {
+                                                if (e.target.checked) {
+                                                  setProductFilters({
+                                                    ...productFilters,
+                                                    brands: [...productFilters.brands, brand],
+                                                  });
+                                                } else {
+                                                  setProductFilters({
+                                                    ...productFilters,
+                                                    brands: productFilters.brands.filter(
+                                                      (b) => b !== brand
+                                                    ),
+                                                  });
+                                                }
+                                              }}
+                                              className="w-3.5 h-3.5 rounded border-gray-600 text-blue-500 focus:ring-1 focus:ring-blue-500 focus:ring-offset-0"
+                                            />
+                                            <span className="text-xs text-gray-300 group-hover:text-white transition-colors">
+                                              {brand}
+                                            </span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Active Filters Summary & Clear */}
+                                {hasActiveFilters && (
+                                  <button
+                                    onClick={() =>
+                                      setProductFilters({
+                                        priceMin: '',
+                                        priceMax: '',
+                                        brands: [],
+                                        availability: 'all',
+                                      })
+                                    }
+                                    className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-md transition-colors"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Right side - Sort and Results Count */}
+                              <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end">
+                                <div className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                                  {filteredProducts.length}{' '}
+                                  {filteredProducts.length === 1 ? 'product' : 'products'}
+                                </div>
+                                <div className="h-4 w-px bg-[#2a2a2a] hidden sm:block"></div>
+                                <select
+                                  value={productSortBy}
+                                  onChange={(e) =>
+                                    setProductSortBy(
+                                      e.target.value as
+                                        | 'name'
+                                        | 'price-asc'
+                                        | 'price-desc'
+                                        | 'brand'
+                                    )
+                                  }
+                                  className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                                >
+                                  <option value="name">Name (A-Z)</option>
+                                  <option value="price-asc">Price: Low to High</option>
+                                  <option value="price-desc">Price: High to Low</option>
+                                  <option value="brand">Brand (A-Z)</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Product Cards */}
+                          {filteredProducts.map((product) => (
+                            <SimpleProductCard
+                              key={product.id}
+                              product={product}
+                              onSelect={(p) => setSidebarProduct(p)}
+                              isSelected={sidebarProduct?.id === product.id}
+                              onProductClick={(p) => setSidebarProduct(p)}
+                              onDetailsClick={(p) => setSelectedProduct(p)}
+                            />
+                          ))}
+
+                          {/* No results */}
+                          {filteredProducts.length === 0 && (
+                            <div className="col-span-full text-center py-12">
+                              <div className="text-[#666] mb-2">No products match your filters</div>
+                              <button
+                                onClick={() =>
+                                  setProductFilters({
+                                    priceMin: '',
+                                    priceMax: '',
+                                    brands: [],
+                                    availability: 'all',
+                                  })
+                                }
+                                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                              >
+                                Clear all filters
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                  {/* Loading state for products */}
+                  {productsLoading && (
+                    <div className="col-span-full flex justify-center items-center py-12">
+                      <div className="text-gray-400">Loading products...</div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {filteredAndSortedCategories.length === 0 &&
+                    currentLevelCards.length > 0 &&
+                    products.length === 0 &&
+                    !productsLoading && (
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-[#666] mb-2">No categories match your filters</div>
+                        <button
+                          onClick={() =>
+                            setCategoryFilters({
+                              status: 'all',
+                              healthMin: '',
+                              healthMax: '',
+                              skuMin: '',
+                            })
+                          }
+                          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )}
+
+                  {currentLevelCards.length === 0 && products.length === 0 && !productsLoading && (
+                    <div className="col-span-full text-center py-12">
+                      <div className="text-[#666] mb-2">No categories found</div>
+                      <div className="text-sm text-[#999]">
+                        Try adjusting your search or filter criteria
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             {viewMode === 'tree' && (
@@ -1710,6 +1963,206 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
                   </div>
                 ) : null /* Products now shown in main view, not sidebar */
               }
+            </div>
+          )}
+
+          {/* Right Product Panel */}
+          {products.length > 0 && (
+            <div
+              className="w-80 flex-shrink-0 bg-[#0a0a0a] border-l border-[#1a1a1a] sticky top-0 self-start overflow-y-auto hidden lg:block"
+              style={{ maxHeight: 'calc(100vh - 100px)' }}
+            >
+              <div className="h-full flex flex-col">
+                {sidebarProduct ? (
+                  <div className="flex-1 p-6 space-y-6">
+                    {/* Product Title */}
+                    <div>
+                      <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
+                        {sidebarProduct.title}
+                      </h2>
+                      <div className="text-sm text-[#666]">
+                        ID: {sidebarProduct.id.substring(0, 20)}...
+                      </div>
+                    </div>
+
+                    {/* Content Overview */}
+                    <div>
+                      <h3 className="text-xs font-medium text-[#999] uppercase tracking-wider mb-4">
+                        Content Overview
+                      </h3>
+                      <div className="space-y-3">
+                        {(() => {
+                          const getCharacterCount = (desc: string | null): number => {
+                            if (!desc) return 0;
+                            return desc.replace(/<[^>]*>/g, '').trim().length;
+                          };
+
+                          const assessDescriptionQuality = (
+                            length: number
+                          ): 'poor' | 'fair' | 'good' | 'excellent' => {
+                            if (length < 100) return 'poor';
+                            if (length < 300) return 'fair';
+                            if (length < 500) return 'good';
+                            return 'excellent';
+                          };
+
+                          const getQualityBadge = (
+                            quality: 'poor' | 'fair' | 'good' | 'excellent'
+                          ) => {
+                            switch (quality) {
+                              case 'poor':
+                                return { bg: 'bg-red-500/20', text: 'text-red-500', label: 'Poor' };
+                              case 'fair':
+                                return {
+                                  bg: 'bg-orange-500/20',
+                                  text: 'text-orange-500',
+                                  label: 'Fair',
+                                };
+                              case 'good':
+                                return {
+                                  bg: 'bg-yellow-500/20',
+                                  text: 'text-yellow-500',
+                                  label: 'Good',
+                                };
+                              case 'excellent':
+                                return {
+                                  bg: 'bg-green-500/20',
+                                  text: 'text-green-500',
+                                  label: 'Excellent',
+                                };
+                            }
+                          };
+
+                          const charCount = getCharacterCount(sidebarProduct.description);
+                          const quality = assessDescriptionQuality(charCount);
+                          const badge = getQualityBadge(quality);
+                          const percentage = Math.min((charCount / 500) * 100, 100);
+
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-[#999]">Description</span>
+                                <span
+                                  className={`px-2 py-0.5 text-xs rounded ${badge.bg} ${badge.text}`}
+                                >
+                                  {badge.label}
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all ${
+                                    quality === 'poor'
+                                      ? 'bg-red-500'
+                                      : quality === 'fair'
+                                        ? 'bg-orange-500'
+                                        : quality === 'good'
+                                          ? 'bg-yellow-500'
+                                          : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-[#666]">{charCount} characters</span>
+                                <span className="text-[#666]">500 recommended</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Product Details */}
+                    <div>
+                      <h3 className="text-xs font-medium text-[#999] uppercase tracking-wider mb-4">
+                        Product Details
+                      </h3>
+                      <div className="space-y-3">
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[#999]">Price</span>
+                          {sidebarProduct.price !== null ? (
+                            <span className="text-base text-white font-semibold">
+                              ${sidebarProduct.price.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-[#666]">Not set</span>
+                          )}
+                        </div>
+
+                        {/* Brand */}
+                        {sidebarProduct.brand && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#999]">Brand</span>
+                            <span className="text-base text-white truncate ml-2">
+                              {sidebarProduct.brand}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Availability */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[#999]">Status</span>
+                          {sidebarProduct.availability === 'in stock' ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-[#10a37f]/20 text-[#10a37f]">
+                              In Stock
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/20 text-orange-400">
+                              {sidebarProduct.availability || 'Unknown'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* GTIN */}
+                        {sidebarProduct.gtin && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#999]">GTIN</span>
+                            <span className="text-base text-white font-mono text-xs">
+                              {sidebarProduct.gtin}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="pt-2">
+                      <h3 className="text-xs font-medium text-[#999] uppercase tracking-wider mb-4">
+                        Quick Actions
+                      </h3>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => setSelectedProduct(sidebarProduct)}
+                          className="w-full px-4 py-2.5 bg-[#10a37f] hover:bg-[#0d8f6f] text-white text-sm font-medium rounded-md transition-colors"
+                        >
+                          View Full Details
+                        </button>
+                        {sidebarProduct.link && (
+                          <a
+                            href={sidebarProduct.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm font-medium rounded-md hover:bg-[#2a2a2a] hover:border-[#3a3a3a] transition-colors text-center"
+                          >
+                            View on Site
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Empty State */
+                  <div className="flex-1 flex items-center justify-center p-6">
+                    <div className="text-center space-y-2">
+                      <div className="text-[#666] text-sm">No product selected</div>
+                      <div className="text-[#444] text-xs">
+                        Click a product card to view metrics
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
