@@ -62,6 +62,17 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  // Product filtering and sorting state
+  const [productSortBy, setProductSortBy] = useState<'name' | 'price-asc' | 'price-desc' | 'brand'>(
+    'name'
+  );
+  const [productFilters, setProductFilters] = useState({
+    priceMin: '',
+    priceMax: '',
+    brands: [] as string[],
+    availability: 'all' as 'all' | 'in-stock' | 'out-of-stock',
+  });
+
   // Pipeline instance ref to avoid recreating
   const enrichmentPipeline = React.useRef(new TaxonomyEnrichmentPipeline());
   const enrichmentQueue = React.useRef<Set<string>>(new Set());
@@ -756,16 +767,16 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
           <div className="flex-1 p-6 overflow-auto">
             {viewMode === 'cards' && (
               <div
-                className={`grid gap-6 transition-all duration-300 ${
+                className={`grid gap-4 transition-all duration-300 ${
                   zoomLevel <= 0.75
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
+                    ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                     : zoomLevel <= 1
-                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
                       : zoomLevel <= 1.5
-                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
                         : zoomLevel <= 2
-                          ? 'grid-cols-1 md:grid-cols-2'
-                          : 'grid-cols-1'
+                          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                          : 'grid-cols-1 md:grid-cols-2'
                 }`}
                 style={{
                   transform: `scale(${zoomLevel})`,
@@ -1196,15 +1207,261 @@ export const TaxonomyVisualization = React.memo(function TaxonomyVisualization({
 
                 {/* Show products as cards after categories */}
                 {products.length > 0 &&
-                  products.map((product) => (
-                    <SimpleProductCard
-                      key={product.id}
-                      product={product}
-                      onSelect={(p) => setSelectedProduct(p)}
-                      isSelected={selectedProduct?.id === product.id}
-                      onProductClick={(p) => setSelectedProduct(p)}
-                    />
-                  ))}
+                  (() => {
+                    // Get unique brands for filter
+                    const uniqueBrands = Array.from(
+                      new Set(products.map((p) => p.brand).filter(Boolean))
+                    ) as string[];
+
+                    // Apply filters
+                    let filteredProducts = products.filter((product) => {
+                      // Price filter
+                      if (productFilters.priceMin && product.price !== null) {
+                        if (product.price < parseFloat(productFilters.priceMin)) return false;
+                      }
+                      if (productFilters.priceMax && product.price !== null) {
+                        if (product.price > parseFloat(productFilters.priceMax)) return false;
+                      }
+
+                      // Brand filter
+                      if (productFilters.brands.length > 0 && product.brand) {
+                        if (!productFilters.brands.includes(product.brand)) return false;
+                      }
+
+                      // Availability filter
+                      if (productFilters.availability === 'in-stock') {
+                        if (product.availability !== 'in stock') return false;
+                      } else if (productFilters.availability === 'out-of-stock') {
+                        if (product.availability === 'in stock') return false;
+                      }
+
+                      return true;
+                    });
+
+                    // Apply sorting
+                    filteredProducts = [...filteredProducts].sort((a, b) => {
+                      switch (productSortBy) {
+                        case 'name':
+                          return a.title.localeCompare(b.title);
+                        case 'price-asc':
+                          if (a.price === null) return 1;
+                          if (b.price === null) return -1;
+                          return a.price - b.price;
+                        case 'price-desc':
+                          if (a.price === null) return 1;
+                          if (b.price === null) return -1;
+                          return b.price - a.price;
+                        case 'brand':
+                          if (!a.brand) return 1;
+                          if (!b.brand) return -1;
+                          return a.brand.localeCompare(b.brand);
+                        default:
+                          return 0;
+                      }
+                    });
+
+                    const hasActiveFilters =
+                      productFilters.priceMin ||
+                      productFilters.priceMax ||
+                      productFilters.brands.length > 0 ||
+                      productFilters.availability !== 'all';
+
+                    return (
+                      <>
+                        {/* Filter and Sort Bar */}
+                        <div className="col-span-full mb-6">
+                          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-[#0a0a0a]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg">
+                            {/* Left side - Filters */}
+                            <div className="flex flex-wrap gap-2 items-center flex-1">
+                              {/* Price Range */}
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:border-[#3a3a3a] transition-colors">
+                                <span className="text-xs text-gray-500 whitespace-nowrap">$</span>
+                                <input
+                                  type="number"
+                                  placeholder="Min"
+                                  value={productFilters.priceMin}
+                                  onChange={(e) =>
+                                    setProductFilters({
+                                      ...productFilters,
+                                      priceMin: e.target.value,
+                                    })
+                                  }
+                                  className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <span className="text-gray-600">–</span>
+                                <input
+                                  type="number"
+                                  placeholder="Max"
+                                  value={productFilters.priceMax}
+                                  onChange={(e) =>
+                                    setProductFilters({
+                                      ...productFilters,
+                                      priceMax: e.target.value,
+                                    })
+                                  }
+                                  className="w-16 bg-transparent text-xs text-white placeholder:text-gray-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </div>
+
+                              {/* Availability */}
+                              <select
+                                value={productFilters.availability}
+                                onChange={(e) =>
+                                  setProductFilters({
+                                    ...productFilters,
+                                    availability: e.target.value as
+                                      | 'all'
+                                      | 'in-stock'
+                                      | 'out-of-stock',
+                                  })
+                                }
+                                className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                              >
+                                <option value="all">All Stock</option>
+                                <option value="in-stock">In Stock</option>
+                                <option value="out-of-stock">Out of Stock</option>
+                              </select>
+
+                              {/* Brand Filter */}
+                              {uniqueBrands.length > 0 && (
+                                <div className="relative">
+                                  <button
+                                    onClick={() => {
+                                      const dropdown = document.getElementById('brand-dropdown');
+                                      dropdown?.classList.toggle('hidden');
+                                    }}
+                                    className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                                  >
+                                    <FilterIcon size={12} className="text-gray-400" />
+                                    <span>Brands</span>
+                                    {productFilters.brands.length > 0 && (
+                                      <span className="ml-0.5 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-medium">
+                                        {productFilters.brands.length}
+                                      </span>
+                                    )}
+                                  </button>
+                                  <div
+                                    id="brand-dropdown"
+                                    className="hidden absolute top-full left-0 mt-1 w-52 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="sticky top-0 bg-[#1a1a1a] border-b border-[#2a2a2a] px-3 py-2">
+                                      <div className="text-xs font-medium text-gray-400">
+                                        Select Brands
+                                      </div>
+                                    </div>
+                                    <div className="py-1">
+                                      {uniqueBrands.map((brand) => (
+                                        <label
+                                          key={brand}
+                                          className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#2a2a2a] cursor-pointer group"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={productFilters.brands.includes(brand)}
+                                            onChange={(e) => {
+                                              if (e.target.checked) {
+                                                setProductFilters({
+                                                  ...productFilters,
+                                                  brands: [...productFilters.brands, brand],
+                                                });
+                                              } else {
+                                                setProductFilters({
+                                                  ...productFilters,
+                                                  brands: productFilters.brands.filter(
+                                                    (b) => b !== brand
+                                                  ),
+                                                });
+                                              }
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-gray-600 text-blue-500 focus:ring-1 focus:ring-blue-500 focus:ring-offset-0"
+                                          />
+                                          <span className="text-xs text-gray-300 group-hover:text-white transition-colors">
+                                            {brand}
+                                          </span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Active Filters Summary & Clear */}
+                              {hasActiveFilters && (
+                                <button
+                                  onClick={() =>
+                                    setProductFilters({
+                                      priceMin: '',
+                                      priceMax: '',
+                                      brands: [],
+                                      availability: 'all',
+                                    })
+                                  }
+                                  className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-[#1a1a1a] rounded-md transition-colors"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Right side - Sort and Results Count */}
+                            <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end">
+                              <div className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                                {filteredProducts.length}{' '}
+                                {filteredProducts.length === 1 ? 'product' : 'products'}
+                              </div>
+                              <div className="h-4 w-px bg-[#2a2a2a] hidden sm:block"></div>
+                              <select
+                                value={productSortBy}
+                                onChange={(e) =>
+                                  setProductSortBy(
+                                    e.target.value as 'name' | 'price-asc' | 'price-desc' | 'brand'
+                                  )
+                                }
+                                className="px-3 py-1.5 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-md text-white hover:border-[#3a3a3a] focus:border-blue-500/50 focus:outline-none cursor-pointer transition-colors"
+                              >
+                                <option value="name">Name (A-Z)</option>
+                                <option value="price-asc">Price: Low to High</option>
+                                <option value="price-desc">Price: High to Low</option>
+                                <option value="brand">Brand (A-Z)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Product Cards */}
+                        {filteredProducts.map((product) => (
+                          <SimpleProductCard
+                            key={product.id}
+                            product={product}
+                            onSelect={(p) => setSelectedProduct(p)}
+                            isSelected={selectedProduct?.id === product.id}
+                            onProductClick={(p) => setSelectedProduct(p)}
+                          />
+                        ))}
+
+                        {/* No results */}
+                        {filteredProducts.length === 0 && (
+                          <div className="col-span-full text-center py-12">
+                            <div className="text-[#666] mb-2">No products match your filters</div>
+                            <button
+                              onClick={() =>
+                                setProductFilters({
+                                  priceMin: '',
+                                  priceMax: '',
+                                  brands: [],
+                                  availability: 'all',
+                                })
+                              }
+                              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                            >
+                              Clear all filters
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                 {/* Loading state for products */}
                 {productsLoading && (
