@@ -12,7 +12,7 @@ const mockProduct: Product = {
   id: 'test-product-1',
   title: 'Test Product Title',
   description:
-    'This is a test product description with detailed information that is quite long and should be truncated when displayed initially but can be expanded to show the full content when the user clicks the show more button.',
+    'This is a test product description with detailed information that is quite long and should be truncated when displayed initially but can be expanded to show the full content when the user clicks the show more button. Adding more content to reach good quality threshold with specifications and benefits.',
   price: 99.99,
   image_link: 'https://example.com/test-image.jpg',
   brand: 'Test Brand',
@@ -332,6 +332,144 @@ describe('ProductDetailModal', () => {
 
       const rightColumn = screen.getByText('Pricing').closest('.lg\\:w-2\\/5');
       expect(rightColumn).toHaveClass('lg:w-2/5');
+    });
+  });
+
+  describe('Description Quality Assessment', () => {
+    it('should display quality badge for descriptions', () => {
+      render(<ProductDetailModal {...defaultProps} />);
+
+      // Should show quality badge (Good since description is 300+ chars)
+      expect(screen.getByText(/Good|Fair|Poor|Excellent/)).toBeInTheDocument();
+    });
+
+    it('should show "Poor" badge for descriptions under 100 characters', () => {
+      const shortDescProduct = {
+        ...mockProduct,
+        description: 'Short description.',
+      };
+      render(<ProductDetailModal {...defaultProps} product={shortDescProduct} />);
+
+      expect(screen.getByText('Poor')).toBeInTheDocument();
+    });
+
+    it('should show "Fair" badge for descriptions 100-299 characters', () => {
+      const fairDescProduct = {
+        ...mockProduct,
+        description: 'A'.repeat(150),
+      };
+      render(<ProductDetailModal {...defaultProps} product={fairDescProduct} />);
+
+      expect(screen.getByText('Fair')).toBeInTheDocument();
+    });
+
+    it('should show "Good" badge for descriptions 300-499 characters', () => {
+      const goodDescProduct = {
+        ...mockProduct,
+        description: 'A'.repeat(350),
+      };
+      render(<ProductDetailModal {...defaultProps} product={goodDescProduct} />);
+
+      expect(screen.getByText('Good')).toBeInTheDocument();
+    });
+
+    it('should show "Excellent" badge for descriptions 500+ characters', () => {
+      const excellentDescProduct = {
+        ...mockProduct,
+        description: 'A'.repeat(550),
+      };
+      render(<ProductDetailModal {...defaultProps} product={excellentDescProduct} />);
+
+      expect(screen.getByText('Excellent')).toBeInTheDocument();
+    });
+
+    it('should display character count with recommended length', () => {
+      render(<ProductDetailModal {...defaultProps} />);
+
+      expect(screen.getByText(/Character Count/i)).toBeInTheDocument();
+      expect(screen.getByText(/\/500 recommended/i)).toBeInTheDocument();
+    });
+
+    it('should show progress bar for character count', () => {
+      const { container } = render(<ProductDetailModal {...defaultProps} />);
+
+      const progressBar = container.querySelector('.bg-\\[\\#1a1a1a\\].rounded-full.h-2');
+      expect(progressBar).toBeInTheDocument();
+    });
+
+    it('should display optimization recommendations for non-excellent quality', () => {
+      const poorDescProduct = {
+        ...mockProduct,
+        description: 'Short.',
+      };
+      render(<ProductDetailModal {...defaultProps} product={poorDescProduct} />);
+
+      expect(screen.getByText(/Optimization Opportunity/i)).toBeInTheDocument();
+      expect(screen.getByText(/Add product specifications/i)).toBeInTheDocument();
+    });
+
+    it('should not show optimization recommendations for excellent quality', () => {
+      const excellentDescProduct = {
+        ...mockProduct,
+        description: 'A'.repeat(600),
+      };
+      render(<ProductDetailModal {...defaultProps} product={excellentDescProduct} />);
+
+      expect(screen.queryByText(/Optimization Opportunity/i)).not.toBeInTheDocument();
+    });
+
+    it('should show missing keywords hint for poor/fair quality', () => {
+      const poorDescProduct = {
+        ...mockProduct,
+        description: 'Short.',
+      };
+      render(<ProductDetailModal {...defaultProps} product={poorDescProduct} />);
+
+      expect(screen.getByText(/Consider adding:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Product features, specifications/i)).toBeInTheDocument();
+    });
+
+    it('should handle null description with appropriate messaging', () => {
+      const noDescProduct = {
+        ...mockProduct,
+        description: null,
+      };
+      render(<ProductDetailModal {...defaultProps} product={noDescProduct} />);
+
+      expect(screen.getByText('No description available')).toBeInTheDocument();
+      expect(screen.getByText('Poor - Missing Content')).toBeInTheDocument();
+      expect(screen.getByText(/Add a comprehensive product description/i)).toBeInTheDocument();
+    });
+
+    it('should handle empty description as poor quality', () => {
+      const emptyDescProduct = {
+        ...mockProduct,
+        description: '',
+      };
+      render(<ProductDetailModal {...defaultProps} product={emptyDescProduct} />);
+
+      expect(screen.getByText('No description available')).toBeInTheDocument();
+    });
+
+    it('should strip HTML tags when calculating character count', () => {
+      const htmlDescProduct = {
+        ...mockProduct,
+        description: '<p>Test</p><b>Bold</b>', // 8 chars without tags
+      };
+      render(<ProductDetailModal {...defaultProps} product={htmlDescProduct} />);
+
+      // Should be counted as Poor (<100 chars) even with HTML
+      expect(screen.getByText('Poor')).toBeInTheDocument();
+    });
+
+    it('should use correct color for progress bar based on quality', () => {
+      const { container } = render(<ProductDetailModal {...defaultProps} />);
+
+      // Find progress bar inner div (colored part)
+      const progressBarInner = container.querySelector('.h-full.transition-all');
+
+      // Should have a color class (bg-red-500, bg-orange-500, bg-yellow-500, or bg-green-500)
+      expect(progressBarInner?.className).toMatch(/bg-(red|orange|yellow|green)-500/);
     });
   });
 });

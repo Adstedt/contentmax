@@ -30,6 +30,48 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   const [specsOpen, setSpecsOpen] = useState(true);
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
+  // Quality assessment function (from enrich-data.ts)
+  const assessDescriptionQuality = (length: number): 'poor' | 'fair' | 'good' | 'excellent' => {
+    if (length < 100) return 'poor';
+    if (length < 300) return 'fair';
+    if (length < 500) return 'good';
+    return 'excellent';
+  };
+
+  // Calculate character count (excluding HTML tags and normalizing whitespace)
+  const getCharacterCount = (text: string | null): number => {
+    if (!text) return 0;
+    return text.replace(/<[^>]*>/g, '').trim().length;
+  };
+
+  // Get quality badge styling
+  const getQualityBadge = (quality: 'poor' | 'fair' | 'good' | 'excellent') => {
+    switch (quality) {
+      case 'poor':
+        return { bg: 'bg-red-500/20', text: 'text-red-500', label: 'Poor' };
+      case 'fair':
+        return { bg: 'bg-orange-500/20', text: 'text-orange-500', label: 'Fair' };
+      case 'good':
+        return { bg: 'bg-yellow-500/20', text: 'text-yellow-500', label: 'Good' };
+      case 'excellent':
+        return { bg: 'bg-green-500/20', text: 'text-green-500', label: 'Excellent' };
+    }
+  };
+
+  // Get optimization recommendations
+  const getRecommendations = (quality: 'poor' | 'fair' | 'good' | 'excellent') => {
+    switch (quality) {
+      case 'poor':
+        return 'Add product specifications, benefits, and use cases to improve discoverability and conversion.';
+      case 'fair':
+        return 'Include more detailed features and customer benefits to enhance product appeal.';
+      case 'good':
+        return 'Consider adding technical specifications or comparison info for comprehensive coverage.';
+      case 'excellent':
+        return 'Description meets quality standards. Monitor for opportunities to enhance further.';
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
@@ -188,17 +230,111 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
         <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
           {/* Main Content Column - Scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-            {/* Product Description - Always Visible */}
+            {/* Product Description with Quality Assessment */}
             <div>
-              <h3 className="text-sm font-semibold text-[#666] uppercase tracking-wider mb-2">
-                Description
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-[#666] uppercase tracking-wider">
+                  Description
+                </h3>
+                {product.description &&
+                  (() => {
+                    const charCount = getCharacterCount(product.description);
+                    const quality = assessDescriptionQuality(charCount);
+                    const badge = getQualityBadge(quality);
+                    return (
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`}
+                      >
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
+              </div>
+
               {product.description ? (
-                <p className="text-[#ccc] leading-relaxed text-sm whitespace-pre-wrap">
-                  {product.description}
-                </p>
+                <>
+                  <p className="text-[#ccc] leading-relaxed text-sm whitespace-pre-wrap mb-4">
+                    {product.description}
+                  </p>
+
+                  {/* Quality Metrics */}
+                  {(() => {
+                    const charCount = getCharacterCount(product.description);
+                    const quality = assessDescriptionQuality(charCount);
+                    const badge = getQualityBadge(quality);
+                    const recommendedLength = 500;
+                    const progressPercentage = Math.min((charCount / recommendedLength) * 100, 100);
+
+                    return (
+                      <div className="mt-4 p-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg space-y-3">
+                        {/* Character Count with Progress Bar */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-[#666]">Character Count</span>
+                            <span className="text-xs text-[#999] font-mono">
+                              {charCount}/{recommendedLength} recommended
+                            </span>
+                          </div>
+                          <div className="w-full bg-[#1a1a1a] rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ${
+                                quality === 'poor'
+                                  ? 'bg-red-500'
+                                  : quality === 'fair'
+                                    ? 'bg-orange-500'
+                                    : quality === 'good'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
+                              }`}
+                              style={{ width: `${progressPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Optimization Recommendation */}
+                        {quality !== 'excellent' && (
+                          <div className="pt-3 border-t border-[#1a1a1a]">
+                            <div className="flex items-start gap-2">
+                              <div
+                                className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${badge.bg}`}
+                              />
+                              <div>
+                                <div className="text-xs font-medium text-[#999] mb-1">
+                                  Optimization Opportunity
+                                </div>
+                                <p className="text-xs text-[#666] leading-relaxed">
+                                  {getRecommendations(quality)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Missing Keywords Hint for Poor/Fair Quality */}
+                        {(quality === 'poor' || quality === 'fair') && (
+                          <div className="pt-3 border-t border-[#1a1a1a]">
+                            <div className="text-xs text-[#666]">
+                              <span className="font-medium text-[#999]">Consider adding:</span>{' '}
+                              Product features, specifications, benefits, use cases, materials,
+                              dimensions
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
               ) : (
-                <p className="text-[#666] italic text-sm">No description available</p>
+                <div className="p-6 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-center">
+                  <p className="text-[#666] italic text-sm mb-3">No description available</p>
+                  <div className="inline-block px-3 py-1.5 bg-red-500/20 text-red-500 rounded text-xs font-medium">
+                    Poor - Missing Content
+                  </div>
+                  <p className="text-xs text-[#666] mt-3 max-w-md mx-auto">
+                    Add a comprehensive product description including specifications, benefits, and
+                    use cases to improve product discoverability and conversion rates.
+                  </p>
+                </div>
               )}
             </div>
 
